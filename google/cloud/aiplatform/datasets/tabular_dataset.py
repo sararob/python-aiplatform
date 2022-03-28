@@ -150,8 +150,8 @@ class TabularDataset(datasets._ColumnNamesDataset):
     @classmethod
     def create_from_dataframe(
         cls,
+        display_name: str,
         df_source: "pd.DataFrame",  # noqa: F821 - skip check for undefined name 'pd'
-        display_name: str = None,
         staging_path: str = None,
         project: Optional[str] = None,
         location: Optional[str] = None,
@@ -166,10 +166,10 @@ class TabularDataset(datasets._ColumnNamesDataset):
                 Required. Pandas DataFrame containing the source data for
                 ingestion as a TabularDataset
             staging_path (str):
-                Required. The BigQuery table or GCS filepath to stage the data
+                Required. The BigQuery table to stage the data
                 for Vertex. Because Vertex maintains a reference to this source
-                to create the Vertex Dataset, this BQ table or GCS file should
-                not be deleted.
+                to create the Vertex Dataset, this BigQuery table should
+                not be deleted. Example: `bq://my-project.my-dataset.my-table`
             project (str):
                 Project to upload this model to. Overrides project set in
                 aiplatform.init.
@@ -183,7 +183,7 @@ class TabularDataset(datasets._ColumnNamesDataset):
 
         if len(df_source) < _AUTOML_TRAINING_MIN_ROWS:
             _LOGGER.info(
-                "Your DataFrame has %s rows, and AutoML requires %s rows to train on tabular data. You can still train a custom model once your dataset has been uploaded to Vertex, but you will not be able to use AutoML for training."
+                "Your DataFrame has %s rows and AutoML requires %s rows to train on tabular data. You can still train a custom model once your dataset has been uploaded to Vertex, but you will not be able to use AutoML for training."
                 % (len(df_source), _AUTOML_TRAINING_MIN_ROWS),
             )
 
@@ -212,9 +212,15 @@ class TabularDataset(datasets._ColumnNamesDataset):
             job.result()
 
         finally:
-            cls.create(display_name=display_name, bq_source=f"bq://{staging_path}")
+            dataset_from_dataframe = cls.create(
+                display_name=display_name,
+                bq_source=f"bq://{staging_path}",
+                project=project,
+                location=location,
+                credentials=credentials,
+            )
 
-        return job
+        return dataset_from_dataframe
 
     def import_data(self):
         raise NotImplementedError(
