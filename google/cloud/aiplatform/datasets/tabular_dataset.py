@@ -169,7 +169,7 @@ class TabularDataset(datasets._ColumnNamesDataset):
                 Required. The BigQuery table to stage the data
                 for Vertex. Because Vertex maintains a reference to this source
                 to create the Vertex Dataset, this BigQuery table should
-                not be deleted. Example: `bq://my-project.my-dataset.my-table`
+                not be deleted. Example: `my-project.my-dataset.my-table`
             project (str):
                 Project to upload this model to. Overrides project set in
                 aiplatform.init.
