@@ -169,7 +169,7 @@ class TabularDataset(datasets._ColumnNamesDataset):
                 Required. The BigQuery table to stage the data
                 for Vertex. Because Vertex maintains a reference to this source
                 to create the Vertex Dataset, this BigQuery table should
-                not be deleted. Example: `my-project.my-dataset.my-table`
+                not be deleted. Example: `bq://my-project.my-dataset.my-table`
             project (str):
                 Project to upload this model to. Overrides project set in
                 aiplatform.init.
@@ -196,6 +196,11 @@ class TabularDataset(datasets._ColumnNamesDataset):
 
         bigquery_client = bigquery.Client(project=project, credentials=credentials)
 
+        if staging_path.startswith("bq://"):
+            bq_staging_path = staging_path[len("bq://"):]
+        else:
+            raise ValueError("Only BigQuery staging paths are supported. Provide a staging path in the format `bq://your-project.your-dataset.your-table`.")
+
         try:
             parquet_options = bigquery.format_options.ParquetOptions()
             parquet_options.enable_list_inference = True
@@ -206,7 +211,7 @@ class TabularDataset(datasets._ColumnNamesDataset):
             )
 
             job = bigquery_client.load_table_from_dataframe(
-                dataframe=df_source, destination=staging_path, job_config=job_config
+                dataframe=df_source, destination=bq_staging_path, job_config=job_config
             )
 
             job.result()
@@ -214,7 +219,7 @@ class TabularDataset(datasets._ColumnNamesDataset):
         finally:
             dataset_from_dataframe = cls.create(
                 display_name=display_name,
-                bq_source=f"bq://{staging_path}",
+                bq_source=staging_path,
                 project=project,
                 location=location,
                 credentials=credentials,

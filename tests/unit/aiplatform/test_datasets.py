@@ -95,8 +95,6 @@ _TEST_SOURCE_URI_BQ = "bq://my-project.my-dataset.table"
 _TEST_INVALID_SOURCE_URIS = ["gs://my-bucket/index_file_1.jsonl", 123]
 
 # create_from_dataframe
-_TEST_BQ_STAGING_PATH = "my-project.my-dataset.table"
-
 _TEST_BOOL_COL = "bool_col"
 _TEST_BOOL_ARR_COL = "bool_array_col"
 _TEST_DOUBLE_COL = "double_col"
@@ -714,7 +712,7 @@ class TestDataset:
         dataset_from_df = datasets.TabularDataset.create_from_dataframe(
             display_name=_TEST_DISPLAY_NAME,
             df_source=source_df,
-            staging_path=_TEST_BQ_STAGING_PATH,
+            staging_path=_TEST_SOURCE_URI_BQ,
         )
 
         if not sync:
