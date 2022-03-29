@@ -194,7 +194,10 @@ class TabularDataset(datasets._ColumnNamesDataset):
                 f"Pyarrow is not installed. Please install pyarrow to use the BigQuery client."
             )
 
-        bigquery_client = bigquery.Client(project=project, credentials=credentials)
+        bigquery_client = bigquery.Client(
+            project=project or initializer.global_config.project,
+            credentials=credentials or initializer.global_config.credentials,
+        )
 
         if staging_path.startswith("bq://"):
             bq_staging_path = staging_path[len("bq://"):]
