@@ -95,6 +95,8 @@ _TEST_SOURCE_URI_BQ = "bq://my-project.my-dataset.table"
 _TEST_INVALID_SOURCE_URIS = ["gs://my-bucket/index_file_1.jsonl", 123]
 
 # create_from_dataframe
+_TEST_INVALID_SOURCE_URI_BQ = "my-project.my-dataset.table"
+
 _TEST_BOOL_COL = "bool_col"
 _TEST_BOOL_ARR_COL = "bool_array_col"
 _TEST_DOUBLE_COL = "double_col"
@@ -731,6 +733,51 @@ class TestDataset:
             dataset=expected_dataset,
             metadata=_TEST_REQUEST_METADATA,
         )
+
+    @pytest.mark.usefixtures("get_dataset_tabular_bq_mock")
+    @pytest.mark.parametrize(
+        "source_df",
+        [
+            pd.DataFrame(
+                data=[
+                    [
+                        False,
+                        [True, False],
+                        1.2,
+                        [1.2, 3.4],
+                        1,
+                        [1, 2],
+                        "test",
+                        ["test1", "test2"],
+                        b"1",
+                    ],
+                    [
+                        True,
+                        [True, True],
+                        2.2,
+                        [2.2, 4.4],
+                        2,
+                        [2, 3],
+                        "test1",
+                        ["test2", "test3"],
+                        b"0",
+                    ],
+                ],
+                columns=_TEST_DF_COLUMN_NAMES,
+            ),
+        ],
+    )
+    @pytest.mark.parametrize("sync", [True, False])
+    def test_create_dataset_tabular_from_dataframe_with_invalid_bq_uri(
+        self, create_dataset_mock, source_df, bq_client_mock, sync
+    ):
+        aiplatform.init(project=_TEST_PROJECT)
+        with pytest.raises(ValueError):
+            datasets.TabularDataset.create_from_dataframe(
+                display_name=_TEST_DISPLAY_NAME,
+                df_source=source_df,
+                staging_path=_TEST_INVALID_SOURCE_URI_BQ,
+            )
 
     @pytest.mark.usefixtures("get_dataset_mock")
     @pytest.mark.parametrize("sync", [True, False])
