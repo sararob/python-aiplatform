@@ -39,8 +39,34 @@ from typing import (
     Union,
 )
 
-class VertexAiPipelineBasedService(abc.ABC):
+from google.cloud.aiplatform.compat.types import (
+    pipeline_job_v1 as gca_pipeline_job_v1,
+    pipeline_state_v1 as gca_pipeline_state_v1,
+)
+
+_LOGGER = base.Logger(__name__)
+
+_PIPELINE_COMPLETE_STATES = set(
+    [
+        gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED,
+        gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_FAILED,
+        gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_CANCELLED,
+        gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_PAUSED,
+    ]
+)
+
+class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
     """Base class for Vertex AI Pipeline based services."""
+
+    client_class = utils.PipelineJobClientWithOverride
+    _resource_noun = "pipelineJob"
+    _delete_method = "delete_pipeline_job"
+    _getter_method = "get_pipeline_job"
+    # _list_method = "list_pipeline_jobs"
+    _parse_resource_name_method = "parse_pipeline_job_path"
+    _format_resource_name_method = "pipeline_job_path"
+
+    _valid_done_states = _PIPELINE_COMPLETE_STATES
 
     @property
     @abc.abstractmethod
@@ -108,14 +134,24 @@ class VertexAiPipelineBasedService(abc.ABC):
                 credentials set in aiplatform.init.
         """
 
-        self.project = project or initializer.global_config.project
-        self.location = location or initializer.global_config.location
-        self.credentials = credentials or initializer.global_config.credentials
-        self.pipeline_job_id = pipeline_job_id
+        super().__init__(project=project, location=location, credentials=credentials)
 
-        # self._gca_resource = self._get_gca_resource(resource_name=pipeline_job_id)
+        self._parent = initializer.global_config.common_location_path(
+            project=project, location=location
+        )
 
-    def _create_pipeline_job(
+        self._gca_resource = self._get_gca_resource(resource_name=pipeline_job_id)
+
+        pipeline_job = pipeline_jobs.PipelineJob.get(
+            resource_name=pipeline_job_id,
+            project=project,
+            location=location,
+            credentials=credentials,
+        )
+
+        return pipeline_job
+
+    def _create_and_submit_pipeline_job(
         self,
         template_ref: str,
         template_params: Dict[str, Any],
@@ -151,7 +187,6 @@ class VertexAiPipelineBasedService(abc.ABC):
 
         project = project or initializer.global_config.project
         location = location or initializer.global_config.location
-        credentials = credentials or initializer.global_config.credentials
 
         timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
 

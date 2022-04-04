@@ -73,8 +73,6 @@ class ModelEvaluationJob(pipeline_service.VertexAiPipelineBasedService):
             pipeline_job_id=evaluation_pipeline_run,
         )
 
-        print(self.state)
-
     @classmethod
     def run(
         cls,
@@ -87,7 +85,7 @@ class ModelEvaluationJob(pipeline_service.VertexAiPipelineBasedService):
         # TODO: format template params from gcs_source_uris, prediction_type, prediction_format
         template_params = {"text": "Hello", "emoji_str": "sparkles"}
         
-        eval_pipeline_run = cls._create_pipeline_job(
+        eval_pipeline_run = cls._create_and_submit_pipeline_job(
             cls,
             template_ref=_MODEL_EVAL_PIPELINE_TEMPLATE,
             template_params=template_params,
