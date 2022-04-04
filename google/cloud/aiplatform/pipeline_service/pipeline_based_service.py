@@ -136,9 +136,9 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
 
         super().__init__(project=project, location=location, credentials=credentials)
 
-        self._parent = initializer.global_config.common_location_path(
-            project=project, location=location
-        )
+        # self._parent = initializer.global_config.common_location_path(
+        #     project=project, location=location
+        # )
 
         self._gca_resource = self._get_gca_resource(resource_name=pipeline_job_id)
 
@@ -155,6 +155,7 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         self,
         template_ref: str,
         template_params: Dict[str, Any],
+        pipeline_root: str,
         project: str,
         location: str,
         credentials: auth_credentials.Credentials,
@@ -177,6 +178,7 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
             location (str):
                 Optional. Location to create PipelineJob. If not set,
                 location set in aiplatform.init will be used.
+            TODO: param to indicate whether to use submit() or run()?
 
         Returns:
             (VertexAiPipelineBasedService):
@@ -191,9 +193,10 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
 
         service_pipeline_job = pipeline_jobs.PipelineJob(
-            display_name=f"service-test-pipeline-job-{timestamp}",
+            display_name=f"eval-test-pipeline-job-{timestamp}",
             template_path=template_ref,
             parameter_values=template_params,
+            pipeline_root=pipeline_root,
             project=project,
             location=location,
             credentials=credentials,

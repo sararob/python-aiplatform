@@ -21,6 +21,7 @@ from google.protobuf import field_mask_pb2
 
 from google.cloud.aiplatform import base
 from google.cloud.aiplatform import initializer
+from google.cloud.aiplatform import models
 from google.cloud.aiplatform import utils
 from google.cloud.aiplatform import pipeline_jobs
 from google.cloud.aiplatform import pipeline_service
@@ -38,9 +39,11 @@ from typing import (
     Union,
 )
 
+from google.cloud.aiplatform_v1.types import model_evaluation
+
 _LOGGER = base.Logger(__name__)
 
-_MODEL_EVAL_PIPELINE_TEMPLATE = "gs://sara-vertex-demos-bucket/test_template.json"
+_MODEL_EVAL_PIPELINE_TEMPLATE = "/Users/sararob/Dev/sara-fork/python-aiplatform/google/cloud/aiplatform/model_evaluation/sdk_pipeline_experimental.json"
 
 class ModelEvaluationJob(pipeline_service.VertexAiPipelineBasedService):
 
@@ -50,7 +53,9 @@ class ModelEvaluationJob(pipeline_service.VertexAiPipelineBasedService):
 
     @property
     def backing_pipeline_job(self) -> pipeline_jobs.PipelineJob:
-        return super().backing_pipeline_job
+        return pipeline_jobs.PipelineJob.get(
+            resource_name=self.resource_name
+        )
 
     @property
     def pipeline_console_uri(self) -> str:
@@ -59,6 +64,7 @@ class ModelEvaluationJob(pipeline_service.VertexAiPipelineBasedService):
     @property
     def metadata_output_artifact(self) -> Optional[str]:
         return super().metadata_output_artifact
+        # set if pipeline is complete
 
     def __init__(
         self,
@@ -74,27 +80,40 @@ class ModelEvaluationJob(pipeline_service.VertexAiPipelineBasedService):
         )
 
     @classmethod
-    def run(
+    def submit(
         cls,
-        # model,
-        # gcs_source_uris,
-        # prediction_type,
-        # prediction_format,
+        model: models.Model,
+        prediction_type: str,
+        pipeline_root,
+        gcs_source_uris: List[str],
+        class_names: List[str],
+        target_column_name: str,
+        instances_format: Optional[str] = "jsonl",
+
     ) -> "ModelEvaluationJob":
 
-        # TODO: format template params from gcs_source_uris, prediction_type, prediction_format
-        template_params = {"text": "Hello", "emoji_str": "sparkles"}
+        # TODO: format template params to macth with pipeline template
+        template_params = {
+            "batch_predict_gcs_source_uris": gcs_source_uris,
+            "batch_predict_instances_format": instances_format,
+            "class_names": class_names,
+            "model_name": model.resource_name,
+            "prediction_type": prediction_type,
+            "project": initializer.global_config.project,
+            "location": initializer.global_config.location,
+            "root_dir": pipeline_root,
+            "target_column_name": target_column_name,
+        }
         
         eval_pipeline_run = cls._create_and_submit_pipeline_job(
             cls,
             template_ref=_MODEL_EVAL_PIPELINE_TEMPLATE,
             template_params=template_params,
+            pipeline_root=pipeline_root,
             project = initializer.global_config.project,
             location = initializer.global_config.location,
             credentials = initializer.global_config.credentials,
         )
-
-        # eval_pipeline_run.submit()
 
         model_eval_job_resource = cls.__new__(cls)
         
@@ -102,3 +121,16 @@ class ModelEvaluationJob(pipeline_service.VertexAiPipelineBasedService):
         model_eval_job_resource.pipeline_console_uri = eval_pipeline_run._dashboard_uri
 
         return model_eval_job_resource
+
+    def get_model_evaluation(
+        self,
+
+    ) -> Optional[model_evaluation.ModelEvaluation]:
+        """Creates a ModelEvaluation resource and instantiates its representation."""
+        print('hello')
+
+        # check if backing job has completed
+        # if not, return None
+        # if yes, return the instantiated ModelEvaluation resource
+            # get the pipeline output artifact (evaluation)
+            # pass the resource name to the 

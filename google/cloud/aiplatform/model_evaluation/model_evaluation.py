@@ -39,6 +39,14 @@ from typing import (
 
 class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
 
+    client_class = utils.ModelClientWithOverride
+    _resource_noun = "evaluations"
+    # _delete_method = "delete_pipeline_job"
+    _getter_method = "get_model_evaluation"
+    _list_method = "list_model_evaluations"
+    _parse_resource_name_method = "parse_model_evaluation_path"
+    _format_resource_name_method = "model_evaluation_path"
+
     @property
     def evaluation_metrics(self) -> Optional[Dict[str, Any]]:
         """Gets the evaluation metrics from the Model Evaluation.
@@ -50,11 +58,11 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
 
     @property
     def batch_prediction_job(self) -> jobs.BatchPredictionJob:
-        """The BP job used for the Model Eval"""
+        """The Batch Prediction job used for the Model Eval"""
     
     @property
     def backing_pipeline_job(self) -> pipeline_jobs.PipelineJob:
-        """ The PipelineJob resource that ran this model evaluation."""
+        """The PipelineJob resource that ran this model evaluation."""
     
     def get_from_pipeline_job(pipeline_id) -> "ModelEvaluation":
         """Creates a ModelEvaluation SDK resource from an evaluation pipeline that has already run on a managed Vertex model."""
@@ -74,3 +82,40 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
         )
 
         self._gca_resource = self._get_gca_resource(resource_name=evaluation_name)
+
+    @classmethod
+    def get(
+        cls,
+        resource_name: str,
+        project: Optional[str] = None,
+        location: Optional[str] = None,
+        credentials: Optional[auth_credentials.Credentials] = None,
+    ) -> "ModelEvaluation":
+        """Get a Vertex AI Model Evaluation given the resource name.
+
+        Args:
+            resource_name (str):
+                Required. A fully-qualified resource name or ID.
+            project (str):
+                Optional. Project to retrieve evaluation from. If not set, project
+                set in aiplatform.init will be used.
+            location (str):
+                Optional. Location to retrieve evaluation from. If not set,
+                location set in aiplatform.init will be used.
+            credentials (auth_credentials.Credentials):
+                Optional. Custom credentials to use to get this evaluation.
+                Overrides credentials set in aiplatform.init.
+
+        Returns:
+            A Vertex AI Model Evaluation.
+        """
+        self = cls._empty_constructor(
+            project=project,
+            location=location,
+            credentials=credentials,
+            resource_name=resource_name,
+        )
+
+        self._gca_resource = self._get_gca_resource(resource_name=resource_name)
+
+        return self
