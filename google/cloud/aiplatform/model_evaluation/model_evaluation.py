@@ -51,6 +51,13 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
     @property
     def batch_prediction_job(self) -> jobs.BatchPredictionJob:
         """The BP job used for the Model Eval"""
+    
+    @property
+    def backing_pipeline_job(self) -> pipeline_jobs.PipelineJob:
+        """ The PipelineJob resource that ran this model evaluation."""
+    
+    def get_from_pipeline_job(pipeline_id) -> "ModelEvaluation":
+        """Creates a ModelEvaluation SDK resource from an evaluation pipeline that has already run on a managed Vertex model."""
 
     def __init__(
         self,
@@ -59,3 +66,11 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
         location: Optional[str] = None,
         credentials: Optional[auth_credentials.Credentials] = None,
     ):
+        super().__init__(
+            project=project,
+            location=location,
+            credentials=credentials,
+            resource_name=evaluation_name,
+        )
+
+        self._gca_resource = self._get_gca_resource(resource_name=evaluation_name)

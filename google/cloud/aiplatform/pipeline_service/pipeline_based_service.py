@@ -16,7 +16,7 @@
 #
 
 import abc
-from re import template
+import datetime
 
 from google.auth import credentials as auth_credentials
 from google.protobuf import field_mask_pb2
@@ -39,7 +39,7 @@ from typing import (
     Union,
 )
 
-class VertexAiPipelineBasedService(base.VertexAiResourceNounWithFutureManager):
+class VertexAiPipelineBasedService(abc.ABC):
     """Base class for Vertex AI Pipeline based services."""
 
     @property
@@ -56,7 +56,7 @@ class VertexAiPipelineBasedService(base.VertexAiResourceNounWithFutureManager):
 
     @property
     @abc.abstractmethod
-    def metadata_output_artifact(self) -> str:
+    def metadata_output_artifact(self) -> Optional[str]:
         """The ML Metadata output artifact resource URI from the completed pipeline run."""
         pass
 
@@ -85,7 +85,7 @@ class VertexAiPipelineBasedService(base.VertexAiResourceNounWithFutureManager):
         Example Usage:
 
             pipeline_service = aiplatform.VertexAiPipelineBasedService(
-                pipeline_job_id = "projects/123/locations/us-central1/pipelines/runs/456"
+                pipeline_job_id = "projects/123/locations/us-central1/pipelinesJobs/456"
             )
 
             pipeline_service = aiplatform.VertexAiPipelinebasedService(
@@ -95,7 +95,7 @@ class VertexAiPipelineBasedService(base.VertexAiResourceNounWithFutureManager):
         Args:
             pipeline_job_id(str):
                 Required. A fully-qualified pipeline job run ID.
-                Example: "projects/123/locations/us-central1/pipelines/runs/456" or
+                Example: "projects/123/locations/us-central1/pipelineJobs/456" or
                 "456" when project and location are initialized or passed.
             project (str):
                 Optional. Project to retrieve pipeline job from. If not set, project
@@ -108,14 +108,12 @@ class VertexAiPipelineBasedService(base.VertexAiResourceNounWithFutureManager):
                 credentials set in aiplatform.init.
         """
 
-        super().__init__(
-            project=project,
-            location=location,
-            credentials=credentials,
-            resource_name=pipeline_job_id,
-        )
+        self.project = project or initializer.global_config.project
+        self.location = location or initializer.global_config.location
+        self.credentials = credentials or initializer.global_config.credentials
+        self.pipeline_job_id = pipeline_job_id
 
-        self._gca_resource = self._get_gca_resource(resource_name=pipeline_job_id)
+        # self._gca_resource = self._get_gca_resource(resource_name=pipeline_job_id)
 
     def _create_pipeline_job(
         self,
@@ -153,9 +151,12 @@ class VertexAiPipelineBasedService(base.VertexAiResourceNounWithFutureManager):
 
         project = project or initializer.global_config.project
         location = location or initializer.global_config.location
+        credentials = credentials or initializer.global_config.credentials
+
+        timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
 
         service_pipeline_job = pipeline_jobs.PipelineJob(
-            display_name="service-test-pipeline-job",
+            display_name=f"service-test-pipeline-job-{timestamp}",
             template_path=template_ref,
             parameter_values=template_params,
             project=project,

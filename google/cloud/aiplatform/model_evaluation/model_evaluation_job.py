@@ -40,9 +40,13 @@ from typing import (
 
 _LOGGER = base.Logger(__name__)
 
-_MODEL_EVAL_PIPELINE_TEMPLATE = "TODO"
+_MODEL_EVAL_PIPELINE_TEMPLATE = "gs://sara-vertex-demos-bucket/test_template.json"
 
 class ModelEvaluationJob(pipeline_service.VertexAiPipelineBasedService):
+
+    @property
+    def _template_ref(self) -> str:
+        return _MODEL_EVAL_PIPELINE_TEMPLATE
 
     @property
     def backing_pipeline_job(self) -> pipeline_jobs.PipelineJob:
@@ -52,6 +56,10 @@ class ModelEvaluationJob(pipeline_service.VertexAiPipelineBasedService):
     def pipeline_console_uri(self) -> str:
         return super().pipeline_console_uri
 
+    @property
+    def metadata_output_artifact(self) -> Optional[str]:
+        return super().metadata_output_artifact
+
     def __init__(
         self,
         evaluation_pipeline_run: str,
@@ -60,25 +68,39 @@ class ModelEvaluationJob(pipeline_service.VertexAiPipelineBasedService):
         credentials: Optional[auth_credentials.Credentials] = None,
     ):
         """Retrieves a ModelEvaluationJob and instantiates its representation."""
-        
-        self._template_ref = _MODEL_EVAL_PIPELINE_TEMPLATE
 
         super().__init__(
             pipeline_job_id=evaluation_pipeline_run,
         )
 
+        print(self.state)
+
+    @classmethod
     def run(
-        self,
-        model,
-        gcs_source_uris,
-        prediction_type,
-        prediction_format,
+        cls,
+        # model,
+        # gcs_source_uris,
+        # prediction_type,
+        # prediction_format,
     ) -> "ModelEvaluationJob":
 
         # TODO: format template params from gcs_source_uris, prediction_type, prediction_format
-        template_params = {}
-
-        return self._create_pipeline_job(
-            template_ref=self._template_ref,
+        template_params = {"text": "Hello", "emoji_str": "sparkles"}
+        
+        eval_pipeline_run = cls._create_pipeline_job(
+            cls,
+            template_ref=_MODEL_EVAL_PIPELINE_TEMPLATE,
             template_params=template_params,
+            project = initializer.global_config.project,
+            location = initializer.global_config.location,
+            credentials = initializer.global_config.credentials,
         )
+
+        # eval_pipeline_run.submit()
+
+        model_eval_job_resource = cls.__new__(cls)
+        
+        model_eval_job_resource.backing_pipeline_job = eval_pipeline_run
+        model_eval_job_resource.pipeline_console_uri = eval_pipeline_run._dashboard_uri
+
+        return model_eval_job_resource
