@@ -16,7 +16,7 @@
 #
 
 import abc
-import datetime
+from datetime import datetime
 
 from google.auth import credentials as auth_credentials
 from google.protobuf import field_mask_pb2
@@ -54,6 +54,7 @@ _PIPELINE_COMPLETE_STATES = set(
         gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_PAUSED,
     ]
 )
+
 
 class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
     """Base class for Vertex AI Pipeline based services."""
@@ -134,28 +135,23 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
                 credentials set in aiplatform.init.
         """
 
-        super().__init__(project=project, location=location, credentials=credentials)
-
-        self._gca_resource = self._get_gca_resource(resource_name=pipeline_job_id)
-
-        pipeline_job = pipeline_jobs.PipelineJob.get(
-            resource_name=pipeline_job_id,
+        super().__init__(
             project=project,
             location=location,
             credentials=credentials,
+            resource_name=pipeline_job_id,
         )
+        self._gca_resource = self._get_gca_resource(resource_name=pipeline_job_id)
 
-        return pipeline_job
-
+    @classmethod
     def _create_and_submit_pipeline_job(
-        self,
-        template_ref: str,
+        cls,
         template_params: Dict[str, Any],
         pipeline_root: str,
-        project: str,
-        location: str,
-        credentials: auth_credentials.Credentials,
-    ) -> pipeline_jobs.PipelineJob:
+        project: Optional[str],
+        location: Optional[str],
+        credentials: Optional[auth_credentials.Credentials],
+    ) -> "VertexAiPipelineBasedService":
         """Create a new PipelineJob using the provided template and parameters.
 
         Args:
@@ -182,14 +178,16 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
                 Instantiated representation of a Vertex AI Pipeline based service.
         """
 
-        project = project or initializer.global_config.project
-        location = location or initializer.global_config.location
+        self = cls._empty_constructor(
+            project=project, location=location, credentials=credentials,
+        )
 
-        timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
 
+        # TODO: add the name of the service to display_name
         service_pipeline_job = pipeline_jobs.PipelineJob(
-            display_name=f"eval-test-pipeline-job-{timestamp}",
-            template_path=template_ref,
+            display_name=f"pipeline-service-job-{timestamp}",
+            template_path=self._template_ref,
             parameter_values=template_params,
             pipeline_root=pipeline_root,
             project=project,
@@ -199,7 +197,6 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
 
         service_pipeline_job.submit()
 
-        self.backing_pipeline_job = service_pipeline_job
-        self.pipeline_console_uri = service_pipeline_job._dashboard_uri
+        self._gca_resource = self._get_gca_resource(service_pipeline_job.resource_name)
 
-        return service_pipeline_job
+        return self

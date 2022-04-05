@@ -15,12 +15,13 @@
 # limitations under the License.
 #
 
-from google.cloud.aiplatform.model_evaluation.model_evaluation import ModelEvaluation
-from google.cloud.aiplatform.model_evaluation.model_evaluation_job import (
-    ModelEvaluationJob,
-)
+import re
+from typing import Dict, NamedTuple, Optional
 
-__all__ = (
-    "ModelEvaluation",
-    "ModelEvaluationJob",
-)
+from google.cloud.aiplatform import utils
+from google.cloud.aiplatform import pipeline_jobs
+
+def _validate_model_evaluation_pipeline(pipeline_run: pipeline_jobs.PipelineJob):
+    """Helper function to validate whether the provided pipeline run 
+    was a Model Evaluation pipeline run."""   
+    print(pipeline_run._gca_resource.job_detail.task_details)

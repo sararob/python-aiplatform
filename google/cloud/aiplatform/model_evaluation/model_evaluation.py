@@ -16,6 +16,7 @@
 #
 
 from google.auth import credentials as auth_credentials
+from google.cloud import aiplatform
 from google.protobuf import field_mask_pb2
 
 from google.cloud.aiplatform import base
@@ -23,6 +24,8 @@ from google.cloud.aiplatform import initializer
 from google.cloud.aiplatform import utils
 from google.cloud.aiplatform import pipeline_jobs
 from google.cloud.aiplatform import jobs
+
+from google.cloud.aiplatform.utils import model_evaluation_utils
 
 from typing import (
     Any,
@@ -36,6 +39,7 @@ from typing import (
     Type,
     Union,
 )
+
 
 class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
 
@@ -54,19 +58,15 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
             A dict with model metrics created from the system.Metrics 
             pipeline output artifact. Returns None if the underlying 
             PipelineJob has not yet completed.
-        """  
+        """
 
     @property
     def batch_prediction_job(self) -> jobs.BatchPredictionJob:
         """The Batch Prediction job used for the Model Eval"""
-    
+
     @property
     def backing_pipeline_job(self) -> pipeline_jobs.PipelineJob:
         """The PipelineJob resource that ran this model evaluation."""
-
-    def _validate_model_evaluation_pipeline(self) -> None:
-        """Helper function to validate whether the provided pipeline run 
-        was a Model Evaluation pipeline run."""    
 
     def get_from_pipeline_job(pipeline_id) -> "ModelEvaluation":
         """Creates a ModelEvaluation SDK resource from an evaluation pipeline that has already run on a managed Vertex model.
@@ -81,6 +81,12 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
         Raises:
             ValueError: if the provided `pipeline_id` is not a ModelEvaluation pipeline.
         """
+        pipeline_job_resource = pipeline_jobs.PipelineJob.get(resource_name=pipeline_id)
+
+        if model_evaluation_utils._validate_model_evaluation_pipeline(
+            pipeline_job_resource
+        ):
+            print("woohooo its an eval pipeline")
 
     def __init__(
         self,
