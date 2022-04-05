@@ -121,7 +121,12 @@ class ModelEvaluationJob(pipeline_service.VertexAiPipelineBasedService):
                 Optional. Custom credentials to use to retrieve this pipeline job. Overrides
                 credentials set in aiplatform.init.
         """
-        super().__init__(pipeline_job_id=evaluation_pipeline_run,)
+        super().__init__(
+            pipeline_job_id=evaluation_pipeline_run,
+            project=project,
+            location=location,
+            credentials=credentials,
+        )
 
     @classmethod
     def submit(
@@ -192,8 +197,8 @@ class ModelEvaluationJob(pipeline_service.VertexAiPipelineBasedService):
             "class_names": class_names,
             "model_name": model.resource_name,
             "prediction_type": prediction_type,
-            "project": project,
-            "location": location,
+            "project": project or initializer.global_config.project,
+            "location": location or initializer.global_config.location,
             "root_dir": pipeline_root,
             "target_column_name": target_column_name,
         }
@@ -233,5 +238,6 @@ class ModelEvaluationJob(pipeline_service.VertexAiPipelineBasedService):
                 f"Your evaluation job is still in progress. For more details see the logs {self.pipeline_console_uri}"
             )
         else:
-            # TODO: waiting for updated pipeline template that creates the ModelEvaluation resource
-            print(self._gca_resource)
+            # TODO: waiting for updated pipeline template that creates the ModelEvaluation resource and set it's properties (BP job, pipeline, metrics)
+            print("Your evaluation pipeline completed successfully")
+            print(self._gca_resource.job_detail)

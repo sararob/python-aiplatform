@@ -148,9 +148,9 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         cls,
         template_params: Dict[str, Any],
         pipeline_root: str,
-        project: Optional[str],
-        location: Optional[str],
-        credentials: Optional[auth_credentials.Credentials],
+        project: Optional[str] = None,
+        location: Optional[str] = None,
+        credentials: Optional[auth_credentials.Credentials] = None,
     ) -> "VertexAiPipelineBasedService":
         """Create a new PipelineJob using the provided template and parameters.
 
@@ -190,7 +190,7 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
             template_path=self._template_ref,
             parameter_values=template_params,
             pipeline_root=pipeline_root,
-            project=project,
+            project=self.project,
             location=location,
             credentials=credentials,
         )
