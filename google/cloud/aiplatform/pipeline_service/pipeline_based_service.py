@@ -62,7 +62,7 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
     _resource_noun = "pipelineJob"
     _delete_method = "delete_pipeline_job"
     _getter_method = "get_pipeline_job"
-    # _list_method = "list_pipeline_jobs"
+    _list_method = "list_pipeline_jobs"
     _parse_resource_name_method = "parse_pipeline_job_path"
     _format_resource_name_method = "pipeline_job_path"
 
@@ -136,10 +136,6 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
 
         super().__init__(project=project, location=location, credentials=credentials)
 
-        # self._parent = initializer.global_config.common_location_path(
-        #     project=project, location=location
-        # )
-
         self._gca_resource = self._get_gca_resource(resource_name=pipeline_job_id)
 
         pipeline_job = pipeline_jobs.PipelineJob.get(
@@ -169,6 +165,8 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
                 Required. The MLMD artifact resources to pass to the given pipeline template.
             template_params (Dict[str, Any]):
                 Required. The parameters to pass to the given pipeline template.
+            pipeline_root (str)
+                Required. The GCS directory to store the pipeline run output.
             credentials (auth_credentials.Credentials):
                 Optional. Custom credentials to use to create the PipelineJob.
                 Overrides credentials set in aiplatform.init.
@@ -178,14 +176,11 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
             location (str):
                 Optional. Location to create PipelineJob. If not set,
                 location set in aiplatform.init will be used.
-            TODO: param to indicate whether to use submit() or run()?
 
         Returns:
             (VertexAiPipelineBasedService):
                 Instantiated representation of a Vertex AI Pipeline based service.
         """
-
-        # api_client = cls._instantiate_client(location=location, credentials=credentials)
 
         project = project or initializer.global_config.project
         location = location or initializer.global_config.location

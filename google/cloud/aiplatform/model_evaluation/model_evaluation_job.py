@@ -40,29 +40,52 @@ from typing import (
 )
 
 from google.cloud.aiplatform_v1.types import model_evaluation
+from google.cloud.aiplatform.compat.types import (
+    pipeline_job_v1 as gca_pipeline_job_v1,
+    pipeline_state_v1 as gca_pipeline_state_v1,
+)
+
 
 _LOGGER = base.Logger(__name__)
 
 _MODEL_EVAL_PIPELINE_TEMPLATE = "/Users/sararob/Dev/sara-fork/python-aiplatform/google/cloud/aiplatform/model_evaluation/sdk_pipeline_experimental.json"
 
+_PIPELINE_COMPLETE_STATES = set(
+    [
+        gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED,
+        gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_FAILED,
+        gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_CANCELLED,
+        gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_PAUSED,
+    ]
+)
+
+_PIPELINE_ERROR_STATES = set(
+    [gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_FAILED]
+)
+
 class ModelEvaluationJob(pipeline_service.VertexAiPipelineBasedService):
 
     @property
     def _template_ref(self) -> str:
+        """The pipeline template URL for the ModelEvaluationJob service."""
         return _MODEL_EVAL_PIPELINE_TEMPLATE
 
     @property
     def backing_pipeline_job(self) -> pipeline_jobs.PipelineJob:
+        """The PipelineJob resource running the Model Evaluation pipeline."""
         return pipeline_jobs.PipelineJob.get(
             resource_name=self.resource_name
         )
 
     @property
     def pipeline_console_uri(self) -> str:
-        return super().pipeline_console_uri
+        """The PipelineJob resource running the Model Evaluation pipeline."""
+        if self.backing_pipeline_job:
+            return self.backing_pipeline_job._dashboard_uri()
 
     @property
     def metadata_output_artifact(self) -> Optional[str]:
+        """The resource uri for the ML Metadata output artifact from the last component of the Model Evaluation pipeline"""
         return super().metadata_output_artifact
         # set if pipeline is complete
 
@@ -73,8 +96,33 @@ class ModelEvaluationJob(pipeline_service.VertexAiPipelineBasedService):
         location: Optional[str] = None,
         credentials: Optional[auth_credentials.Credentials] = None,
     ):
-        """Retrieves a ModelEvaluationJob and instantiates its representation."""
+        """Retrieves a ModelEvaluationJob and instantiates its representation.
 
+        Example Usage:
+
+            my_evaluation = aiplatform.ModelEvaluationJob(
+                pipeline_job_id = "projects/123/locations/us-central1/pipelineJobs/456"
+            )
+
+            my_evaluation = aiplatform.ModelEvaluationJob(
+                pipeline_job_id = "456"
+            )
+
+        Args:
+            evaluation_pipeline_run (str):
+                Required. A fully-qualified pipeline job run ID.
+                Example: "projects/123/locations/us-central1/pipelineJobs/456" or
+                "456" when project and location are initialized or passed.
+            project (str):
+                Optional. Project to retrieve pipeline job from. If not set, project
+                set in aiplatform.init will be used.
+            location (str):
+                Optional. Location to retrieve pipeline job from. If not set, location
+                set in aiplatform.init will be used.
+            credentials (auth_credentials.Credentials):
+                Optional. Custom credentials to use to retrieve this pipeline job. Overrides
+                credentials set in aiplatform.init.
+        """
         super().__init__(
             pipeline_job_id=evaluation_pipeline_run,
         )
@@ -84,15 +132,61 @@ class ModelEvaluationJob(pipeline_service.VertexAiPipelineBasedService):
         cls,
         model: models.Model,
         prediction_type: str,
-        pipeline_root,
-        gcs_source_uris: List[str],
-        class_names: List[str],
+        pipeline_root: str, # rename this in the caller to evaluation_staging_bucket?
         target_column_name: str,
+        gcs_source_uris: List[str],
+        class_names: Optional[List[str]],
         instances_format: Optional[str] = "jsonl",
-
     ) -> "ModelEvaluationJob":
+        """Submits a Model Evaluation Job using aiplatform.PipelineJob and returns 
+        the ModelEvaluationJob resource.
 
-        # TODO: format template params to macth with pipeline template
+        Example usage:
+
+        my_evaluation = ModelEvaluationJob.submit(
+            model=aiplatform.Model(model_name="..."),
+            prediction_type="classification",
+            pipeline_root="gs://my-pipeline-bucket/runpath",
+            gcs_source_uris=["gs://test-prediction-data"],
+            class_names=["cat", "dog"],
+            target_column_name=["animal_type"],
+            instances_format="jsonl",
+        )
+
+        my_evaluation = ModelEvaluationJob.submit(
+            model=aiplatform.Model(model_name="..."),
+            prediction_type="regression",
+            pipeline_root="gs://my-pipeline-bucket/runpath",
+            gcs_source_uris=["gs://test-prediction-data"],
+            target_column_name=["price"],
+            instances_format="jsonl",
+        )
+
+        Args:
+            model (str):
+                Required. The aiplatform.Model resource to run the ModelEvaluationJob on.
+            prediction_type (str):
+                Required. The type of prediction performed by the Model. One of "classification" or "regression".
+            pipeline_root (str):
+                Required. The GCS directory to store output from the model evaluation PipelineJob.
+            gcs_source_uris (List[str]):
+                Required. A list of GCS URIs containing your input data for batch prediction. 
+                TODO add details on input source reqs.
+            target_column_name (str):
+                Required. The name of your prediction column.
+            class_names (List[str]):
+                Required when `prediction_type` is "classification". A list of all possible class names
+                for your classification model's output, in the same order as they appear in the batch prediction input file.
+            instances_format (str):
+                The format in which instances are given, must be one of the Model's supportedInputStorageFormats. If not set, defaults to "jsonl".
+        Returns:
+            model: Updated model resource.
+        Raises:
+            ValueError: If `labels` is not the correct format.
+        """
+
+        # TODO: validate the passed in Model resource can be used for model eval
+
         template_params = {
             "batch_predict_gcs_source_uris": gcs_source_uris,
             "batch_predict_instances_format": instances_format,
@@ -118,19 +212,32 @@ class ModelEvaluationJob(pipeline_service.VertexAiPipelineBasedService):
         model_eval_job_resource = cls.__new__(cls)
         
         model_eval_job_resource.backing_pipeline_job = eval_pipeline_run
-        model_eval_job_resource.pipeline_console_uri = eval_pipeline_run._dashboard_uri
 
         return model_eval_job_resource
 
     def get_model_evaluation(
         self,
-
+        display_name: str,
     ) -> Optional[model_evaluation.ModelEvaluation]:
-        """Creates a ModelEvaluation resource and instantiates its representation."""
-        print('hello')
+        """Creates a ModelEvaluation resource and instantiates its representation.
+        Args:
+            display_name (str):
+                Required. The display name for your model evaluation resource.
+        Returns:
+            aiplatform.ModelEvaluation: Instantiated representation of the ModelEvaluation resource.
+        Raises:
+            RuntimeError: If the ModelEvaluationJob pipeline failed.
+        """
 
-        # check if backing job has completed
-        # if not, return None
-        # if yes, return the instantiated ModelEvaluation resource
-            # get the pipeline output artifact (evaluation)
-            # pass the resource name to the 
+        print(f'creating evaluation with name {display_name}')
+        eval_job_state = self.backing_pipeline_job.state
+
+        if eval_job_state in _PIPELINE_ERROR_STATES:
+            raise RuntimeError(
+                f"Evaluation job failed. For more details see the logs: {self.pipeline_console_uri}"
+            )
+        elif eval_job_state not in _PIPELINE_COMPLETE_STATES:
+            _LOGGER.info(f"Your evaluation job is still in progress. For more details see the logs {self.pipeline_console_uri}")
+        else:
+            # TODO: waiting for updated pipeline template that creates the ModelEvaluation resource 
+            print(self._gca_resource)

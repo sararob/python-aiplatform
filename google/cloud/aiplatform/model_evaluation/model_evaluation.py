@@ -63,9 +63,24 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
     @property
     def backing_pipeline_job(self) -> pipeline_jobs.PipelineJob:
         """The PipelineJob resource that ran this model evaluation."""
-    
+
+    def _validate_model_evaluation_pipeline(self) -> None:
+        """Helper function to validate whether the provided pipeline run 
+        was a Model Evaluation pipeline run."""    
+
     def get_from_pipeline_job(pipeline_id) -> "ModelEvaluation":
-        """Creates a ModelEvaluation SDK resource from an evaluation pipeline that has already run on a managed Vertex model."""
+        """Creates a ModelEvaluation SDK resource from an evaluation pipeline that has already run on a managed Vertex model.
+        Args:
+            pipeline_id (str):
+                Required. A fully-qualified pipeline job run ID.
+                Example: "projects/123/locations/us-central1/pipelineJobs/456" or
+                "456" when project and location are initialized or passed.
+
+        Returns:
+            A Vertex AI ModelEvaluation resource.
+        Raises:
+            ValueError: if the provided `pipeline_id` is not a ModelEvaluation pipeline.
+        """
 
     def __init__(
         self,
@@ -74,6 +89,24 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
         location: Optional[str] = None,
         credentials: Optional[auth_credentials.Credentials] = None,
     ):
+        """Retrieves the ModelEvaluation resource and instantiates its representation.
+
+        Args:
+            evaluation_name (str):
+                Required. A fully-qualified model evaluation resource name or evaluation ID.
+                Example: "projects/123/locations/us-central1/models/456/evaluations/789" or
+                "789" when project and location are initialized or passed.
+            project (str):
+                Optional project to retrieve model evaluation from. If not set, project
+                set in aiplatform.init will be used.
+            location (str):
+                Optional location to retrieve model evaluation from. If not set, location
+                set in aiplatform.init will be used.
+            credentials: Optional[auth_credentials.Credentials]=None,
+                Custom credentials to use to retrieve this model evaluation. If not set,
+                credentials set in aiplatform.init will be used.
+        """
+
         super().__init__(
             project=project,
             location=location,
@@ -91,24 +124,24 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
         location: Optional[str] = None,
         credentials: Optional[auth_credentials.Credentials] = None,
     ) -> "ModelEvaluation":
-        """Get a Vertex AI Model Evaluation given the resource name.
+        """Retrieves the ModelEvaluation resource and instantiates its representation.
 
         Args:
-            resource_name (str):
-                Required. A fully-qualified resource name or ID.
+            evaluation_name (str):
+                Required. A fully-qualified model evaluation resource name or evaluation ID.
+                Example: "projects/123/locations/us-central1/models/456/evaluations/789" or
+                "789" when project and location are initialized or passed.
             project (str):
-                Optional. Project to retrieve evaluation from. If not set, project
+                Optional project to retrieve model evaluation from. If not set, project
                 set in aiplatform.init will be used.
             location (str):
-                Optional. Location to retrieve evaluation from. If not set,
-                location set in aiplatform.init will be used.
-            credentials (auth_credentials.Credentials):
-                Optional. Custom credentials to use to get this evaluation.
-                Overrides credentials set in aiplatform.init.
-
-        Returns:
-            A Vertex AI Model Evaluation.
+                Optional location to retrieve model evaluation from. If not set, location
+                set in aiplatform.init will be used.
+            credentials: Optional[auth_credentials.Credentials]=None,
+                Custom credentials to use to retrieve this model evaluation. If not set,
+                credentials set in aiplatform.init will be used.
         """
+
         self = cls._empty_constructor(
             project=project,
             location=location,
