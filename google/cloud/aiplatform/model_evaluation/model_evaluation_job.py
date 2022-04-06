@@ -225,8 +225,6 @@ class ModelEvaluationJob(pipeline_service.VertexAiPipelineBasedService):
         Raises:
             RuntimeError: If the ModelEvaluationJob pipeline failed.
         """
-
-        _LOGGER.info(f"creating evaluation with name {display_name}")
         eval_job_state = self.backing_pipeline_job.state
 
         if eval_job_state in _PIPELINE_ERROR_STATES:
@@ -238,6 +236,16 @@ class ModelEvaluationJob(pipeline_service.VertexAiPipelineBasedService):
                 f"Your evaluation job is still in progress. For more details see the logs {self.pipeline_console_uri}"
             )
         else:
-            # TODO: waiting for updated pipeline template that creates the ModelEvaluation resource and set it's properties (BP job, pipeline, metrics)
-            print("Your evaluation pipeline completed successfully")
-            print(self._gca_resource.job_detail)
+            # TODO: waiting for updated pipeline template that creates the ModelEvaluation resource
+            _LOGGER.info(f"Your evaluation job ran successfully. Creating Model Evaluation with name {display_name}")
+
+            # TODO: set ModelEvaluation properties for BP job, eval metrics
+            for component in self._gca_resource.job_detail.task_details:
+                for key in component.outputs:
+                    if key == 'batchpredictionjob':
+                        batch_pred_mlmd_uri = component.outputs[key].artifacts[0].name
+                        batch_pred_resource_uri = component.outputs[key].artifacts[0].metadata['resourceName']
+                    if key == 'evaluation_metrics':
+                        eval_metrics_mlmd_uri = component.outputs[key].artifacts[0].name
+                        eval_metrics_resource_uri = component.outputs[key].artifacts[0].metadata['resourceName']
+                        
