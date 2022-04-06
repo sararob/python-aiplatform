@@ -50,20 +50,6 @@ _LOGGER = base.Logger(__name__)
 
 _MODEL_EVAL_PIPELINE_TEMPLATE = "/Users/sararob/Dev/sara-fork/python-aiplatform/google/cloud/aiplatform/model_evaluation/sdk_pipeline_experimental.json"
 
-_PIPELINE_COMPLETE_STATES = set(
-    [
-        gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED,
-        gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_FAILED,
-        gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_CANCELLED,
-        gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_PAUSED,
-    ]
-)
-
-_PIPELINE_ERROR_STATES = set(
-    [gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_FAILED]
-)
-
-
 class ModelEvaluationJob(pipeline_service.VertexAiPipelineBasedService):
     @property
     def _template_ref(self) -> str:
@@ -73,13 +59,12 @@ class ModelEvaluationJob(pipeline_service.VertexAiPipelineBasedService):
     @property
     def backing_pipeline_job(self) -> pipeline_jobs.PipelineJob:
         """The PipelineJob resource running the Model Evaluation pipeline."""
-        return pipeline_jobs.PipelineJob.get(resource_name=self.resource_name)
+        return super().backing_pipeline_job
 
     @property
     def pipeline_console_uri(self) -> str:
         """The PipelineJob resource running the Model Evaluation pipeline."""
-        if self.backing_pipeline_job:
-            return self.backing_pipeline_job._dashboard_uri()
+        return super().pipeline_console_uri
 
     @property
     def metadata_output_artifact(self) -> Optional[str]:
@@ -227,11 +212,11 @@ class ModelEvaluationJob(pipeline_service.VertexAiPipelineBasedService):
         """
         eval_job_state = self.backing_pipeline_job.state
 
-        if eval_job_state in _PIPELINE_ERROR_STATES:
+        if eval_job_state in pipeline_jobs._PIPELINE_ERROR_STATES:
             raise RuntimeError(
                 f"Evaluation job failed. For more details see the logs: {self.pipeline_console_uri}"
             )
-        elif eval_job_state not in _PIPELINE_COMPLETE_STATES:
+        elif eval_job_state not in pipeline_jobs._PIPELINE_COMPLETE_STATES:
             _LOGGER.info(
                 f"Your evaluation job is still in progress. For more details see the logs {self.pipeline_console_uri}"
             )

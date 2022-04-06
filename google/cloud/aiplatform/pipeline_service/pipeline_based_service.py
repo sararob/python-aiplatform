@@ -73,13 +73,14 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
     @abc.abstractmethod
     def backing_pipeline_job(self) -> pipeline_jobs.PipelineJob:
         """The PipelineJob associated with the resource."""
-        pass
+        return pipeline_jobs.PipelineJob.get(resource_name=self.resource_name)
 
     @property
     @abc.abstractmethod
     def pipeline_console_uri(self) -> str:
         """The console URI of the PipelineJob created by the service."""
-        pass
+        if self.backing_pipeline_job:
+            return self.backing_pipeline_job._dashboard_uri()
 
     @property
     @abc.abstractmethod
@@ -94,6 +95,7 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
             return self.backing_pipeline_job.state
         return None
 
+    @property
     @classmethod
     @abc.abstractmethod
     def _template_ref(self) -> str:
@@ -133,6 +135,8 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
             credentials (auth_credentials.Credentials):
                 Optional. Custom credentials to use to retrieve this pipeline job. Overrides
                 credentials set in aiplatform.init.
+        Raises:
+            ValueError: if the pipeline template used in this PipelineJob is not consistent with the _template_ref defined on the subclass.
         """
 
         super().__init__(
@@ -141,6 +145,9 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
             credentials=credentials,
             resource_name=pipeline_job_id,
         )
+
+        # TODO: validate that pipeline_job template matches _template_ref
+
         self._gca_resource = self._get_gca_resource(resource_name=pipeline_job_id)
 
     @classmethod
