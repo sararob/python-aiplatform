@@ -46,6 +46,7 @@ from google.cloud.aiplatform.compat.types import (
 
 _LOGGER = base.Logger(__name__)
 
+
 class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
     """Base class for Vertex AI Pipeline based services."""
 

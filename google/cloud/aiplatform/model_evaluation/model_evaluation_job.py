@@ -50,6 +50,7 @@ _LOGGER = base.Logger(__name__)
 
 _MODEL_EVAL_PIPELINE_TEMPLATE = "/Users/sararob/Dev/sara-fork/python-aiplatform/google/cloud/aiplatform/model_evaluation/sdk_pipeline_experimental.json"
 
+
 class ModelEvaluationJob(pipeline_based_service.VertexAiPipelineBasedService):
 
     _template_ref = _MODEL_EVAL_PIPELINE_TEMPLATE
@@ -210,15 +211,18 @@ class ModelEvaluationJob(pipeline_based_service.VertexAiPipelineBasedService):
             )
         else:
             # TODO: waiting for updated pipeline template that creates the ModelEvaluation resource
-            _LOGGER.info(f"Your evaluation job ran successfully. Creating Model Evaluation with name {display_name}")
+            _LOGGER.info(
+                f"Your evaluation job ran successfully. Creating Model Evaluation with name {display_name}"
+            )
 
             # TODO: set ModelEvaluation properties for BP job, eval metrics
             for component in self._gca_resource.job_detail.task_details:
                 for key in component.outputs:
-                    if key == 'batchpredictionjob':
+                    if key == "batchpredictionjob":
                         batch_pred_mlmd_uri = component.outputs[key].artifacts[0].name
-                        batch_pred_resource_uri = component.outputs[key].artifacts[0].metadata['resourceName']
-                    if key == 'evaluation_metrics':
+                        batch_pred_resource_uri = (
+                            component.outputs[key].artifacts[0].metadata["resourceName"]
+                        )
+                    if key == "evaluation_metrics":
                         eval_metrics_mlmd_uri = component.outputs[key].artifacts[0].name
                         # eval_metrics_resource_uri = component.outputs[key].artifacts[0].metadata['resourceName'] # not available yet
-                        
