@@ -108,10 +108,8 @@ _TEST_PIPELINE_RESOURCE_NAME = (
 )
 _TEST_PIPELINE_CREATE_TIME = datetime.now()
 
-# pipeline based service
-# _TEST_TEMPLATE_REF
-
 # TODO mocks
+
 
 @pytest.fixture
 def mock_pipeline_service_create():
@@ -136,6 +134,7 @@ def make_pipeline_job(state):
         service_account=_TEST_SERVICE_ACCOUNT,
         network=_TEST_NETWORK,
     )
+
 
 @pytest.fixture
 def mock_pipeline_service_get():
@@ -194,23 +193,25 @@ def mock_pipeline_service_get_with_fail():
 
         yield mock_get_pipeline_job
 
+
 @pytest.fixture
 def mock_load_json(job_spec_json):
     with patch.object(storage.Blob, "download_as_bytes") as mock_load_json:
         mock_load_json.return_value = json.dumps(job_spec_json).encode()
         yield mock_load_json
 
-class TestPipelineBasedService:
 
+class TestPipelineBasedService:
     @pytest.mark.parametrize(
         "pipeline_name", [_TEST_PIPELINE_JOB_ID, _TEST_PIPELINE_JOB_NAME]
     )
-    def test_init_pipeline_based_service(self, pipeline_name, mock_pipeline_service_get):
+    def test_init_pipeline_based_service(
+        self, pipeline_name, mock_pipeline_service_get
+    ):
         aiplatform.init(project=_TEST_PROJECT)
 
         my_pipeline_based_service = aiplatform.VertexAiPipelineBasedService(
-            pipeline_job_id=pipeline_name,
-            _template_ref=_TEST_TEMPLATE_PATH,
+            pipeline_job_id=pipeline_name, _template_ref=_TEST_TEMPLATE_PATH,
         )
 
         # my_featurestore = aiplatform.Featurestore(featurestore_name=featurestore_name)
@@ -218,7 +219,6 @@ class TestPipelineBasedService:
         mock_pipeline_service_get.assert_called_once_with(
             name=my_pipeline_based_service.resource_name,
         )
-
 
     # TODO: test_init_with_invalid_pipeline_run_id
 

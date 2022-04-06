@@ -40,6 +40,8 @@ from typing import (
     Union,
 )
 
+from google.cloud.aiplatform_v1.types import pipeline_job
+
 
 class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
 
@@ -68,25 +70,60 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
     def backing_pipeline_job(self) -> pipeline_jobs.PipelineJob:
         """The PipelineJob resource that ran this model evaluation."""
 
-    def get_from_pipeline_job(pipeline_id) -> "ModelEvaluation":
+    @classmethod
+    def get_from_pipeline_job(
+        cls,
+        pipeline_job_id: Optional[str] = None,
+        pipeline_job: Optional[pipeline_jobs.PipelineJob] = None,
+        project: Optional[str] = None,
+        location: Optional[str] = None,
+        credentials: Optional[auth_credentials.Credentials] = None,
+    ) -> "ModelEvaluation":
         """Creates a ModelEvaluation SDK resource from an evaluation pipeline that has already run on a managed Vertex model.
         Args:
-            pipeline_id (str):
-                Required. A fully-qualified pipeline job run ID.
+            pipeline_job_id (str):
+                Optional. A fully-qualified pipeline job run ID.
                 Example: "projects/123/locations/us-central1/pipelineJobs/456" or
-                "456" when project and location are initialized or passed.
+                "456" when project and location are initialized or passed. One of `pipeline_job_id` or `pipeline_job` is required.
+            pipeline_job (aiplatform.PipelineJob):
+                Optional. An aiplatform.PipelineJob resource to create the ModelEvaluation from. One of `pipeline_job` or `pipeline_job_id` is required.
+            project (str):
+                Optional project to retrieve model evaluation from. If not set, project
+                set in aiplatform.init will be used.
+            location (str):
+                Optional location to retrieve model evaluation from. If not set, location
+                set in aiplatform.init will be used.
+            credentials: Optional[auth_credentials.Credentials]=None,
+                Custom credentials to use to retrieve this model evaluation. If not set,
+                credentials set in aiplatform.init will be used.
 
         Returns:
             A Vertex AI ModelEvaluation resource.
         Raises:
-            ValueError: if the provided `pipeline_id` is not a ModelEvaluation pipeline.
+            ValueError: if neither pipeline_job_id or pipeline_job is provided.
+            ValueError: if the provided pipeline_job_id is not a ModelEvaluation pipeline.
         """
-        pipeline_job_resource = pipeline_jobs.PipelineJob.get(resource_name=pipeline_id)
+
+        if pipeline_job_id is None and pipeline_job is None:
+            raise ValueError(
+                "Please provide either a pipeline_job_id or pipeline_job. Neither were passed."
+            )
+
+        if pipeline_job_id is not None:
+            pipeline_job_resource = pipeline_jobs.PipelineJob.get(
+                resource_name=pipeline_job_id,
+                project=project,
+                location=location,
+                credentials=credentials,
+            )
+        else:
+            pipeline_job_resource = pipeline_job
 
         if model_evaluation_utils._validate_model_evaluation_pipeline(
             pipeline_job_resource
         ):
-            print("woohooo its an eval pipeline")
+            # TODO: create and return the ModelEvaluation resource
+            print("creating ModelEvaluation resource...")
 
     def __init__(
         self,

@@ -247,5 +247,5 @@ class ModelEvaluationJob(pipeline_service.VertexAiPipelineBasedService):
                         batch_pred_resource_uri = component.outputs[key].artifacts[0].metadata['resourceName']
                     if key == 'evaluation_metrics':
                         eval_metrics_mlmd_uri = component.outputs[key].artifacts[0].name
-                        eval_metrics_resource_uri = component.outputs[key].artifacts[0].metadata['resourceName']
+                        # eval_metrics_resource_uri = component.outputs[key].artifacts[0].metadata['resourceName'] # not available yet
                         

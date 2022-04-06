@@ -157,7 +157,7 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         Args:
             template_ref (str):
                 Required. The path of the compiled Pipeline JSON template file in the template artifact registry.
-            template_artifacts (Dict[str, Any]) TODO
+            template_artifacts (Dict[str, Any]) TODO: dependent on pipelines backend work
                 Required. The MLMD artifact resources to pass to the given pipeline template.
             template_params (Dict[str, Any]):
                 Required. The parameters to pass to the given pipeline template.
@@ -178,15 +178,16 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
                 Instantiated representation of a Vertex AI Pipeline based service.
         """
 
+        service_name = cls.__name__.lower()
+
         self = cls._empty_constructor(
             project=project, location=location, credentials=credentials,
         )
 
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
 
-        # TODO: add the name of the service to display_name
         service_pipeline_job = pipeline_jobs.PipelineJob(
-            display_name=f"pipeline-service-job-{timestamp}",
+            display_name=f"{service_name}-pipeline-{timestamp}",
             template_path=self._template_ref,
             parameter_values=template_params,
             pipeline_root=pipeline_root,
