@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-from google.cloud.aiplatform.pipeline_service.pipeline_based_service import (
+from google.cloud.aiplatform.pipeline_based_service.pipeline_based_service import (
     VertexAiPipelineBasedService,
 )
 

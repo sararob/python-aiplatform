@@ -46,16 +46,6 @@ from google.cloud.aiplatform.compat.types import (
 
 _LOGGER = base.Logger(__name__)
 
-_PIPELINE_COMPLETE_STATES = set(
-    [
-        gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED,
-        gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_FAILED,
-        gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_CANCELLED,
-        gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_PAUSED,
-    ]
-)
-
-
 class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
     """Base class for Vertex AI Pipeline based services."""
 
@@ -67,20 +57,14 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
     _parse_resource_name_method = "parse_pipeline_job_path"
     _format_resource_name_method = "pipeline_job_path"
 
-    _valid_done_states = _PIPELINE_COMPLETE_STATES
+    _valid_done_states = pipeline_jobs._PIPELINE_COMPLETE_STATES
 
     @property
+    @classmethod
     @abc.abstractmethod
-    def backing_pipeline_job(self) -> pipeline_jobs.PipelineJob:
-        """The PipelineJob associated with the resource."""
-        return pipeline_jobs.PipelineJob.get(resource_name=self.resource_name)
-
-    @property
-    @abc.abstractmethod
-    def pipeline_console_uri(self) -> str:
-        """The console URI of the PipelineJob created by the service."""
-        if self.backing_pipeline_job:
-            return self.backing_pipeline_job._dashboard_uri()
+    def _template_ref(self) -> str:
+        """The pipeline template URL for this service."""
+        pass
 
     @property
     @abc.abstractmethod
@@ -89,18 +73,29 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         pass
 
     @property
+    def backing_pipeline_job(self) -> pipeline_jobs.PipelineJob:
+        """The PipelineJob associated with the resource."""
+        return pipeline_jobs.PipelineJob.get(resource_name=self.resource_name)
+
+    @property
+    def pipeline_console_uri(self) -> str:
+        """The console URI of the PipelineJob created by the service."""
+        if self.backing_pipeline_job:
+            return self.backing_pipeline_job._dashboard_uri()
+
+    @property
     def state(self) -> Optional[str]:
         """The state of the Pipeline run associated with the service."""
         if self.backing_pipeline_job:
             return self.backing_pipeline_job.state
         return None
 
-    @property
-    @classmethod
-    @abc.abstractmethod
-    def _template_ref(self) -> str:
-        """The pipeline template URL for this service."""
-        pass
+    def _validate_pipeline_template_matches_service(pipeline_job_id: str):
+        pipeline_job_resource = pipeline_jobs.PipelineJob.get(
+            resource_name=pipeline_job_id,
+        )
+
+        pipeline_job_resource.pipeline_spec
 
     def __init__(
         self,

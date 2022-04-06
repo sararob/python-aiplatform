@@ -33,6 +33,7 @@ from google.cloud import storage
 from google.cloud import aiplatform
 from google.cloud.aiplatform import base
 from google.cloud.aiplatform import initializer
+from google.cloud.aiplatform import pipeline_based_service
 
 # from google.protobuf import field_mask_pb2
 
@@ -43,6 +44,8 @@ from google.cloud.aiplatform_v1.types import (
     pipeline_job as gca_pipeline_job_v1,
     pipeline_state as gca_pipeline_state_v1,
 )
+
+_TEST_API_CLIENT = pipeline_service_client_v1.PipelineServiceClient
 
 # pipeline job
 _TEST_PROJECT = "test-project"
@@ -193,6 +196,13 @@ def mock_pipeline_service_get_with_fail():
 
         yield mock_get_pipeline_job
 
+@pytest.fixture
+def fake_pipeline_service_getter_mock():
+    with patch.object(
+        _TEST_API_CLIENT, _TEST_JOB_GET_METHOD_NAME, create=True
+    ) as fake_job_getter_mock:
+        fake_job_getter_mock.return_value = {}
+        yield fake_job_getter_mock
 
 @pytest.fixture
 def mock_load_json(job_spec_json):
@@ -200,25 +210,32 @@ def mock_load_json(job_spec_json):
         mock_load_json.return_value = json.dumps(job_spec_json).encode()
         yield mock_load_json
 
-
 class TestPipelineBasedService:
+    class FakePipelineBasedService(pipeline_based_service.VertexAiPipelineBasedService):
+        _template_ref = _TEST_TEMPLATE_PATH
+        backing_pipeline_job = _TEST_PIPELINE_JOB_NAME
+        pipeline_console_uri = "TODO"
+        metadata_output_artifact = "TODO"
+
     @pytest.mark.parametrize(
         "pipeline_name", [_TEST_PIPELINE_JOB_ID, _TEST_PIPELINE_JOB_NAME]
     )
     def test_init_pipeline_based_service(
         self, pipeline_name, mock_pipeline_service_get
     ):
-        aiplatform.init(project=_TEST_PROJECT)
-
-        my_pipeline_based_service = aiplatform.VertexAiPipelineBasedService(
-            pipeline_job_id=pipeline_name, _template_ref=_TEST_TEMPLATE_PATH,
+        aiplatform.init(
+            project=_TEST_PROJECT,
+            location=_TEST_LOCATION,
+            credentials=_TEST_CREDENTIALS,
         )
 
-        # my_featurestore = aiplatform.Featurestore(featurestore_name=featurestore_name)
-
-        mock_pipeline_service_get.assert_called_once_with(
-            name=my_pipeline_based_service.resource_name,
+        fake_service = self.FakePipelineBasedService(
+            pipeline_job_id=pipeline_name,
         )
+
+        # mock_pipeline_service_get.assert_called_once_with(
+        #     name=pipeline_name
+        # )
 
     # TODO: test_init_with_invalid_pipeline_run_id
 

@@ -24,7 +24,7 @@ from google.cloud.aiplatform import initializer
 from google.cloud.aiplatform import models
 from google.cloud.aiplatform import utils
 from google.cloud.aiplatform import pipeline_jobs
-from google.cloud.aiplatform import pipeline_service
+from google.cloud.aiplatform import pipeline_based_service
 
 from typing import (
     Any,
@@ -50,21 +50,9 @@ _LOGGER = base.Logger(__name__)
 
 _MODEL_EVAL_PIPELINE_TEMPLATE = "/Users/sararob/Dev/sara-fork/python-aiplatform/google/cloud/aiplatform/model_evaluation/sdk_pipeline_experimental.json"
 
-class ModelEvaluationJob(pipeline_service.VertexAiPipelineBasedService):
-    @property
-    def _template_ref(self) -> str:
-        """The pipeline template URL for the ModelEvaluationJob service."""
-        return _MODEL_EVAL_PIPELINE_TEMPLATE
+class ModelEvaluationJob(pipeline_based_service.VertexAiPipelineBasedService):
 
-    @property
-    def backing_pipeline_job(self) -> pipeline_jobs.PipelineJob:
-        """The PipelineJob resource running the Model Evaluation pipeline."""
-        return super().backing_pipeline_job
-
-    @property
-    def pipeline_console_uri(self) -> str:
-        """The PipelineJob resource running the Model Evaluation pipeline."""
-        return super().pipeline_console_uri
+    _template_ref = _MODEL_EVAL_PIPELINE_TEMPLATE
 
     @property
     def metadata_output_artifact(self) -> Optional[str]:

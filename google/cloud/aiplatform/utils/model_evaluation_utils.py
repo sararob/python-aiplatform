@@ -25,6 +25,9 @@ def _validate_model_evaluation_pipeline(pipeline_run: pipeline_jobs.PipelineJob)
     """Helper function to validate whether the provided pipeline run 
     was a Model Evaluation pipeline run."""   
     # See if 'evaluation_metrics' key exists in pipelineSpec
+
+    print('hello hi',pipeline_run.pipeline_spec)
+
     eval = False
 
     for component in pipeline_run._gca_resource.job_detail.task_details:
