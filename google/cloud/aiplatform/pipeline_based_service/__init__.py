@@ -16,7 +16,7 @@
 #
 
 from google.cloud.aiplatform.pipeline_based_service.pipeline_based_service import (
-    VertexAiPipelineBasedService,
+    _VertexAiPipelineBasedService,
 )
 
-__all__ = ("VertexAiPipelineBasedService",)
+__all__ = ("_VertexAiPipelineBasedService",)

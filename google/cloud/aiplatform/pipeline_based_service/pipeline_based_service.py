@@ -50,7 +50,7 @@ from google.cloud.aiplatform.compat.types import (
 _LOGGER = base.Logger(__name__)
 
 
-class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
+class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
     """Base class for Vertex AI Pipeline based services."""
 
     client_class = utils.PipelineJobClientWithOverride
@@ -94,7 +94,7 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
             return self.backing_pipeline_job.state
         return None
 
-    def _validate_pipeline_template_matches_service(self, pipeline_job_id: str):
+    def _validate_pipeline_template_matches_service(self, pipeline_job: pipeline_jobs.PipelineJob):
         """Utility function to validate that the passed in pipeline ID matches 
         the template of the Pipeline Based Service.
         
@@ -104,16 +104,16 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         """
 
         # TODO: figure out a better way to do this
-        pipeline_job_resource = pipeline_jobs.PipelineJob.get(
-            resource_name=pipeline_job_id,
-        )
+        # pipeline_job_resource = pipeline_jobs.PipelineJob.get(
+        #     resource_name=pipeline_job_id,
+        # )
         service_pipeline_json = json_utils.load_json(self._template_ref)
 
         current_pipeline_components = []
         template_ref_components = []
 
         for order, component_name in enumerate(
-            pipeline_job_resource.pipeline_spec.get("components")
+            pipeline_job.pipeline_spec.get("components")
         ):
             current_pipeline_components.append(component_name)
 
@@ -122,7 +122,7 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
 
         if current_pipeline_components != template_ref_components:
             raise ValueError(
-                "The provided pipeline template does not match the template of the Pipeline Based Service"
+                f"The provided pipeline template is not compatible with {self.__class__.__name__}"
             )
 
     def __init__(
@@ -169,8 +169,11 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
             resource_name=pipeline_job_id,
         )
 
-        # TODO: validate that pipeline_job template matches _template_ref
-        self._validate_pipeline_template_matches_service(pipeline_job_id)
+        job_resource = pipeline_jobs.PipelineJob.get(
+            resource_name=pipeline_job_id
+        )
+
+        self._validate_pipeline_template_matches_service(job_resource)
 
         self._gca_resource = self._get_gca_resource(resource_name=pipeline_job_id)
 
@@ -185,7 +188,7 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         project: Optional[str] = None,
         location: Optional[str] = None,
         credentials: Optional[auth_credentials.Credentials] = None,
-    ) -> "VertexAiPipelineBasedService":
+    ) -> "_VertexAiPipelineBasedService":
         """Create a new PipelineJob using the provided template and parameters.
 
         Args:

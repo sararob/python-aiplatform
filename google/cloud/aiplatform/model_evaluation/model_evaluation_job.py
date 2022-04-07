@@ -51,7 +51,7 @@ _LOGGER = base.Logger(__name__)
 _MODEL_EVAL_PIPELINE_TEMPLATE = "/Users/sararob/Dev/sara-fork/python-aiplatform/google/cloud/aiplatform/model_evaluation/sdk_pipeline_experimental.json"
 
 
-class ModelEvaluationJob(pipeline_based_service.VertexAiPipelineBasedService):
+class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
 
     _template_ref = _MODEL_EVAL_PIPELINE_TEMPLATE
 
