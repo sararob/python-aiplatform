@@ -16,6 +16,8 @@
 #
 
 import abc
+from re import template
+from google.protobuf import json_format
 from datetime import datetime
 
 from google.auth import credentials as auth_credentials
@@ -25,6 +27,7 @@ from google.cloud.aiplatform import base
 from google.cloud.aiplatform import initializer
 from google.cloud.aiplatform import utils
 from google.cloud.aiplatform import pipeline_jobs
+from google.cloud.aiplatform.utils import json_utils
 
 from typing import (
     Any,
@@ -91,12 +94,36 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
             return self.backing_pipeline_job.state
         return None
 
-    def _validate_pipeline_template_matches_service(pipeline_job_id: str):
+    def _validate_pipeline_template_matches_service(self, pipeline_job_id: str):
+        """Utility function to validate that the passed in pipeline ID matches 
+        the template of the Pipeline Based Service.
+        
+        Raises:
+            ValueError: if the provided pipeline ID doesn't match the pipeline service.
+        
+        """
+
+        # TODO: figure out a better way to do this
         pipeline_job_resource = pipeline_jobs.PipelineJob.get(
             resource_name=pipeline_job_id,
         )
+        service_pipeline_json = json_utils.load_json(self._template_ref)
 
-        pipeline_job_resource.pipeline_spec
+        current_pipeline_components = []
+        template_ref_components = []
+
+        for order, component_name in enumerate(
+            pipeline_job_resource.pipeline_spec.get("components")
+        ):
+            current_pipeline_components.append(component_name)
+
+        for comp in service_pipeline_json["pipelineSpec"]["components"]:
+            template_ref_components.append(comp)
+
+        if current_pipeline_components != template_ref_components:
+            raise ValueError(
+                "The provided pipeline template does not match the template of the Pipeline Based Service"
+            )
 
     def __init__(
         self,
@@ -143,6 +170,7 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         )
 
         # TODO: validate that pipeline_job template matches _template_ref
+        self._validate_pipeline_template_matches_service(pipeline_job_id)
 
         self._gca_resource = self._get_gca_resource(resource_name=pipeline_job_id)
 
@@ -151,6 +179,9 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         cls,
         template_params: Dict[str, Any],
         pipeline_root: str,
+        service_account: Optional[str] = None,
+        network: Optional[str] = None,
+        job_id: Optional[str] = None,
         project: Optional[str] = None,
         location: Optional[str] = None,
         credentials: Optional[auth_credentials.Credentials] = None,
@@ -166,6 +197,17 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
                 Required. The parameters to pass to the given pipeline template.
             pipeline_root (str)
                 Required. The GCS directory to store the pipeline run output.
+            service_account (str):
+                Specifies the service account for workload run-as account.
+                Users submitting jobs must have act-as permission on this run-as account.
+            network (str):
+                The full name of the Compute Engine network to which the job
+                should be peered. For example, projects/12345/global/networks/myVPC.
+                Private services access must already be configured for the network.
+                If left unspecified, the job is not peered with any network.
+            job_id (str):
+                Optional. The unique ID of the job run.
+                If not specified, pipeline name + timestamp will be used.
             credentials (auth_credentials.Credentials):
                 Optional. Custom credentials to use to create the PipelineJob.
                 Overrides credentials set in aiplatform.init.
@@ -181,25 +223,27 @@ class VertexAiPipelineBasedService(base.VertexAiStatefulResource):
                 Instantiated representation of a Vertex AI Pipeline based service.
         """
 
+        # TODO: use cls._generate_display_name()
         service_name = cls.__name__.lower()
 
         self = cls._empty_constructor(
             project=project, location=location, credentials=credentials,
         )
 
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-
         service_pipeline_job = pipeline_jobs.PipelineJob(
-            display_name=f"{service_name}-pipeline-{timestamp}",
+            display_name=service_name,
             template_path=self._template_ref,
             parameter_values=template_params,
             pipeline_root=pipeline_root,
+            job_id=job_id,
             project=self.project,
             location=location,
             credentials=credentials,
         )
 
-        service_pipeline_job.submit()
+        service_pipeline_job.submit(
+            service_account=service_account, network=network,
+        )
 
         self._gca_resource = self._get_gca_resource(service_pipeline_job.resource_name)
 
