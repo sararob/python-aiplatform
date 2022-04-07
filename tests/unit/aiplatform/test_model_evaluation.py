@@ -16,11 +16,14 @@
 #
 
 from datetime import datetime
+import os
+from typing import Type
 import pytest
 import json
 
 from unittest import mock
 from unittest.mock import patch
+from importlib import reload
 
 from google.api_core import operation
 from google.auth import credentials as auth_credentials
@@ -29,6 +32,7 @@ from google.cloud import storage
 
 from google.cloud import aiplatform
 from google.cloud.aiplatform import base
+from google.cloud.aiplatform import initializer
 from google.cloud.aiplatform import pipeline_based_service
 
 from google.cloud.aiplatform_v1.services.pipeline_service import (
@@ -41,6 +45,14 @@ from google.cloud.aiplatform_v1.types import (
 
 from google.cloud.aiplatform.pipeline_based_service.pipeline_based_service import (
     _VertexAiPipelineBasedService,
+)
+
+from google.cloud.aiplatform.model_evaluation import (
+    ModelEvaluation,
+)
+
+from google.cloud.aiplatform.model_evaluation.model_evaluation_job import (
+    ModelEvaluationJob,
 )
 
 _TEST_API_CLIENT = pipeline_service_client_v1.PipelineServiceClient
@@ -106,9 +118,6 @@ _TEST_PIPELINE_RESOURCE_NAME = (
     f"{_TEST_PARENT}/fakePipelineJobs/{_TEST_PIPELINE_JOB_ID}"
 )
 _TEST_PIPELINE_CREATE_TIME = datetime.now()
-
-# TODO mocks
-
 
 @pytest.fixture
 def mock_pipeline_service_create():
@@ -199,136 +208,17 @@ def mock_load_json(job_spec_json):
         mock_load_json.return_value = json.dumps(job_spec_json).encode()
         yield mock_load_json
 
+# TODO: test_init_model_evaluation_job
 
-class TestPipelineBasedService:
-    class FakePipelineBasedService(
-        pipeline_based_service._VertexAiPipelineBasedService
-    ):
-        _template_ref = _TEST_TEMPLATE_PATH
-        metadata_output_artifact = "TODO"
+# TODO: test_init_model_evaluation_job_with_invalid_eval_template_raises
 
-    # TODO: this test may not be needed since it will only be initialized by a subclass
-    # Currently fails because more mocks are needed
-    # @pytest.mark.parametrize(
-    #     "pipeline_name", [_TEST_PIPELINE_JOB_ID, _TEST_PIPELINE_JOB_NAME]
-    # )
-    # @pytest.mark.parametrize(
-    #     "job_spec_json",
-    #     [_TEST_PIPELINE_SPEC, _TEST_PIPELINE_JOB],
-    # )
-    # def test_init_pipeline_based_service(
-    #     self, pipeline_name, mock_pipeline_service_get, mock_pipeline_service_create, mock_load_json
-    # ):
-    #     aiplatform.init(
-    #         project=_TEST_PROJECT,
-    #         location=_TEST_LOCATION,
-    #         credentials=_TEST_CREDENTIALS,
-    #     )
+# TODO: test_model_evaluation_job_submit
 
-    #     self.FakePipelineBasedService(pipeline_job_id=pipeline_name,)
+# TODO: test_model_evaluation_job_submit_with_invalid_*
 
-    #     mock_pipeline_service_get.assert_called_with(
-    #         name=_TEST_PIPELINE_JOB_NAME, retry=base._DEFAULT_RETRY
-    #     )
+# TODO: test_model_evaluation_job_get_model_evaluation_with_failed_pipeline_run_raises
 
-    #     assert not mock_pipeline_service_create.called
+# TODO: test_model_evaluation_job_get_model_evaluation_with_pending_pipeline_run
 
-    @pytest.mark.parametrize(
-        "pipeline_name", [_TEST_PIPELINE_JOB_ID, _TEST_PIPELINE_JOB_NAME]
-    )
-    def test_init_pipeline_based_service_without_template_ref(
-        self,
-        pipeline_name,
-        mock_pipeline_service_get,
-        mock_pipeline_service_create,
-    ):
-        """
-        Raises TypeError since abstract properties '_template_ref' and metadata_output_artifact
-        are not set, the VertexAiPipelineBasedService class should only be instantiated through
-        a child class.
-        """
+# TODO: test_model_evaluation_job_get_model_evaluation_with_successful_pipeline_run
 
-        with pytest.raises(TypeError):
-            pipeline_based_service._VertexAiPipelineBasedService(
-                pipeline_job_id=pipeline_name,
-            )
-
-    def test_init_pipeline_based_service_with_invalid_pipeline_run_id(
-        self,
-        mock_pipeline_service_get,
-    ):
-        aiplatform.init(
-            project=_TEST_PROJECT,
-            location=_TEST_LOCATION,
-            credentials=_TEST_CREDENTIALS,
-        )
-
-        with pytest.raises(ValueError):
-            self.FakePipelineBasedService(
-                pipeline_job_id=_TEST_INVALID_PIPELINE_JOB_NAME,
-            )
-
-    # TODO: test_init_with_invalid_template_ref_raises. This test might only be needed for subclasses?
-
-    @pytest.mark.parametrize(
-        "job_spec_json",
-        [_TEST_PIPELINE_SPEC],
-    )
-    def test_create_and_submit_pipeline_job(
-        self,
-        mock_pipeline_service_get,
-        mock_pipeline_service_create,
-        mock_load_json,
-        job_spec_json,
-    ):
-        aiplatform.init(
-            project=_TEST_PROJECT,
-            location=_TEST_LOCATION,
-            credentials=_TEST_CREDENTIALS,
-        )
-
-        fake_service_display_name = self.FakePipelineBasedService.__name__.lower()
-
-        self.FakePipelineBasedService._create_and_submit_pipeline_job(
-            job_id=_TEST_PIPELINE_JOB_ID,
-            template_params=_TEST_PIPELINE_PARAMETER_VALUES,
-            pipeline_root=_TEST_PIPELINE_ROOT,
-            service_account=_TEST_SERVICE_ACCOUNT,
-            network=_TEST_NETWORK,
-        )
-
-        expected_runtime_config_dict = {
-            "gcsOutputDirectory": _TEST_PIPELINE_ROOT,
-            "parameterValues": _TEST_PIPELINE_PARAMETER_VALUES,
-        }
-        runtime_config = gca_pipeline_job_v1.PipelineJob.RuntimeConfig()._pb
-        json_format.ParseDict(expected_runtime_config_dict, runtime_config)
-
-        pipeline_spec = job_spec_json.get("pipelineSpec") or job_spec_json
-
-        # Construct expected request
-        expected_gapic_pipeline_job = gca_pipeline_job_v1.PipelineJob(
-            display_name=fake_service_display_name,
-            pipeline_spec={
-                "components": {},
-                "pipelineInfo": pipeline_spec["pipelineInfo"],
-                "root": pipeline_spec["root"],
-                "schemaVersion": "2.1.0",
-            },
-            runtime_config=runtime_config,
-            service_account=_TEST_SERVICE_ACCOUNT,
-            network=_TEST_NETWORK,
-        )
-
-        mock_pipeline_service_get.assert_called_with(
-            name=_TEST_PIPELINE_JOB_NAME, retry=base._DEFAULT_RETRY
-        )
-
-        assert mock_pipeline_service_get.call_count == 1
-
-        mock_pipeline_service_create.assert_called_once_with(
-            parent=_TEST_PARENT,
-            pipeline_job=expected_gapic_pipeline_job,
-            pipeline_job_id=_TEST_PIPELINE_JOB_ID,
-            timeout=None,
-        )

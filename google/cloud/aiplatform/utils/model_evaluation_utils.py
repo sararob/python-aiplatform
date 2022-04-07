@@ -15,24 +15,21 @@
 # limitations under the License.
 #
 
-import re
-from typing import Dict, NamedTuple, Optional
-
-from google.cloud.aiplatform import utils
 from google.cloud.aiplatform import pipeline_jobs
 
+
 def _validate_model_evaluation_pipeline(pipeline_run: pipeline_jobs.PipelineJob):
-    """Helper function to validate whether the provided pipeline run 
-    was a Model Evaluation pipeline run."""   
+    """Helper function to validate whether the provided pipeline run
+    was a Model Evaluation pipeline run."""
     # See if 'evaluation_metrics' key exists in pipelineSpec
 
-    print('hello hi',pipeline_run.pipeline_spec)
+    print("hello hi", pipeline_run.pipeline_spec)
 
     eval = False
 
     for component in pipeline_run._gca_resource.job_detail.task_details:
         for key in component.outputs:
-            if key == 'evaluation_metrics':
+            if key == "evaluation_metrics":
                 eval = True
-    
+
     return eval

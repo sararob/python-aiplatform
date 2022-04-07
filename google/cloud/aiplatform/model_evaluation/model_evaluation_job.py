@@ -15,36 +15,20 @@
 # limitations under the License.
 #
 
-from re import template
 from google.auth import credentials as auth_credentials
-from google.protobuf import field_mask_pb2
 
 from google.cloud.aiplatform import base
 from google.cloud.aiplatform import initializer
 from google.cloud.aiplatform import models
-from google.cloud.aiplatform import utils
 from google.cloud.aiplatform import pipeline_jobs
 from google.cloud.aiplatform import pipeline_based_service
 
 from typing import (
-    Any,
-    Callable,
-    Dict,
     List,
-    Iterable,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
 )
 
 from google.cloud.aiplatform_v1.types import model_evaluation
-from google.cloud.aiplatform.compat.types import (
-    pipeline_job_v1 as gca_pipeline_job_v1,
-    pipeline_state_v1 as gca_pipeline_state_v1,
-)
-
 
 _LOGGER = base.Logger(__name__)
 
@@ -116,7 +100,7 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         location: Optional[str] = None,
         credentials: Optional[auth_credentials.Credentials] = None,
     ) -> "ModelEvaluationJob":
-        """Submits a Model Evaluation Job using aiplatform.PipelineJob and returns 
+        """Submits a Model Evaluation Job using aiplatform.PipelineJob and returns
         the ModelEvaluationJob resource.
 
         Example usage:
@@ -148,7 +132,7 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
             pipeline_root (str):
                 Required. The GCS directory to store output from the model evaluation PipelineJob.
             gcs_source_uris (List[str]):
-                Required. A list of GCS URIs containing your input data for batch prediction. 
+                Required. A list of GCS URIs containing your input data for batch prediction.
                 TODO add details on input source reqs.
             target_column_name (str):
                 Required. The name of your prediction column.
@@ -188,7 +172,8 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         return eval_pipeline_run
 
     def get_model_evaluation(
-        self, display_name: str,
+        self,
+        display_name: str,
     ) -> Optional[model_evaluation.ModelEvaluation]:
         """Creates a ModelEvaluation resource and instantiates its representation.
         Args:

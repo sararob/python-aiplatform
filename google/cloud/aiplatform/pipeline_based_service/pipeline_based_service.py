@@ -16,35 +16,18 @@
 #
 
 import abc
-from re import template
-from google.protobuf import json_format
-from datetime import datetime
-
 from google.auth import credentials as auth_credentials
-from google.protobuf import field_mask_pb2
 
 from google.cloud.aiplatform import base
-from google.cloud.aiplatform import initializer
 from google.cloud.aiplatform import utils
 from google.cloud.aiplatform import pipeline_jobs
 from google.cloud.aiplatform.utils import json_utils
 
 from typing import (
     Any,
-    Callable,
     Dict,
     List,
-    Iterable,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-)
-
-from google.cloud.aiplatform.compat.types import (
-    pipeline_job_v1 as gca_pipeline_job_v1,
-    pipeline_state_v1 as gca_pipeline_state_v1,
 )
 
 _LOGGER = base.Logger(__name__)
@@ -94,13 +77,15 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
             return self.backing_pipeline_job.state
         return None
 
-    def _validate_pipeline_template_matches_service(self, pipeline_job: pipeline_jobs.PipelineJob):
-        """Utility function to validate that the passed in pipeline ID matches 
+    def _validate_pipeline_template_matches_service(
+        self, pipeline_job: pipeline_jobs.PipelineJob
+    ):
+        """Utility function to validate that the passed in pipeline ID matches
         the template of the Pipeline Based Service.
-        
+
         Raises:
             ValueError: if the provided pipeline ID doesn't match the pipeline service.
-        
+
         """
 
         # TODO: figure out a better way to do this
@@ -169,9 +154,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
             resource_name=pipeline_job_id,
         )
 
-        job_resource = pipeline_jobs.PipelineJob.get(
-            resource_name=pipeline_job_id
-        )
+        job_resource = pipeline_jobs.PipelineJob.get(resource_name=pipeline_job_id)
 
         self._validate_pipeline_template_matches_service(job_resource)
 
@@ -230,7 +213,9 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         service_name = cls.__name__.lower()
 
         self = cls._empty_constructor(
-            project=project, location=location, credentials=credentials,
+            project=project,
+            location=location,
+            credentials=credentials,
         )
 
         service_pipeline_job = pipeline_jobs.PipelineJob(
@@ -245,7 +230,8 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         )
 
         service_pipeline_job.submit(
-            service_account=service_account, network=network,
+            service_account=service_account,
+            network=network,
         )
 
         self._gca_resource = self._get_gca_resource(service_pipeline_job.resource_name)

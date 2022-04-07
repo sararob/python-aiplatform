@@ -16,31 +16,20 @@
 #
 
 from google.auth import credentials as auth_credentials
-from google.cloud import aiplatform
-from google.protobuf import field_mask_pb2
 
 from google.cloud.aiplatform import base
 from google.cloud.aiplatform import initializer
-from google.cloud.aiplatform import utils
 from google.cloud.aiplatform import pipeline_jobs
 from google.cloud.aiplatform import jobs
+from google.cloud.aiplatform import utils
 
 from google.cloud.aiplatform.utils import model_evaluation_utils
 
 from typing import (
     Any,
-    Callable,
     Dict,
-    List,
-    Iterable,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
 )
-
-from google.cloud.aiplatform_v1.types import pipeline_job
 
 
 class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
@@ -57,8 +46,8 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
     def evaluation_metrics(self) -> Optional[Dict[str, Any]]:
         """Gets the evaluation metrics from the Model Evaluation.
         Returns:
-            A dict with model metrics created from the system.Metrics 
-            pipeline output artifact. Returns None if the underlying 
+            A dict with model metrics created from the system.Metrics
+            pipeline output artifact. Returns None if the underlying
             PipelineJob has not yet completed.
         """
 
