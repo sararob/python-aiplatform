@@ -199,7 +199,7 @@
               "runtimeParameter": "uri"
             },
             "metadata": {
-              "resourceName": "projects/462141068491/locations/us-central1/models/5759615740244131840"
+              "resourceName": "projects/462141068491/locations/us-central1/models/2859878122356998144"
             },
             "typeSchema": {
               "schemaTitle": "google.VertexModel",

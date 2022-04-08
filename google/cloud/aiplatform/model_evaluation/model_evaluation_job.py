@@ -96,6 +96,8 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         gcs_source_uris: List[str],
         class_names: Optional[List[str]],
         instances_format: Optional[str] = "jsonl",
+        service_account: Optional[str] = None,
+        network: Optional[str] = None,
         project: Optional[str] = None,
         location: Optional[str] = None,
         credentials: Optional[auth_credentials.Credentials] = None,
@@ -141,6 +143,14 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
                 for your classification model's output, in the same order as they appear in the batch prediction input file.
             instances_format (str):
                 The format in which instances are given, must be one of the Model's supportedInputStorageFormats. If not set, defaults to "jsonl".
+            service_account (str):
+                Specifies the service account for workload run-as account.
+                Users submitting jobs must have act-as permission on this run-as account.
+            network (str):
+                The full name of the Compute Engine network to which the job
+                should be peered. For example, projects/12345/global/networks/myVPC.
+                Private services access must already be configured for the network.
+                If left unspecified, the job is not peered with any network.
         Returns:
             model: Updated model resource.
         Raises:
@@ -148,6 +158,8 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         """
 
         # TODO: validate the passed in Model resource can be used for model eval
+        # print('hello',model.resource_name)
+
 
         template_params = {
             "batch_predict_gcs_source_uris": gcs_source_uris,
@@ -164,6 +176,8 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         eval_pipeline_run = cls._create_and_submit_pipeline_job(
             template_params=template_params,
             pipeline_root=pipeline_root,
+            service_account=service_account,
+            network=network,
             project=project,
             location=location,
             credentials=credentials,
