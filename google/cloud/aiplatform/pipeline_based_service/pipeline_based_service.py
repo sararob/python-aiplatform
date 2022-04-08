@@ -16,12 +16,13 @@
 #
 
 import abc
+import json
 from google.auth import credentials as auth_credentials
 
 from google.cloud.aiplatform import base
 from google.cloud.aiplatform import utils
 from google.cloud.aiplatform import pipeline_jobs
-from google.cloud.aiplatform.utils import json_utils
+from google.cloud.aiplatform.utils import yaml_utils
 
 from typing import (
     Any,
@@ -92,7 +93,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         # pipeline_job_resource = pipeline_jobs.PipelineJob.get(
         #     resource_name=pipeline_job_id,
         # )
-        service_pipeline_json = json_utils.load_json(self._template_ref)
+        service_pipeline_json = yaml_utils.load_yaml(self._template_ref)
 
         current_pipeline_components = []
         template_ref_components = []
