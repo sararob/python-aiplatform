@@ -37,6 +37,9 @@ from google.cloud.aiplatform import base
 from google.cloud.aiplatform import models
 from google.cloud.aiplatform import initializer
 from google.cloud.aiplatform import pipeline_based_service
+from google.cloud.aiplatform import pipeline_jobs
+
+from test_utils import json_file
 
 from google.cloud.aiplatform_v1.services.pipeline_service import (
     client as pipeline_service_client_v1,
@@ -322,7 +325,218 @@ _TEST_MODEL_EVAL_PIPELINE_SPEC = {
     },
 }
 
-_TEST_MODEL_EVAL_PIPELINE_SPEC_JSON = json.dumps(_TEST_MODEL_EVAL_PIPELINE_SPEC)
+_TEST_MODEL_EVAL_PIPELINE_SPEC_JSON = json.dumps({
+    "pipelineInfo": {"name": "evaluation-sdk-pipeline"},
+    "root": {
+        "dag": {"tasks": {}},
+        "inputDefinitions": {
+            "parameters": {
+                "batch_predict_gcs_source_uris": {"type": "STRING"},
+                "batch_predict_instances_format": {"type": "STRING"},
+                "class_names": {"type": "STRING"},
+                "model_name": {"type": "STRING"},
+                "prediction_type": {"type": "STRING"},
+                "project": {"type": "STRING"},
+                "location": {"type": "STRING"},
+                "root_dir": {"type": "STRING"},
+                "target_column_name": {"type": "STRING"},
+            }
+        },
+    },
+    "schemaVersion": "2.0.0",
+    "sdkVersion": "kfp-1.8.12",
+    "components":  {
+      "comp-importer": {
+        "executorLabel": "exec-importer",
+        "inputDefinitions": {
+          "parameters": {
+            "uri": {
+              "type": "STRING"
+            }
+          }
+        },
+        "outputDefinitions": {
+          "artifacts": {
+            "artifact": {
+              "artifactType": {
+                "schemaTitle": "google.VertexModel",
+                "schemaVersion": "0.0.1"
+              }
+            }
+          }
+        }
+      },
+      "comp-model-batch-predict": {
+        "executorLabel": "exec-model-batch-predict",
+        "inputDefinitions": {
+          "artifacts": {
+            "model": {
+              "artifactType": {
+                "schemaTitle": "google.VertexModel",
+                "schemaVersion": "0.0.1"
+              }
+            }
+          },
+          "parameters": {
+            "accelerator_count": {
+              "type": "INT"
+            },
+            "accelerator_type": {
+              "type": "STRING"
+            },
+            "bigquery_destination_output_uri": {
+              "type": "STRING"
+            },
+            "encryption_spec_key_name": {
+              "type": "STRING"
+            },
+            "explanation_metadata": {
+              "type": "STRING"
+            },
+            "explanation_parameters": {
+              "type": "STRING"
+            },
+            "gcs_destination_output_uri_prefix": {
+              "type": "STRING"
+            },
+            "gcs_source_uris": {
+              "type": "STRING"
+            },
+            "generate_explanation": {
+              "type": "STRING"
+            },
+            "instances_format": {
+              "type": "STRING"
+            },
+            "job_display_name": {
+              "type": "STRING"
+            },
+            "labels": {
+              "type": "STRING"
+            },
+            "location": {
+              "type": "STRING"
+            },
+            "machine_type": {
+              "type": "STRING"
+            },
+            "manual_batch_tuning_parameters_batch_size": {
+              "type": "INT"
+            },
+            "max_replica_count": {
+              "type": "INT"
+            },
+            "model_parameters": {
+              "type": "STRING"
+            },
+            "predictions_format": {
+              "type": "STRING"
+            },
+            "project": {
+              "type": "STRING"
+            },
+            "starting_replica_count": {
+              "type": "INT"
+            }
+          }
+        },
+        "outputDefinitions": {
+          "artifacts": {
+            "batchpredictionjob": {
+              "artifactType": {
+                "schemaTitle": "google.VertexBatchPredictionJob",
+                "schemaVersion": "0.0.1"
+              }
+            }
+          },
+          "parameters": {
+            "gcp_resources": {
+              "type": "STRING"
+            }
+          }
+        }
+      },
+      "comp-model-evaluation": {
+        "executorLabel": "exec-model-evaluation",
+        "inputDefinitions": {
+          "artifacts": {
+            "batch_prediction_job": {
+              "artifactType": {
+                "schemaTitle": "google.VertexBatchPredictionJob",
+                "schemaVersion": "0.0.1"
+              }
+            }
+          },
+          "parameters": {
+            "class_names": {
+              "type": "STRING"
+            },
+            "classification_type": {
+              "type": "STRING"
+            },
+            "dataflow_disk_size": {
+              "type": "INT"
+            },
+            "dataflow_machine_type": {
+              "type": "STRING"
+            },
+            "dataflow_max_workers_num": {
+              "type": "INT"
+            },
+            "dataflow_workers_num": {
+              "type": "INT"
+            },
+            "example_weight_column": {
+              "type": "STRING"
+            },
+            "generate_feature_attribution": {
+              "type": "STRING"
+            },
+            "ground_truth_column": {
+              "type": "STRING"
+            },
+            "location": {
+              "type": "STRING"
+            },
+            "positive_classes": {
+              "type": "STRING"
+            },
+            "prediction_id_column": {
+              "type": "STRING"
+            },
+            "prediction_label_column": {
+              "type": "STRING"
+            },
+            "prediction_score_column": {
+              "type": "STRING"
+            },
+            "predictions_format": {
+              "type": "STRING"
+            },
+            "problem_type": {
+              "type": "STRING"
+            },
+            "project": {
+              "type": "STRING"
+            },
+            "root_dir": {
+              "type": "STRING"
+            }
+          }
+        },
+        "outputDefinitions": {
+          "artifacts": {
+            "evaluation_metrics": {
+              "artifactType": {
+                "schemaTitle": "system.Metrics",
+                "schemaVersion": "0.0.1"
+              }
+            }
+          }
+        }
+      }
+    },
+})
 
 _TEST_INVALID_MODEL_EVAL_PIPELINE_SPEC = {
     "pipelineInfo": {"name": "evaluation-sdk-pipeline"},
@@ -476,6 +690,8 @@ _TEST_PIPELINE_CREATE_TIME = datetime.datetime.now()
 
 _TEST_EVAL_PIPELINE_DISPLAY_NAME = "modelevaluationjob"
 
+_TEST_EVAL_RESOURCE_NAME = f"projects/{_TEST_ID}/locations/{_TEST_LOCATION}/models/{_TEST_ID}/evaluations/{_TEST_ID}"
+
 @pytest.fixture
 def mock_pipeline_service_create():
     with mock.patch.object(
@@ -616,42 +832,70 @@ def mock_model():
 class TestModelEvaluationJob:
 
     class FakeModelEvaluationJob(model_evaluation_job.ModelEvaluationJob):
-        _template_ref = "_TEST_VALID_EVAL_PIPELINE_TEMPLATE"
+        _template_ref = _TEST_TEMPLATE_PATH
         metadat_output_artifact = "TODO"
 
 
     @pytest.mark.parametrize(
         "job_spec",
-        [_TEST_MODEL_EVAL_PIPELINE_SPEC_JSON, _TEST_MODEL_EVAL_PIPELINE_JOB],
+        [_TEST_MODEL_EVAL_PIPELINE_JOB],
+    )
+    @pytest.mark.usefixtures(
+        "mock_pipeline_service_get",
+        "mock_pipeline_service_create",
     )
     def test_init_model_evaluation_job(
         self,
         mock_pipeline_service_get,
         mock_pipeline_service_create,
         job_spec,
-        mock_load_yaml_and_json,
+        # mock_load_yaml_and_json,
+        json_file,
     ):
         aiplatform.init(
             project=_TEST_PROJECT,
             location=_TEST_LOCATION,
             credentials=_TEST_CREDENTIALS,
+            staging_bucket=_TEST_GCS_BUCKET_NAME,
         )
 
-        self.FakeModelEvaluationJob._template_ref = _TEST_TEMPLATE_PATH
-
-        self.FakeModelEvaluationJob(
-            evaluation_pipeline_run=_TEST_PIPELINE_JOB_NAME,
-        )
-
-        expected_runtime_config_dict = {
-            "gcsOutputDirectory": _TEST_GCS_BUCKET_NAME,
-            "parameterValues": _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES,
-        }
-        runtime_config = gca_pipeline_job_v1.PipelineJob.RuntimeConfig()._pb
-        json_format.ParseDict(expected_runtime_config_dict, runtime_config)
+        self.FakeModelEvaluationJob._template_ref = os.path.join(os.getcwd(), "tests/unit/aiplatform/test_model_eval_template.json")
 
         job_spec = yaml.safe_load(job_spec)
         pipeline_spec = job_spec.get("pipelineSpec") or job_spec
+
+        # job_spec = yaml.safe_load(job_spec)
+        job = pipeline_jobs.PipelineJob(
+            display_name=_TEST_PIPELINE_JOB_DISPLAY_NAME,
+            template_path=self.FakeModelEvaluationJob._template_ref,
+            parameter_values=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES,
+            job_id=_TEST_PIPELINE_JOB_ID,
+        )
+
+        job.run(
+            service_account=_TEST_SERVICE_ACCOUNT,
+            network=_TEST_NETWORK,
+            create_request_timeout=None,
+        )
+
+        job.wait()
+        # job.pipeline_spec = _TEST_MODEL_EVAL_PIPELINE_SPEC
+
+
+
+        self.FakeModelEvaluationJob(
+            evaluation_pipeline_run=job.resource_name,
+        )
+
+        # expected_runtime_config_dict = {
+        #     "gcsOutputDirectory": _TEST_GCS_BUCKET_NAME,
+        #     "parameterValues": _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES,
+        # }
+        # runtime_config = gca_pipeline_job_v1.PipelineJob.RuntimeConfig()._pb
+        # json_format.ParseDict(expected_runtime_config_dict, runtime_config)
+
+        # job_spec = yaml.safe_load(job_spec)
+        # pipeline_spec = job_spec.get("pipelineSpec") or job_spec
 
         # expected_gapic_pipeline_job = gca_pipeline_job_v1.PipelineJob(
         #     display_name=_TEST_PIPELINE_JOB_DISPLAY_NAME,
@@ -718,6 +962,7 @@ class TestModelEvaluationJob:
             project=_TEST_PROJECT,
             location=_TEST_LOCATION,
             credentials=_TEST_CREDENTIALS,
+            staging_bucket=_TEST_GCS_BUCKET_NAME,
         )
 
         managed_model = models.Model(model_name=_TEST_MODEL_RESOURCE_NAME,)
@@ -734,7 +979,7 @@ class TestModelEvaluationJob:
             network=_TEST_NETWORK,
         )
 
-        print('hihi',test_eval_job._gca_resource.runtime_config)
+        print('hihi',test_eval_job)
 
         expected_runtime_config_dict = {
             "gcsOutputDirectory": _TEST_PIPELINE_ROOT,
@@ -761,7 +1006,7 @@ class TestModelEvaluationJob:
                 "schemaVersion": pipeline_spec["schemaVersion"],
                 "sdkVersion": pipeline_spec["sdkVersion"],
             },
-            runtime_config=runtime_config,
+            # runtime_config=runtime_config,
             service_account=_TEST_SERVICE_ACCOUNT,
             network=_TEST_NETWORK,
         )
@@ -774,8 +1019,8 @@ class TestModelEvaluationJob:
             parent=_TEST_PARENT,
             pipeline_job=expected_gapic_pipeline_job,
             pipeline_job_id=f"evaluation-sdk-pipeline-{test_job_create_time_str}",
-            service_account=_TEST_SERVICE_ACCOUNT,
-            network=_TEST_NETWORK,
+            # service_account=_TEST_SERVICE_ACCOUNT,
+            # network=_TEST_NETWORK,
             timeout=None,
         )
 
@@ -800,6 +1045,8 @@ class TestModelEvaluationJob:
 class TestModelEvaluation:
 
     # TODO: test_init_model_evaluation
+
+    # TODO: test_init_model_evaluation_without_pipeline_job_id_or_pipeline_resource_params_raises
 
     # TODO: test_init_model_evaluation_with_invalid_evaluation_resource_raises
 

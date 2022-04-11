@@ -225,3 +225,12 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
                     if key == "evaluation_metrics":
                         eval_metrics_mlmd_uri = component.outputs[key].artifacts[0].name
                         # eval_metrics_resource_uri = component.outputs[key].artifacts[0].metadata['resourceName'] # not available yet
+
+    def wait(self):
+        """Wait for thie PipelineJob to complete."""
+        pipeline_run = super().backing_pipeline_job
+
+        if pipeline_run._latest_future is None:
+            pipeline_run._block_until_complete()
+        else:
+            pipeline_run.wait()

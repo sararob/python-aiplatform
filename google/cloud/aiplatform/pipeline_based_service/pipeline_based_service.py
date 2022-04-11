@@ -95,8 +95,17 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         # )
         service_pipeline_json = yaml_utils.load_yaml(self._template_ref)
 
+        print(service_pipeline_json)
+
         current_pipeline_components = []
         template_ref_components = []
+
+        # Adding this for TestModelEvaluationJob::test_init_model_evaluation_job
+        # Not sure if it's needed
+        if not pipeline_job.pipeline_spec:
+            raise ValueError(
+                f"The provided pipeline template is not compatible with {self.__class__.__name__}"
+            )
 
         for order, component_name in enumerate(
             pipeline_job.pipeline_spec.get("components")
