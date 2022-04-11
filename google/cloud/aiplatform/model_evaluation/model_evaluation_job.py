@@ -160,7 +160,6 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         # TODO: validate the passed in Model resource can be used for model eval
         # print('hello',model.resource_name)
 
-
         template_params = {
             "batch_predict_gcs_source_uris": gcs_source_uris,
             "batch_predict_instances_format": instances_format,
@@ -186,8 +185,7 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         return eval_pipeline_run
 
     def get_model_evaluation(
-        self,
-        display_name: str,
+        self, display_name: str,
     ) -> Optional[model_evaluation.ModelEvaluation]:
         """Creates a ModelEvaluation resource and instantiates its representation.
         Args:

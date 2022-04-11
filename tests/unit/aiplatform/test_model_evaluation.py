@@ -53,9 +53,7 @@ from google.cloud.aiplatform.pipeline_based_service.pipeline_based_service impor
     _VertexAiPipelineBasedService,
 )
 
-from google.cloud.aiplatform.model_evaluation import (
-    ModelEvaluation,
-)
+from google.cloud.aiplatform.model_evaluation import ModelEvaluation
 
 from google.cloud.aiplatform.model_evaluation.model_evaluation_job import (
     ModelEvaluationJob,
@@ -66,6 +64,14 @@ from google.cloud.aiplatform_v1.services.model_service import (
 )
 
 from google.cloud.aiplatform.compat.types import model as gca_model
+
+from google.cloud.aiplatform_v1.types import (
+    encryption_spec as gca_encryption_spec,
+    model_evaluation as gca_model_evaluation,
+    model_evaluation_slice as gca_model_evaluation_slice,
+    io as gca_io,
+    types as gca_types,
+)
 
 _TEST_API_CLIENT = pipeline_service_client_v1.PipelineServiceClient
 
@@ -132,411 +138,241 @@ _TEST_MODEL_EVAL_PIPELINE_SPEC = {
     },
     "schemaVersion": "2.0.0",
     "sdkVersion": "kfp-1.8.12",
-    "components":  {
-      "comp-importer": {
-        "executorLabel": "exec-importer",
-        "inputDefinitions": {
-          "parameters": {
-            "uri": {
-              "type": "STRING"
-            }
-          }
+    "components": {
+        "comp-importer": {
+            "executorLabel": "exec-importer",
+            "inputDefinitions": {"parameters": {"uri": {"type": "STRING"}}},
+            "outputDefinitions": {
+                "artifacts": {
+                    "artifact": {
+                        "artifactType": {
+                            "schemaTitle": "google.VertexModel",
+                            "schemaVersion": "0.0.1",
+                        }
+                    }
+                }
+            },
         },
-        "outputDefinitions": {
-          "artifacts": {
-            "artifact": {
-              "artifactType": {
-                "schemaTitle": "google.VertexModel",
-                "schemaVersion": "0.0.1"
-              }
-            }
-          }
-        }
-      },
-      "comp-model-batch-predict": {
-        "executorLabel": "exec-model-batch-predict",
-        "inputDefinitions": {
-          "artifacts": {
-            "model": {
-              "artifactType": {
-                "schemaTitle": "google.VertexModel",
-                "schemaVersion": "0.0.1"
-              }
-            }
-          },
-          "parameters": {
-            "accelerator_count": {
-              "type": "INT"
+        "comp-model-batch-predict": {
+            "executorLabel": "exec-model-batch-predict",
+            "inputDefinitions": {
+                "artifacts": {
+                    "model": {
+                        "artifactType": {
+                            "schemaTitle": "google.VertexModel",
+                            "schemaVersion": "0.0.1",
+                        }
+                    }
+                },
+                "parameters": {
+                    "accelerator_count": {"type": "INT"},
+                    "accelerator_type": {"type": "STRING"},
+                    "bigquery_destination_output_uri": {"type": "STRING"},
+                    "encryption_spec_key_name": {"type": "STRING"},
+                    "explanation_metadata": {"type": "STRING"},
+                    "explanation_parameters": {"type": "STRING"},
+                    "gcs_destination_output_uri_prefix": {"type": "STRING"},
+                    "gcs_source_uris": {"type": "STRING"},
+                    "generate_explanation": {"type": "STRING"},
+                    "instances_format": {"type": "STRING"},
+                    "job_display_name": {"type": "STRING"},
+                    "labels": {"type": "STRING"},
+                    "location": {"type": "STRING"},
+                    "machine_type": {"type": "STRING"},
+                    "manual_batch_tuning_parameters_batch_size": {"type": "INT"},
+                    "max_replica_count": {"type": "INT"},
+                    "model_parameters": {"type": "STRING"},
+                    "predictions_format": {"type": "STRING"},
+                    "project": {"type": "STRING"},
+                    "starting_replica_count": {"type": "INT"},
+                },
             },
-            "accelerator_type": {
-              "type": "STRING"
+            "outputDefinitions": {
+                "artifacts": {
+                    "batchpredictionjob": {
+                        "artifactType": {
+                            "schemaTitle": "google.VertexBatchPredictionJob",
+                            "schemaVersion": "0.0.1",
+                        }
+                    }
+                },
+                "parameters": {"gcp_resources": {"type": "STRING"}},
             },
-            "bigquery_destination_output_uri": {
-              "type": "STRING"
-            },
-            "encryption_spec_key_name": {
-              "type": "STRING"
-            },
-            "explanation_metadata": {
-              "type": "STRING"
-            },
-            "explanation_parameters": {
-              "type": "STRING"
-            },
-            "gcs_destination_output_uri_prefix": {
-              "type": "STRING"
-            },
-            "gcs_source_uris": {
-              "type": "STRING"
-            },
-            "generate_explanation": {
-              "type": "STRING"
-            },
-            "instances_format": {
-              "type": "STRING"
-            },
-            "job_display_name": {
-              "type": "STRING"
-            },
-            "labels": {
-              "type": "STRING"
-            },
-            "location": {
-              "type": "STRING"
-            },
-            "machine_type": {
-              "type": "STRING"
-            },
-            "manual_batch_tuning_parameters_batch_size": {
-              "type": "INT"
-            },
-            "max_replica_count": {
-              "type": "INT"
-            },
-            "model_parameters": {
-              "type": "STRING"
-            },
-            "predictions_format": {
-              "type": "STRING"
-            },
-            "project": {
-              "type": "STRING"
-            },
-            "starting_replica_count": {
-              "type": "INT"
-            }
-          }
         },
-        "outputDefinitions": {
-          "artifacts": {
-            "batchpredictionjob": {
-              "artifactType": {
-                "schemaTitle": "google.VertexBatchPredictionJob",
-                "schemaVersion": "0.0.1"
-              }
-            }
-          },
-          "parameters": {
-            "gcp_resources": {
-              "type": "STRING"
-            }
-          }
-        }
-      },
-      "comp-model-evaluation": {
-        "executorLabel": "exec-model-evaluation",
-        "inputDefinitions": {
-          "artifacts": {
-            "batch_prediction_job": {
-              "artifactType": {
-                "schemaTitle": "google.VertexBatchPredictionJob",
-                "schemaVersion": "0.0.1"
-              }
-            }
-          },
-          "parameters": {
-            "class_names": {
-              "type": "STRING"
+        "comp-model-evaluation": {
+            "executorLabel": "exec-model-evaluation",
+            "inputDefinitions": {
+                "artifacts": {
+                    "batch_prediction_job": {
+                        "artifactType": {
+                            "schemaTitle": "google.VertexBatchPredictionJob",
+                            "schemaVersion": "0.0.1",
+                        }
+                    }
+                },
+                "parameters": {
+                    "class_names": {"type": "STRING"},
+                    "classification_type": {"type": "STRING"},
+                    "dataflow_disk_size": {"type": "INT"},
+                    "dataflow_machine_type": {"type": "STRING"},
+                    "dataflow_max_workers_num": {"type": "INT"},
+                    "dataflow_workers_num": {"type": "INT"},
+                    "example_weight_column": {"type": "STRING"},
+                    "generate_feature_attribution": {"type": "STRING"},
+                    "ground_truth_column": {"type": "STRING"},
+                    "location": {"type": "STRING"},
+                    "positive_classes": {"type": "STRING"},
+                    "prediction_id_column": {"type": "STRING"},
+                    "prediction_label_column": {"type": "STRING"},
+                    "prediction_score_column": {"type": "STRING"},
+                    "predictions_format": {"type": "STRING"},
+                    "problem_type": {"type": "STRING"},
+                    "project": {"type": "STRING"},
+                    "root_dir": {"type": "STRING"},
+                },
             },
-            "classification_type": {
-              "type": "STRING"
+            "outputDefinitions": {
+                "artifacts": {
+                    "evaluation_metrics": {
+                        "artifactType": {
+                            "schemaTitle": "system.Metrics",
+                            "schemaVersion": "0.0.1",
+                        }
+                    }
+                }
             },
-            "dataflow_disk_size": {
-              "type": "INT"
-            },
-            "dataflow_machine_type": {
-              "type": "STRING"
-            },
-            "dataflow_max_workers_num": {
-              "type": "INT"
-            },
-            "dataflow_workers_num": {
-              "type": "INT"
-            },
-            "example_weight_column": {
-              "type": "STRING"
-            },
-            "generate_feature_attribution": {
-              "type": "STRING"
-            },
-            "ground_truth_column": {
-              "type": "STRING"
-            },
-            "location": {
-              "type": "STRING"
-            },
-            "positive_classes": {
-              "type": "STRING"
-            },
-            "prediction_id_column": {
-              "type": "STRING"
-            },
-            "prediction_label_column": {
-              "type": "STRING"
-            },
-            "prediction_score_column": {
-              "type": "STRING"
-            },
-            "predictions_format": {
-              "type": "STRING"
-            },
-            "problem_type": {
-              "type": "STRING"
-            },
-            "project": {
-              "type": "STRING"
-            },
-            "root_dir": {
-              "type": "STRING"
-            }
-          }
         },
-        "outputDefinitions": {
-          "artifacts": {
-            "evaluation_metrics": {
-              "artifactType": {
-                "schemaTitle": "system.Metrics",
-                "schemaVersion": "0.0.1"
-              }
-            }
-          }
-        }
-      }
     },
 }
 
-_TEST_MODEL_EVAL_PIPELINE_SPEC_JSON = json.dumps({
-    "pipelineInfo": {"name": "evaluation-sdk-pipeline"},
-    "root": {
-        "dag": {"tasks": {}},
-        "inputDefinitions": {
-            "parameters": {
-                "batch_predict_gcs_source_uris": {"type": "STRING"},
-                "batch_predict_instances_format": {"type": "STRING"},
-                "class_names": {"type": "STRING"},
-                "model_name": {"type": "STRING"},
-                "prediction_type": {"type": "STRING"},
-                "project": {"type": "STRING"},
-                "location": {"type": "STRING"},
-                "root_dir": {"type": "STRING"},
-                "target_column_name": {"type": "STRING"},
-            }
+_TEST_MODEL_EVAL_PIPELINE_SPEC_JSON = json.dumps(
+    {
+        "pipelineInfo": {"name": "evaluation-sdk-pipeline"},
+        "root": {
+            "dag": {"tasks": {}},
+            "inputDefinitions": {
+                "parameters": {
+                    "batch_predict_gcs_source_uris": {"type": "STRING"},
+                    "batch_predict_instances_format": {"type": "STRING"},
+                    "class_names": {"type": "STRING"},
+                    "model_name": {"type": "STRING"},
+                    "prediction_type": {"type": "STRING"},
+                    "project": {"type": "STRING"},
+                    "location": {"type": "STRING"},
+                    "root_dir": {"type": "STRING"},
+                    "target_column_name": {"type": "STRING"},
+                }
+            },
         },
-    },
-    "schemaVersion": "2.0.0",
-    "sdkVersion": "kfp-1.8.12",
-    "components":  {
-      "comp-importer": {
-        "executorLabel": "exec-importer",
-        "inputDefinitions": {
-          "parameters": {
-            "uri": {
-              "type": "STRING"
-            }
-          }
+        "schemaVersion": "2.0.0",
+        "sdkVersion": "kfp-1.8.12",
+        "components": {
+            "comp-importer": {
+                "executorLabel": "exec-importer",
+                "inputDefinitions": {"parameters": {"uri": {"type": "STRING"}}},
+                "outputDefinitions": {
+                    "artifacts": {
+                        "artifact": {
+                            "artifactType": {
+                                "schemaTitle": "google.VertexModel",
+                                "schemaVersion": "0.0.1",
+                            }
+                        }
+                    }
+                },
+            },
+            "comp-model-batch-predict": {
+                "executorLabel": "exec-model-batch-predict",
+                "inputDefinitions": {
+                    "artifacts": {
+                        "model": {
+                            "artifactType": {
+                                "schemaTitle": "google.VertexModel",
+                                "schemaVersion": "0.0.1",
+                            }
+                        }
+                    },
+                    "parameters": {
+                        "accelerator_count": {"type": "INT"},
+                        "accelerator_type": {"type": "STRING"},
+                        "bigquery_destination_output_uri": {"type": "STRING"},
+                        "encryption_spec_key_name": {"type": "STRING"},
+                        "explanation_metadata": {"type": "STRING"},
+                        "explanation_parameters": {"type": "STRING"},
+                        "gcs_destination_output_uri_prefix": {"type": "STRING"},
+                        "gcs_source_uris": {"type": "STRING"},
+                        "generate_explanation": {"type": "STRING"},
+                        "instances_format": {"type": "STRING"},
+                        "job_display_name": {"type": "STRING"},
+                        "labels": {"type": "STRING"},
+                        "location": {"type": "STRING"},
+                        "machine_type": {"type": "STRING"},
+                        "manual_batch_tuning_parameters_batch_size": {"type": "INT"},
+                        "max_replica_count": {"type": "INT"},
+                        "model_parameters": {"type": "STRING"},
+                        "predictions_format": {"type": "STRING"},
+                        "project": {"type": "STRING"},
+                        "starting_replica_count": {"type": "INT"},
+                    },
+                },
+                "outputDefinitions": {
+                    "artifacts": {
+                        "batchpredictionjob": {
+                            "artifactType": {
+                                "schemaTitle": "google.VertexBatchPredictionJob",
+                                "schemaVersion": "0.0.1",
+                            }
+                        }
+                    },
+                    "parameters": {"gcp_resources": {"type": "STRING"}},
+                },
+            },
+            "comp-model-evaluation": {
+                "executorLabel": "exec-model-evaluation",
+                "inputDefinitions": {
+                    "artifacts": {
+                        "batch_prediction_job": {
+                            "artifactType": {
+                                "schemaTitle": "google.VertexBatchPredictionJob",
+                                "schemaVersion": "0.0.1",
+                            }
+                        }
+                    },
+                    "parameters": {
+                        "class_names": {"type": "STRING"},
+                        "classification_type": {"type": "STRING"},
+                        "dataflow_disk_size": {"type": "INT"},
+                        "dataflow_machine_type": {"type": "STRING"},
+                        "dataflow_max_workers_num": {"type": "INT"},
+                        "dataflow_workers_num": {"type": "INT"},
+                        "example_weight_column": {"type": "STRING"},
+                        "generate_feature_attribution": {"type": "STRING"},
+                        "ground_truth_column": {"type": "STRING"},
+                        "location": {"type": "STRING"},
+                        "positive_classes": {"type": "STRING"},
+                        "prediction_id_column": {"type": "STRING"},
+                        "prediction_label_column": {"type": "STRING"},
+                        "prediction_score_column": {"type": "STRING"},
+                        "predictions_format": {"type": "STRING"},
+                        "problem_type": {"type": "STRING"},
+                        "project": {"type": "STRING"},
+                        "root_dir": {"type": "STRING"},
+                    },
+                },
+                "outputDefinitions": {
+                    "artifacts": {
+                        "evaluation_metrics": {
+                            "artifactType": {
+                                "schemaTitle": "system.Metrics",
+                                "schemaVersion": "0.0.1",
+                            }
+                        }
+                    }
+                },
+            },
         },
-        "outputDefinitions": {
-          "artifacts": {
-            "artifact": {
-              "artifactType": {
-                "schemaTitle": "google.VertexModel",
-                "schemaVersion": "0.0.1"
-              }
-            }
-          }
-        }
-      },
-      "comp-model-batch-predict": {
-        "executorLabel": "exec-model-batch-predict",
-        "inputDefinitions": {
-          "artifacts": {
-            "model": {
-              "artifactType": {
-                "schemaTitle": "google.VertexModel",
-                "schemaVersion": "0.0.1"
-              }
-            }
-          },
-          "parameters": {
-            "accelerator_count": {
-              "type": "INT"
-            },
-            "accelerator_type": {
-              "type": "STRING"
-            },
-            "bigquery_destination_output_uri": {
-              "type": "STRING"
-            },
-            "encryption_spec_key_name": {
-              "type": "STRING"
-            },
-            "explanation_metadata": {
-              "type": "STRING"
-            },
-            "explanation_parameters": {
-              "type": "STRING"
-            },
-            "gcs_destination_output_uri_prefix": {
-              "type": "STRING"
-            },
-            "gcs_source_uris": {
-              "type": "STRING"
-            },
-            "generate_explanation": {
-              "type": "STRING"
-            },
-            "instances_format": {
-              "type": "STRING"
-            },
-            "job_display_name": {
-              "type": "STRING"
-            },
-            "labels": {
-              "type": "STRING"
-            },
-            "location": {
-              "type": "STRING"
-            },
-            "machine_type": {
-              "type": "STRING"
-            },
-            "manual_batch_tuning_parameters_batch_size": {
-              "type": "INT"
-            },
-            "max_replica_count": {
-              "type": "INT"
-            },
-            "model_parameters": {
-              "type": "STRING"
-            },
-            "predictions_format": {
-              "type": "STRING"
-            },
-            "project": {
-              "type": "STRING"
-            },
-            "starting_replica_count": {
-              "type": "INT"
-            }
-          }
-        },
-        "outputDefinitions": {
-          "artifacts": {
-            "batchpredictionjob": {
-              "artifactType": {
-                "schemaTitle": "google.VertexBatchPredictionJob",
-                "schemaVersion": "0.0.1"
-              }
-            }
-          },
-          "parameters": {
-            "gcp_resources": {
-              "type": "STRING"
-            }
-          }
-        }
-      },
-      "comp-model-evaluation": {
-        "executorLabel": "exec-model-evaluation",
-        "inputDefinitions": {
-          "artifacts": {
-            "batch_prediction_job": {
-              "artifactType": {
-                "schemaTitle": "google.VertexBatchPredictionJob",
-                "schemaVersion": "0.0.1"
-              }
-            }
-          },
-          "parameters": {
-            "class_names": {
-              "type": "STRING"
-            },
-            "classification_type": {
-              "type": "STRING"
-            },
-            "dataflow_disk_size": {
-              "type": "INT"
-            },
-            "dataflow_machine_type": {
-              "type": "STRING"
-            },
-            "dataflow_max_workers_num": {
-              "type": "INT"
-            },
-            "dataflow_workers_num": {
-              "type": "INT"
-            },
-            "example_weight_column": {
-              "type": "STRING"
-            },
-            "generate_feature_attribution": {
-              "type": "STRING"
-            },
-            "ground_truth_column": {
-              "type": "STRING"
-            },
-            "location": {
-              "type": "STRING"
-            },
-            "positive_classes": {
-              "type": "STRING"
-            },
-            "prediction_id_column": {
-              "type": "STRING"
-            },
-            "prediction_label_column": {
-              "type": "STRING"
-            },
-            "prediction_score_column": {
-              "type": "STRING"
-            },
-            "predictions_format": {
-              "type": "STRING"
-            },
-            "problem_type": {
-              "type": "STRING"
-            },
-            "project": {
-              "type": "STRING"
-            },
-            "root_dir": {
-              "type": "STRING"
-            }
-          }
-        },
-        "outputDefinitions": {
-          "artifacts": {
-            "evaluation_metrics": {
-              "artifactType": {
-                "schemaTitle": "system.Metrics",
-                "schemaVersion": "0.0.1"
-              }
-            }
-          }
-        }
-      }
-    },
-})
+    }
+)
 
 _TEST_INVALID_MODEL_EVAL_PIPELINE_SPEC = {
     "pipelineInfo": {"name": "evaluation-sdk-pipeline"},
@@ -558,123 +394,75 @@ _TEST_INVALID_MODEL_EVAL_PIPELINE_SPEC = {
     },
     "schemaVersion": "2.0.0",
     "sdkVersion": "kfp-1.8.12",
-    "components":  {
-      "comp-importer": {
-        "executorLabel": "exec-importer",
-        "inputDefinitions": {
-          "parameters": {
-            "uri": {
-              "type": "STRING"
-            }
-          }
+    "components": {
+        "comp-importer": {
+            "executorLabel": "exec-importer",
+            "inputDefinitions": {"parameters": {"uri": {"type": "STRING"}}},
+            "outputDefinitions": {
+                "artifacts": {
+                    "artifact": {
+                        "artifactType": {
+                            "schemaTitle": "google.VertexModel",
+                            "schemaVersion": "0.0.1",
+                        }
+                    }
+                }
+            },
         },
-        "outputDefinitions": {
-          "artifacts": {
-            "artifact": {
-              "artifactType": {
-                "schemaTitle": "google.VertexModel",
-                "schemaVersion": "0.0.1"
-              }
-            }
-          }
-        }
-      },
-      "comp-model-batch-predict": {
-        "executorLabel": "exec-model-batch-predict",
-        "inputDefinitions": {
-          "artifacts": {
-            "model": {
-              "artifactType": {
-                "schemaTitle": "google.VertexModel",
-                "schemaVersion": "0.0.1"
-              }
-            }
-          },
-          "parameters": {
-            "accelerator_count": {
-              "type": "INT"
+        "comp-model-batch-predict": {
+            "executorLabel": "exec-model-batch-predict",
+            "inputDefinitions": {
+                "artifacts": {
+                    "model": {
+                        "artifactType": {
+                            "schemaTitle": "google.VertexModel",
+                            "schemaVersion": "0.0.1",
+                        }
+                    }
+                },
+                "parameters": {
+                    "accelerator_count": {"type": "INT"},
+                    "accelerator_type": {"type": "STRING"},
+                    "bigquery_destination_output_uri": {"type": "STRING"},
+                    "encryption_spec_key_name": {"type": "STRING"},
+                    "explanation_metadata": {"type": "STRING"},
+                    "explanation_parameters": {"type": "STRING"},
+                    "gcs_destination_output_uri_prefix": {"type": "STRING"},
+                    "gcs_source_uris": {"type": "STRING"},
+                    "generate_explanation": {"type": "STRING"},
+                    "instances_format": {"type": "STRING"},
+                    "job_display_name": {"type": "STRING"},
+                    "labels": {"type": "STRING"},
+                    "location": {"type": "STRING"},
+                    "machine_type": {"type": "STRING"},
+                    "manual_batch_tuning_parameters_batch_size": {"type": "INT"},
+                    "max_replica_count": {"type": "INT"},
+                    "model_parameters": {"type": "STRING"},
+                    "predictions_format": {"type": "STRING"},
+                    "project": {"type": "STRING"},
+                    "starting_replica_count": {"type": "INT"},
+                },
             },
-            "accelerator_type": {
-              "type": "STRING"
+            "outputDefinitions": {
+                "artifacts": {
+                    "batchpredictionjob": {
+                        "artifactType": {
+                            "schemaTitle": "google.VertexBatchPredictionJob",
+                            "schemaVersion": "0.0.1",
+                        }
+                    }
+                },
+                "parameters": {"gcp_resources": {"type": "STRING"}},
             },
-            "bigquery_destination_output_uri": {
-              "type": "STRING"
-            },
-            "encryption_spec_key_name": {
-              "type": "STRING"
-            },
-            "explanation_metadata": {
-              "type": "STRING"
-            },
-            "explanation_parameters": {
-              "type": "STRING"
-            },
-            "gcs_destination_output_uri_prefix": {
-              "type": "STRING"
-            },
-            "gcs_source_uris": {
-              "type": "STRING"
-            },
-            "generate_explanation": {
-              "type": "STRING"
-            },
-            "instances_format": {
-              "type": "STRING"
-            },
-            "job_display_name": {
-              "type": "STRING"
-            },
-            "labels": {
-              "type": "STRING"
-            },
-            "location": {
-              "type": "STRING"
-            },
-            "machine_type": {
-              "type": "STRING"
-            },
-            "manual_batch_tuning_parameters_batch_size": {
-              "type": "INT"
-            },
-            "max_replica_count": {
-              "type": "INT"
-            },
-            "model_parameters": {
-              "type": "STRING"
-            },
-            "predictions_format": {
-              "type": "STRING"
-            },
-            "project": {
-              "type": "STRING"
-            },
-            "starting_replica_count": {
-              "type": "INT"
-            }
-          }
         },
-        "outputDefinitions": {
-          "artifacts": {
-            "batchpredictionjob": {
-              "artifactType": {
-                "schemaTitle": "google.VertexBatchPredictionJob",
-                "schemaVersion": "0.0.1"
-              }
-            }
-          },
-          "parameters": {
-            "gcp_resources": {
-              "type": "STRING"
-            }
-          }
-        }
-      },
     },
 }
 
 _TEST_MODEL_EVAL_PIPELINE_JOB = json.dumps(
     {
-        "runtimeConfig": {"parameterValues": _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES},
+        "runtimeConfig": {
+            "parameterValues": _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES
+        },
         "pipelineSpec": json.loads(_TEST_MODEL_EVAL_PIPELINE_SPEC_JSON),
     }
 )
@@ -691,6 +479,7 @@ _TEST_PIPELINE_CREATE_TIME = datetime.datetime.now()
 _TEST_EVAL_PIPELINE_DISPLAY_NAME = "modelevaluationjob"
 
 _TEST_EVAL_RESOURCE_NAME = f"projects/{_TEST_ID}/locations/{_TEST_LOCATION}/models/{_TEST_ID}/evaluations/{_TEST_ID}"
+
 
 @pytest.fixture
 def mock_pipeline_service_create():
@@ -774,6 +563,7 @@ def mock_pipeline_service_get_with_fail():
 
         yield mock_get_pipeline_job
 
+
 @pytest.fixture
 def mock_pipeline_service_get_pending():
     with mock.patch.object(
@@ -797,11 +587,13 @@ def mock_load_json(job_spec_json):
         mock_load_json.return_value = json.dumps(job_spec_json).encode()
         yield mock_load_json
 
+
 @pytest.fixture
 def mock_load_yaml_and_json(job_spec):
     with patch.object(storage.Blob, "download_as_bytes") as mock_load_yaml_and_json:
         mock_load_yaml_and_json.return_value = job_spec.encode()
         yield mock_load_yaml_and_json
+
 
 @pytest.fixture
 def get_model_mock():
@@ -809,11 +601,11 @@ def get_model_mock():
         model_service_client.ModelServiceClient, "get_model"
     ) as get_model_mock:
         get_model_mock.return_value = gca_model.Model(
-            display_name=_TEST_MODEL_NAME,
-            name=_TEST_MODEL_RESOURCE_NAME,
+            display_name=_TEST_MODEL_NAME, name=_TEST_MODEL_RESOURCE_NAME,
         )
 
         yield get_model_mock
+
 
 @pytest.fixture
 def mock_model():
@@ -823,33 +615,55 @@ def mock_model():
     model._latest_future = None
     model._exception = None
     model._gca_resource = gca_model.Model(
-        display_name='test-eval-model',
+        display_name="test-eval-model",
         description="This is the mock Model's description",
         name=_TEST_MODEL_NAME,
     )
     yield model
 
-class TestModelEvaluationJob:
 
+# Mocks specific to ModelEvaluation
+
+
+@pytest.fixture
+def mock_model_eval_get():
+    with mock.patch.object(
+        model_service_client.ModelServiceClient, "get_model_evaluation"
+    ) as mock_get_model_eval:
+        mock_get_model_eval.return_value = gca_model_evaluation.ModelEvaluation(
+            name=_TEST_EVAL_RESOURCE_NAME
+        )
+        yield mock_get_model_eval
+
+
+@pytest.fixture
+def mock_model_eval_create():
+    with mock.patch.object(
+        model_service_client.ModelServiceClient, "get_model_evaluation"
+    ) as mock_get_model_eval:
+        mock_get_model_eval.return_value = gca_model_evaluation.ModelEvaluation(
+            name=_TEST_EVAL_RESOURCE_NAME
+        )
+        yield mock_get_model_eval
+
+
+class TestModelEvaluationJob:
     class FakeModelEvaluationJob(model_evaluation_job.ModelEvaluationJob):
         _template_ref = _TEST_TEMPLATE_PATH
         metadat_output_artifact = "TODO"
 
-
     @pytest.mark.parametrize(
-        "job_spec",
-        [_TEST_MODEL_EVAL_PIPELINE_JOB],
+        "job_spec", [_TEST_MODEL_EVAL_PIPELINE_JOB],
     )
     @pytest.mark.usefixtures(
-        "mock_pipeline_service_get",
-        "mock_pipeline_service_create",
+        "mock_pipeline_service_get", "mock_pipeline_service_create",
     )
     def test_init_model_evaluation_job(
         self,
         mock_pipeline_service_get,
         mock_pipeline_service_create,
         job_spec,
-        # mock_load_yaml_and_json,
+        mock_load_yaml_and_json,
         json_file,
     ):
         aiplatform.init(
@@ -859,7 +673,9 @@ class TestModelEvaluationJob:
             staging_bucket=_TEST_GCS_BUCKET_NAME,
         )
 
-        self.FakeModelEvaluationJob._template_ref = os.path.join(os.getcwd(), "tests/unit/aiplatform/test_model_eval_template.json")
+        self.FakeModelEvaluationJob._template_ref = os.path.join(
+            os.getcwd(), "tests/unit/aiplatform/test_model_eval_template.json"
+        )
 
         job_spec = yaml.safe_load(job_spec)
         pipeline_spec = job_spec.get("pipelineSpec") or job_spec
@@ -881,11 +697,7 @@ class TestModelEvaluationJob:
         job.wait()
         # job.pipeline_spec = _TEST_MODEL_EVAL_PIPELINE_SPEC
 
-
-
-        self.FakeModelEvaluationJob(
-            evaluation_pipeline_run=job.resource_name,
-        )
+        self.FakeModelEvaluationJob(evaluation_pipeline_run=job.resource_name,)
 
         # expected_runtime_config_dict = {
         #     "gcsOutputDirectory": _TEST_GCS_BUCKET_NAME,
@@ -910,6 +722,7 @@ class TestModelEvaluationJob:
         #     service_account=_TEST_SERVICE_ACCOUNT,
         #     network=_TEST_NETWORK,
         # )
+
     # def test_init_model_evaluation_job_with_invalid_eval_template_raises(
     #     self,
     #     mock_pipeline_service_get,
@@ -929,8 +742,7 @@ class TestModelEvaluationJob:
     #         )
 
     def test_init_model_evaluation_job_with_invalid_pipeline_job_name_raises(
-        self,
-        mock_pipeline_service_get,
+        self, mock_pipeline_service_get,
     ):
         aiplatform.init(
             project=_TEST_PROJECT,
@@ -939,9 +751,7 @@ class TestModelEvaluationJob:
         )
 
         with pytest.raises(ValueError):
-            ModelEvaluationJob(
-                evaluation_pipeline_run=_TEST_INVALID_PIPELINE_JOB_NAME,
-            )
+            ModelEvaluationJob(evaluation_pipeline_run=_TEST_INVALID_PIPELINE_JOB_NAME,)
 
     @pytest.mark.parametrize(
         "job_spec",
@@ -969,18 +779,23 @@ class TestModelEvaluationJob:
 
         test_eval_job = self.FakeModelEvaluationJob.submit(
             model=managed_model,
-            prediction_type=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES["prediction_type"],
+            prediction_type=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+                "prediction_type"
+            ],
             pipeline_root=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES["root_dir"],
-            target_column_name=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES["target_column_name"],
-            gcs_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES["batch_predict_gcs_source_uris"],
+            target_column_name=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+                "target_column_name"
+            ],
+            gcs_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+                "batch_predict_gcs_source_uris"
+            ],
             class_names=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES["class_names"],
-            instances_format=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES["batch_predict_instances_format"],
+            instances_format=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+                "batch_predict_instances_format"
+            ],
             service_account=_TEST_SERVICE_ACCOUNT,
             network=_TEST_NETWORK,
         )
-
-        print('hihi',test_eval_job)
-
         expected_runtime_config_dict = {
             "gcsOutputDirectory": _TEST_PIPELINE_ROOT,
             "parameterValues": _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES,
@@ -993,8 +808,6 @@ class TestModelEvaluationJob:
         pipeline_spec = job_spec.get("pipelineSpec") or job_spec
 
         fake_service_display_name = self.FakeModelEvaluationJob.__name__.lower()
-
-        # print(test_eval_job)
 
         # Construct expected request
         expected_gapic_pipeline_job = gca_pipeline_job_v1.PipelineJob(
@@ -1042,19 +855,74 @@ class TestModelEvaluationJob:
 
     # TODO: test_model_evaluation_job_get_model_evaluation_with_successful_pipeline_run
 
+
 class TestModelEvaluation:
+    def test_init_model_evaluation(self, mock_model_eval_get):
+        aiplatform.init(project=_TEST_PROJECT)
 
-    # TODO: test_init_model_evaluation
+        my_model_eval = aiplatform.ModelEvaluation(
+            evaluation_name=_TEST_EVAL_RESOURCE_NAME
+        )
 
-    # TODO: test_init_model_evaluation_without_pipeline_job_id_or_pipeline_resource_params_raises
+        mock_model_eval_get.assert_called_once_with(
+            name=_TEST_EVAL_RESOURCE_NAME, retry=base._DEFAULT_RETRY
+        )
 
     # TODO: test_init_model_evaluation_with_invalid_evaluation_resource_raises
 
-    # TODO: test_get_model_evaluation_from_pipeline_job
+    def test_get_model_evaluation_from_pipeline_job(
+        self,
+        mock_model_eval_get,
+        mock_pipeline_service_get,
+        mock_pipeline_service_create,
+    ):
+        aiplatform.init(project=_TEST_PROJECT)
+
+        job = pipeline_jobs.PipelineJob(
+            display_name=_TEST_PIPELINE_JOB_DISPLAY_NAME,
+            template_path=_TEST_TEMPLATE_PATH,
+            parameter_values=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES,
+            job_id=_TEST_PIPELINE_JOB_ID,
+        )
+
+        ModelEvaluation.get_from_pipeline_job(pipeline_job=job.resource_name,)
+
+        mock_model_eval_get.assert_called_once_with(
+            name=_TEST_EVAL_RESOURCE_NAME, retry=base._DEFAULT_RETRY
+        )
+
+    def test_get_model_evaluation_from_pipeline_job_id(
+        self,
+        mock_model_eval_get,
+        mock_pipeline_service_get,
+        mock_pipeline_service_create,
+    ):
+        aiplatform.init(project=_TEST_PROJECT)
+
+        model_eval_test = ModelEvaluation.get_from_pipeline_job(
+            pipeline_job_id=_TEST_PIPELINE_JOB_ID,
+        )
+
+        print(model_eval_test)
+
+        mock_model_eval_get.assert_called_once_with(
+            name=_TEST_EVAL_RESOURCE_NAME, retry=base._DEFAULT_RETRY
+        )
 
     # TODO: test_get_model_evaluation_with_invalid_pipeline_job_raises
 
     # TODO: test_get_model_evaluation_with_invalid_template_raises
 
-    print('add tests here')
+    # print('add tests here')
 
+    # @pytest.mark.parametrize(
+    #     "featurestore_name", [_TEST_FEATURESTORE_ID, _TEST_FEATURESTORE_NAME]
+    # )
+    # def test_init_featurestore(self, featurestore_name, get_featurestore_mock):
+    #     aiplatform.init(project=_TEST_PROJECT)
+
+    #     my_featurestore = aiplatform.Featurestore(featurestore_name=featurestore_name)
+
+    #     get_featurestore_mock.assert_called_once_with(
+    #         name=my_featurestore.resource_name, retry=base._DEFAULT_RETRY
+    #     )

@@ -43,8 +43,6 @@ from google.cloud.aiplatform.pipeline_based_service.pipeline_based_service impor
     _VertexAiPipelineBasedService,
 )
 
-_TEST_API_CLIENT = pipeline_service_client_v1.PipelineServiceClient
-
 # pipeline job
 _TEST_PROJECT = "test-project"
 _TEST_LOCATION = "us-central1"
@@ -98,16 +96,10 @@ _TEST_PIPELINE_JOB = {
     "pipelineSpec": _TEST_PIPELINE_SPEC,
 }
 
-_TEST_PIPELINE_GET_METHOD_NAME = "get_fake_pipeline_job"
-_TEST_PIPELINE_LIST_METHOD_NAME = "list_fake_pipeline_jobs"
-_TEST_PIPELINE_CANCEL_METHOD_NAME = "cancel_fake_pipeline_job"
-_TEST_PIPELINE_DELETE_METHOD_NAME = "delete_fake_pipeline_job"
 _TEST_PIPELINE_RESOURCE_NAME = (
     f"{_TEST_PARENT}/fakePipelineJobs/{_TEST_PIPELINE_JOB_ID}"
 )
 _TEST_PIPELINE_CREATE_TIME = datetime.now()
-
-# TODO mocks
 
 
 @pytest.fixture
@@ -237,10 +229,7 @@ class TestPipelineBasedService:
         "pipeline_name", [_TEST_PIPELINE_JOB_ID, _TEST_PIPELINE_JOB_NAME]
     )
     def test_init_pipeline_based_service_without_template_ref(
-        self,
-        pipeline_name,
-        mock_pipeline_service_get,
-        mock_pipeline_service_create,
+        self, pipeline_name, mock_pipeline_service_get, mock_pipeline_service_create,
     ):
         """
         Raises TypeError since abstract properties '_template_ref' and metadata_output_artifact
@@ -254,8 +243,7 @@ class TestPipelineBasedService:
             )
 
     def test_init_pipeline_based_service_with_invalid_pipeline_run_id(
-        self,
-        mock_pipeline_service_get,
+        self, mock_pipeline_service_get,
     ):
         aiplatform.init(
             project=_TEST_PROJECT,
@@ -271,8 +259,7 @@ class TestPipelineBasedService:
     # TODO: test_init_with_invalid_template_ref_raises. This test might only be needed for subclasses?
 
     @pytest.mark.parametrize(
-        "job_spec_json",
-        [_TEST_PIPELINE_SPEC],
+        "job_spec_json", [_TEST_PIPELINE_SPEC],
     )
     def test_create_and_submit_pipeline_job(
         self,

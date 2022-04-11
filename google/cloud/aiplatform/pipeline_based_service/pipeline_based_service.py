@@ -223,9 +223,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         service_name = cls.__name__.lower()
 
         self = cls._empty_constructor(
-            project=project,
-            location=location,
-            credentials=credentials,
+            project=project, location=location, credentials=credentials,
         )
 
         service_pipeline_job = pipeline_jobs.PipelineJob(
@@ -240,8 +238,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         )
 
         service_pipeline_job.submit(
-            service_account=service_account,
-            network=network,
+            service_account=service_account, network=network,
         )
 
         self._gca_resource = self._get_gca_resource(service_pipeline_job.resource_name)
