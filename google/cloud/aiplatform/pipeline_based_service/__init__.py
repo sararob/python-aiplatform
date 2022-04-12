@@ -15,4 +15,8 @@
 # limitations under the License.
 #
 
-__version__ = "1.12.0"
+from google.cloud.aiplatform.pipeline_based_service.pipeline_based_service import (
+    _VertexAiPipelineBasedService,
+)
+
+__all__ = ("_VertexAiPipelineBasedService",)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright 2021 Google LLC
+# Copyright 2022 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,4 +15,12 @@
 # limitations under the License.
 #
 
-__version__ = "1.12.0"
+from google.cloud.aiplatform.model_evaluation.model_evaluation import ModelEvaluation
+from google.cloud.aiplatform.model_evaluation.model_evaluation_job import (
+    ModelEvaluationJob,
+)
+
+__all__ = (
+    "ModelEvaluation",
+    "ModelEvaluationJob",
+)
