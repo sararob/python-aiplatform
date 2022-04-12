@@ -15,6 +15,8 @@
 # limitations under the License.
 #
 
+from multiprocessing.sharedctypes import Value
+from google.cloud.aiplatform import model_evaluation
 import yaml
 import datetime
 import os
@@ -62,6 +64,8 @@ from google.cloud.aiplatform.model_evaluation.model_evaluation_job import (
 from google.cloud.aiplatform_v1.services.model_service import (
     client as model_service_client,
 )
+
+
 
 from google.cloud.aiplatform.compat.types import model as gca_model
 
@@ -116,6 +120,28 @@ _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES = {
     "location": _TEST_LOCATION,
     "root_dir": _TEST_PIPELINE_ROOT,
     "target_column_name": "predict_class",
+}
+_TEST_INVALID_MODEL_EVAL_PIPELINE_SPEC = {
+    "pipelineInfo": {"name": "evaluation-sdk-pipeline"},
+    "root": {
+        "dag": {"tasks": {}},
+        "inputDefinitions": {
+            "parameters": {
+                "batch_predict_gcs_source_uris": {"type": "STRING"},
+                "batch_predict_instances_format": {"type": "STRING"},
+                "class_names": {"type": "STRING"},
+                "model_name": {"type": "STRING"},
+                "prediction_type": {"type": "STRING"},
+                "project": {"type": "STRING"},
+                "location": {"type": "STRING"},
+                "root_dir": {"type": "STRING"},
+                "target_column_name": {"type": "STRING"},
+            }
+        },
+    },
+    "schemaVersion": "2.0.0",
+    "sdkVersion": "kfp-1.8.12",
+    "components": {},
 }
 
 _TEST_MODEL_EVAL_PIPELINE_SPEC = {
@@ -636,110 +662,84 @@ def mock_model_eval_get():
         yield mock_get_model_eval
 
 
-@pytest.fixture
-def mock_model_eval_create():
-    with mock.patch.object(
-        model_service_client.ModelServiceClient, "get_model_evaluation"
-    ) as mock_get_model_eval:
-        mock_get_model_eval.return_value = gca_model_evaluation.ModelEvaluation(
-            name=_TEST_EVAL_RESOURCE_NAME
-        )
-        yield mock_get_model_eval
 
+@pytest.fixture
+def mock_model_eval_job_get():
+    with mock.patch.object(
+        pipeline_service_client_v1.PipelineServiceClient, "get_pipeline_job"
+    ) as mock_get_model_eval_job:
+        mock_get_model_eval_job.return_value = gca_pipeline_job_v1.PipelineJob(
+            name=_TEST_PIPELINE_JOB_NAME,
+            state=gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED,
+            create_time=_TEST_PIPELINE_CREATE_TIME,
+            service_account=_TEST_SERVICE_ACCOUNT,
+            network=_TEST_NETWORK,
+            pipeline_spec=_TEST_MODEL_EVAL_PIPELINE_SPEC,
+        )
+        yield mock_get_model_eval_job
+
+@pytest.fixture
+def mock_invalid_model_eval_job_get():
+    with mock.patch.object(
+        pipeline_service_client_v1.PipelineServiceClient, "get_pipeline_job"
+    ) as mock_get_model_eval_job:
+        mock_get_model_eval_job.return_value = gca_pipeline_job_v1.PipelineJob(
+            name=_TEST_PIPELINE_JOB_NAME,
+            state=gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED,
+            create_time=_TEST_PIPELINE_CREATE_TIME,
+            service_account=_TEST_SERVICE_ACCOUNT,
+            network=_TEST_NETWORK,
+            pipeline_spec=_TEST_INVALID_MODEL_EVAL_PIPELINE_SPEC,
+        )
+        yield mock_get_model_eval_job
+
+@pytest.fixture
+def mock_model_eval_job_create():
+    with mock.patch.object(
+        pipeline_service_client_v1.PipelineServiceClient, "create_pipeline_job"
+    ) as mock_create_model_eval_job:
+        mock_create_model_eval_job.return_value = gca_pipeline_job_v1.PipelineJob(
+            name=_TEST_PIPELINE_JOB_NAME,
+            state=gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED,
+            create_time=_TEST_PIPELINE_CREATE_TIME,
+            service_account=_TEST_SERVICE_ACCOUNT,
+            network=_TEST_NETWORK,
+            pipeline_spec=_TEST_MODEL_EVAL_PIPELINE_SPEC, # this should be a protobuf, use json_utils parsing method, compare both dicts
+        )
+        yield mock_create_model_eval_job
 
 class TestModelEvaluationJob:
     class FakeModelEvaluationJob(model_evaluation_job.ModelEvaluationJob):
         _template_ref = _TEST_TEMPLATE_PATH
         metadat_output_artifact = "TODO"
 
-    @pytest.mark.parametrize(
-        "job_spec", [_TEST_MODEL_EVAL_PIPELINE_JOB],
-    )
-    @pytest.mark.usefixtures(
-        "mock_pipeline_service_get", "mock_pipeline_service_create",
-    )
     def test_init_model_evaluation_job(
         self,
         mock_pipeline_service_get,
-        mock_pipeline_service_create,
-        job_spec,
-        mock_load_yaml_and_json,
-        json_file,
+        mock_model_eval_job_get,
     ):
-        aiplatform.init(
-            project=_TEST_PROJECT,
-            location=_TEST_LOCATION,
-            credentials=_TEST_CREDENTIALS,
-            staging_bucket=_TEST_GCS_BUCKET_NAME,
-        )
-
-        self.FakeModelEvaluationJob._template_ref = os.path.join(
-            os.getcwd(), "tests/unit/aiplatform/test_model_eval_template.json"
-        )
-
-        job_spec = yaml.safe_load(job_spec)
-        pipeline_spec = job_spec.get("pipelineSpec") or job_spec
-
-        # job_spec = yaml.safe_load(job_spec)
-        job = pipeline_jobs.PipelineJob(
-            display_name=_TEST_PIPELINE_JOB_DISPLAY_NAME,
-            template_path=self.FakeModelEvaluationJob._template_ref,
-            parameter_values=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES,
-            job_id=_TEST_PIPELINE_JOB_ID,
-        )
-
-        job.run(
-            service_account=_TEST_SERVICE_ACCOUNT,
-            network=_TEST_NETWORK,
-            create_request_timeout=None,
-        )
-
-        job.wait()
-        # job.pipeline_spec = _TEST_MODEL_EVAL_PIPELINE_SPEC
-
-        self.FakeModelEvaluationJob(evaluation_pipeline_run=job.resource_name,)
-
-        # expected_runtime_config_dict = {
-        #     "gcsOutputDirectory": _TEST_GCS_BUCKET_NAME,
-        #     "parameterValues": _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES,
-        # }
-        # runtime_config = gca_pipeline_job_v1.PipelineJob.RuntimeConfig()._pb
-        # json_format.ParseDict(expected_runtime_config_dict, runtime_config)
-
-        # job_spec = yaml.safe_load(job_spec)
-        # pipeline_spec = job_spec.get("pipelineSpec") or job_spec
-
-        # expected_gapic_pipeline_job = gca_pipeline_job_v1.PipelineJob(
-        #     display_name=_TEST_PIPELINE_JOB_DISPLAY_NAME,
-        #     pipeline_spec={
-        #         "components": pipeline_spec["components"],
-        #         "pipelineInfo": pipeline_spec["pipelineInfo"],
-        #         "root": pipeline_spec["root"],
-        #         "schemaVersion": "2.0.0",
-        #         "sdkVersion": "kfp-1.8.12",
-        #     },
-        #     runtime_config=runtime_config,
-        #     service_account=_TEST_SERVICE_ACCOUNT,
-        #     network=_TEST_NETWORK,
+        # aiplatform.init(
+        #     project=_TEST_PROJECT,
+        #     location=_TEST_LOCATION,
+        #     credentials=_TEST_CREDENTIALS,
+        #     staging_bucket=_TEST_GCS_BUCKET_NAME,
         # )
+        aiplatform.init(project=_TEST_PROJECT)
+        model_evaluation_job.ModelEvaluationJob(evaluation_pipeline_run=_TEST_PIPELINE_JOB_NAME)
 
-    # def test_init_model_evaluation_job_with_invalid_eval_template_raises(
-    #     self,
-    #     mock_pipeline_service_get,
-    # ):
+        mock_model_eval_job_get.assert_called_once_with(
+            name=_TEST_PIPELINE_JOB_NAME, retry=base._DEFAULT_RETRY
+        )
 
-    #     aiplatform.init(
-    #         project=_TEST_PROJECT,
-    #         location=_TEST_LOCATION,
-    #         credentials=_TEST_CREDENTIALS,
-    #     )
-
-    #     self.FakeModelEvaluationJob._template_ref = "TODO invalid template ref"
-
-    #     with pytest.raises(ValueError):
-    #         self.FakeModelEvaluationJob(
-    #             evaluation_pipeline_run=_TEST_PIPELINE_JOB_NAME,
-    #         )
+    def test_init_model_evaluation_job_with_invalid_eval_template_raises(
+        self,
+        mock_invalid_model_eval_job_get,
+    ):
+        aiplatform.init(project=_TEST_PROJECT)
+        with pytest.raises(ValueError):
+            model_evaluation_job.ModelEvaluationJob(
+                evaluation_pipeline_run=_TEST_PIPELINE_JOB_NAME
+            )
 
     def test_init_model_evaluation_job_with_invalid_pipeline_job_name_raises(
         self, mock_pipeline_service_get,
@@ -755,16 +755,18 @@ class TestModelEvaluationJob:
 
     @pytest.mark.parametrize(
         "job_spec",
-        [_TEST_MODEL_EVAL_PIPELINE_SPEC_JSON, _TEST_MODEL_EVAL_PIPELINE_JOB],
+        [_TEST_MODEL_EVAL_PIPELINE_SPEC_JSON],
     )
     def test_model_evaluation_job_submit(
         self,
         mock_pipeline_service_create,
-        mock_pipeline_service_get,
         job_spec,
         mock_load_yaml_and_json,
         mock_model,
         get_model_mock,
+        mock_model_eval_job_get,
+        mock_model_eval_job_create,
+        dicts_are_same,
     ):
         self.FakeModelEvaluationJob._template_ref = _TEST_TEMPLATE_PATH
 
@@ -777,12 +779,14 @@ class TestModelEvaluationJob:
 
         managed_model = models.Model(model_name=_TEST_MODEL_RESOURCE_NAME,)
 
-        test_eval_job = self.FakeModelEvaluationJob.submit(
+        model_evaluation_job.ModelEvaluationJob._template_ref = _TEST_TEMPLATE_PATH
+        
+        test_model_eval_job = model_evaluation_job.ModelEvaluationJob.submit(
             model=managed_model,
             prediction_type=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "prediction_type"
             ],
-            pipeline_root=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES["root_dir"],
+            pipeline_root=_TEST_GCS_BUCKET_NAME,
             target_column_name=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "target_column_name"
             ],
@@ -796,8 +800,11 @@ class TestModelEvaluationJob:
             service_account=_TEST_SERVICE_ACCOUNT,
             network=_TEST_NETWORK,
         )
+
+        test_model_eval_job.wait()
+
         expected_runtime_config_dict = {
-            "gcsOutputDirectory": _TEST_PIPELINE_ROOT,
+            "gcsOutputDirectory": _TEST_GCS_BUCKET_NAME,
             "parameterValues": _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES,
         }
 
@@ -807,28 +814,19 @@ class TestModelEvaluationJob:
         job_spec = yaml.safe_load(job_spec)
         pipeline_spec = job_spec.get("pipelineSpec") or job_spec
 
-        fake_service_display_name = self.FakeModelEvaluationJob.__name__.lower()
-
         # Construct expected request
         expected_gapic_pipeline_job = gca_pipeline_job_v1.PipelineJob(
-            display_name=fake_service_display_name,
-            pipeline_spec={
-                "components": pipeline_spec["components"],
-                "pipelineInfo": pipeline_spec["pipelineInfo"],
-                "root": pipeline_spec["root"],
-                "schemaVersion": pipeline_spec["schemaVersion"],
-                "sdkVersion": pipeline_spec["sdkVersion"],
-            },
-            # runtime_config=runtime_config,
+            display_name=test_model_eval_job._gca_resource.display_name,
+            pipeline_spec=_TEST_MODEL_EVAL_PIPELINE_SPEC,
+            runtime_config=runtime_config,
             service_account=_TEST_SERVICE_ACCOUNT,
             network=_TEST_NETWORK,
         )
 
-        # print(expected_gapic_pipeline_job)
 
         test_job_create_time_str = _TEST_PIPELINE_CREATE_TIME.strftime("%Y%m%d%H%M%S")
 
-        mock_pipeline_service_create.assert_called_with(
+        mock_model_eval_job_create.assert_called_with(
             parent=_TEST_PARENT,
             pipeline_job=expected_gapic_pipeline_job,
             pipeline_job_id=f"evaluation-sdk-pipeline-{test_job_create_time_str}",
@@ -836,16 +834,6 @@ class TestModelEvaluationJob:
             # network=_TEST_NETWORK,
             timeout=None,
         )
-
-        # mock_pipeline_service_get.assert_called_with(
-        #     name=_TEST_PIPELINE_JOB_NAME, retry=base._DEFAULT_RETRY
-        # )
-
-        # assert job._gca_resource == make_pipeline_job(
-        #     gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED
-        # )
-
-    # TODO: test_model_evaluation_job_submit
 
     # TODO: test_model_evaluation_job_submit_with_invalid_*
 
@@ -912,17 +900,3 @@ class TestModelEvaluation:
     # TODO: test_get_model_evaluation_with_invalid_pipeline_job_raises
 
     # TODO: test_get_model_evaluation_with_invalid_template_raises
-
-    # print('add tests here')
-
-    # @pytest.mark.parametrize(
-    #     "featurestore_name", [_TEST_FEATURESTORE_ID, _TEST_FEATURESTORE_NAME]
-    # )
-    # def test_init_featurestore(self, featurestore_name, get_featurestore_mock):
-    #     aiplatform.init(project=_TEST_PROJECT)
-
-    #     my_featurestore = aiplatform.Featurestore(featurestore_name=featurestore_name)
-
-    #     get_featurestore_mock.assert_called_once_with(
-    #         name=my_featurestore.resource_name, retry=base._DEFAULT_RETRY
-    #     )

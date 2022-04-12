@@ -23,6 +23,13 @@ from google.cloud.aiplatform import base
 from google.cloud.aiplatform import utils
 from google.cloud.aiplatform import pipeline_jobs
 from google.cloud.aiplatform.utils import yaml_utils
+from google.protobuf import json_format
+from dictdiffer import diff, patch, swap, revert
+
+from google.cloud.aiplatform.compat.types import (
+    pipeline_job_v1 as gca_pipeline_job_v1,
+    pipeline_state_v1 as gca_pipeline_state_v1,
+)
 
 from typing import (
     Any,
@@ -89,33 +96,25 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
 
         """
 
-        # TODO: figure out a better way to do this
-        # pipeline_job_resource = pipeline_jobs.PipelineJob.get(
-        #     resource_name=pipeline_job_id,
-        # )
-        service_pipeline_json = yaml_utils.load_yaml(self._template_ref)
-
-        print(service_pipeline_json)
+        # TODO: figure out if this is the best way to validate the templates match
+        service_pipeline_json = yaml_utils.load_yaml(self._template_ref)["pipelineSpec"]
+        # print('heyoooo',service_pipeline_json)
 
         current_pipeline_components = []
         template_ref_components = []
 
-        # Adding this for TestModelEvaluationJob::test_init_model_evaluation_job
-        # Not sure if it's needed
-        if not pipeline_job.pipeline_spec:
-            raise ValueError(
-                f"The provided pipeline template is not compatible with {self.__class__.__name__}"
-            )
+        current_pipeline_json = pipeline_job.to_dict()["pipelineSpec"]
+        # result = diff(service_pipeline_json, current_pipeline_json)
+        # for i in result:
+        #     print(i)
 
-        for order, component_name in enumerate(
-            pipeline_job.pipeline_spec.get("components")
-        ):
-            current_pipeline_components.append(component_name)
+        # for component_name, value in pipeline_job.pipeline_spec.get("components").items():
+        #     current_pipeline_components.append(component_name)
 
-        for comp in service_pipeline_json["pipelineSpec"]["components"]:
-            template_ref_components.append(comp)
+        # for component_name in service_pipeline_json["pipelineSpec"]["components"]:
+        #     template_ref_components.append(component_name)
 
-        if current_pipeline_components != template_ref_components:
+        if current_pipeline_json != service_pipeline_json:
             raise ValueError(
                 f"The provided pipeline template is not compatible with {self.__class__.__name__}"
             )
@@ -168,7 +167,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
 
         self._validate_pipeline_template_matches_service(job_resource)
 
-        self._gca_resource = self._get_gca_resource(resource_name=pipeline_job_id)
+        self._gca_resource = gca_pipeline_job_v1.PipelineJob(name=pipeline_job_id)
 
     @classmethod
     def _create_and_submit_pipeline_job(

@@ -52,11 +52,12 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
         """
 
     @property
-    def batch_prediction_job(self) -> jobs.BatchPredictionJob:
+    def batch_prediction_job(self) -> Optional[jobs.BatchPredictionJob]:
         """The Batch Prediction job used for the Model Eval"""
+        # TODO: get this from the backing_pipeline_job property
 
     @property
-    def backing_pipeline_job(self) -> pipeline_jobs.PipelineJob:
+    def backing_pipeline_job(self) -> Optional[pipeline_jobs.PipelineJob]:
         """The PipelineJob resource that ran this model evaluation."""
 
     @classmethod

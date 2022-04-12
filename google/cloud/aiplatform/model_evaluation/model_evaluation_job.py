@@ -28,6 +28,11 @@ from typing import (
     Optional,
 )
 
+from google.cloud.aiplatform.compat.types import (
+    pipeline_job_v1 as gca_pipeline_job_v1,
+    pipeline_state_v1 as gca_pipeline_state_v1,
+)
+
 from google.cloud.aiplatform_v1.types import model_evaluation
 
 _LOGGER = base.Logger(__name__)
@@ -39,11 +44,17 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
 
     _template_ref = _MODEL_EVAL_PIPELINE_TEMPLATE
 
+    # TODO: this could possibly return a dict with the artifact resource uri AND artifact uri (.name and .uri below)
+    # TODO: should this be a property on ModelEvaluation instead?
+
+    # Note: might wait on implementing this until aiplatform.Artifact is exposed, make this private for now
     @property
     def metadata_output_artifact(self) -> Optional[str]:
         """The resource uri for the ML Metadata output artifact from the last component of the Model Evaluation pipeline"""
-        return super().metadata_output_artifact
-        # set if pipeline is complete
+        if self.state == gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED:
+            for task in self.backing_pipeline_job._gca_resource.job_detail.task_details:
+                if task.task_name == "model-evaluation":
+                    return task.outputs['evaluation_metrics'].artifacts[0].name
 
     def __init__(
         self,
@@ -158,7 +169,6 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         """
 
         # TODO: validate the passed in Model resource can be used for model eval
-        # print('hello',model.resource_name)
 
         template_params = {
             "batch_predict_gcs_source_uris": gcs_source_uris,

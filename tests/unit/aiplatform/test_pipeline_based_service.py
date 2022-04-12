@@ -191,6 +191,20 @@ def mock_load_json(job_spec_json):
         mock_load_json.return_value = json.dumps(job_spec_json).encode()
         yield mock_load_json
 
+@pytest.fixture
+def mock_pipeline_based_service_get():
+    with mock.patch.object(
+        pipeline_service_client_v1.PipelineServiceClient, "get_pipeline_job"
+    ) as mock_get_pipeline_based_service:
+        mock_get_pipeline_based_service.return_value = gca_pipeline_job_v1.PipelineJob(
+            name=_TEST_PIPELINE_JOB_NAME,
+            state=gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED,
+            create_time=_TEST_PIPELINE_CREATE_TIME,
+            service_account=_TEST_SERVICE_ACCOUNT,
+            network=_TEST_NETWORK,
+            pipeline_spec=_TEST_PIPELINE_SPEC,
+        )
+        yield mock_get_pipeline_based_service
 
 class TestPipelineBasedService:
     class FakePipelineBasedService(
@@ -202,28 +216,33 @@ class TestPipelineBasedService:
     # TODO: this test may not be needed since it will only be initialized by a subclass
     # Currently fails because more mocks are needed
     # @pytest.mark.parametrize(
-    #     "pipeline_name", [_TEST_PIPELINE_JOB_ID, _TEST_PIPELINE_JOB_NAME]
-    # )
-    # @pytest.mark.parametrize(
     #     "job_spec_json",
-    #     [_TEST_PIPELINE_SPEC, _TEST_PIPELINE_JOB],
+    #     [_TEST_PIPELINE_SPEC],
     # )
-    # def test_init_pipeline_based_service(
-    #     self, pipeline_name, mock_pipeline_service_get, mock_pipeline_service_create, mock_load_json
-    # ):
-    #     aiplatform.init(
-    #         project=_TEST_PROJECT,
-    #         location=_TEST_LOCATION,
-    #         credentials=_TEST_CREDENTIALS,
-    #     )
+    @pytest.mark.parametrize(
+        "pipeline_name", [_TEST_PIPELINE_JOB_ID, _TEST_PIPELINE_JOB_NAME]
+    )
+    def test_init_pipeline_based_service(
+        self, pipeline_name, mock_pipeline_service_get, mock_pipeline_based_service_get, 
+    ):
+        aiplatform.init(
+            project=_TEST_PROJECT,
+            location=_TEST_LOCATION,
+            credentials=_TEST_CREDENTIALS,
+        )
 
-    #     self.FakePipelineBasedService(pipeline_job_id=pipeline_name,)
 
-    #     mock_pipeline_service_get.assert_called_with(
-    #         name=_TEST_PIPELINE_JOB_NAME, retry=base._DEFAULT_RETRY
-    #     )
+        test_service = self.FakePipelineBasedService(
+            pipeline_job_id=_TEST_PIPELINE_JOB_ID
+        )
 
-    #     assert not mock_pipeline_service_create.called
+        # self.FakePipelineBasedService(pipeline_job_id=pipeline_name,)
+
+        # mock_pipeline_based_service_get.assert_called_with(
+        #     name=_TEST_PIPELINE_JOB_NAME, retry=base._DEFAULT_RETRY
+        # )
+
+        # assert not mock_pipeline_service_create.called
 
     @pytest.mark.parametrize(
         "pipeline_name", [_TEST_PIPELINE_JOB_ID, _TEST_PIPELINE_JOB_NAME]
