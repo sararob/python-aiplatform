@@ -33,6 +33,7 @@ from google.cloud.aiplatform import jobs
 from google.cloud.aiplatform import models
 from google.cloud.aiplatform import utils
 from google.cloud.aiplatform.utils import gcs_utils
+from google.cloud.aiplatform import model_evaluation
 
 from google.cloud.aiplatform.compat.services import endpoint_service_client
 
@@ -3209,4 +3210,94 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             staging_bucket=staging_bucket,
             sync=sync,
             upload_request_timeout=upload_request_timeout,
+        )
+
+    def list_model_evaluations(
+        self,
+        project: Optional[str] = None,
+        location: Optional[str] = None,
+        credentials: Optional[auth_credentials.Credentials] = None,
+    ) -> List["model_evaluation.ModelEvaluation"]:
+        """List all Model Evaluation resources associated with this model.
+
+        Example Usage:
+
+        my_model = Model(
+            model_name="projects/123/locations/us-central1/models/456"
+        )
+
+        my_evaluations = my_model.list_model_evaluations()
+
+        Args:
+            project: Optional[str]=None,
+                Project to get model evaluations from. Overrides project set in
+                aiplatform.init.
+            location: Optional[str]=None,
+                Location to get model evaluations from. Overrides location set in
+                aiplatform.init.
+            credentials: Optional[auth_credentials.Credentials]=None,
+                Custom credentials to get model evaluations from. Overrides credentials
+                set in aiplatform.init.
+        Returns:
+            List[model_evaluation.ModelEvaluation]: List of ModelEvaluation resources
+            for the model.
+        """
+        parent = utils.full_resource_name(
+            resource_name=self.resource_name,
+            resource_noun=Model._resource_noun,
+            parse_resource_name_method=Model._parse_resource_name,
+            format_resource_name_method=Model._format_resource_name,
+            project=project,
+            location=location,
+        )
+
+        self.wait()
+
+        return model_evaluation.ModelEvaluation._list(
+            project=project,
+            location=location,
+            credentials=credentials,
+            parent=parent,
+        )
+
+    def get_model_evaluation(
+        self,
+        evaluation_id: Optional[str] = None,
+    ) -> Optional[model_evaluation.ModelEvaluation]:
+        """Returns a ModelEvaluation resource and instantiates its representation.
+        If no evaluation_id is passed, it will return the first evaluation associated
+        with this model.
+
+        Example usage:
+
+            my_model = Model(
+                model_name="projects/123/locations/us-central1/models/456"
+            )
+
+            my_evaluation = my_model.get_model_evaluation(
+                evaluation_id="789"
+            )
+
+            # If no arguments are passed, this returns the first evaluation for the model
+            my_evaluation = my_model.get_model_evaluation()
+
+        Args:
+            evaluation_id (str):
+                Optional. The ID of the model evaluation to retrieve.
+        Returns:
+            model_evaluation.ModelEvaluation: Instantiated representation of the
+            ModelEvaluation resource.
+        """
+        if not evaluation_id:
+            evaluation_resource_name = self.list_model_evaluations(self.resource_name)[
+                0
+            ].resource_name
+        else:
+            # TODO: validate evaluation_id
+            evaluation_resource_name = (
+                f"{self.resource_name}/evaluations/{evaluation_id}"
+            )
+
+        return model_evaluation.ModelEvaluation(
+            evaluation_name=evaluation_resource_name,
         )
