@@ -22,7 +22,6 @@ import json
 from unittest import mock
 from unittest.mock import patch
 
-from google.api_core import operation
 from google.auth import credentials as auth_credentials
 from google.protobuf import json_format
 from google.cloud import storage
@@ -328,8 +327,6 @@ class TestPipelineBasedService:
                 pipeline_job_id=_TEST_INVALID_PIPELINE_JOB_NAME,
             )
 
-    # TODO: test_init_with_invalid_template_ref_raises. This test might only be needed for subclasses?
-
     @pytest.mark.parametrize(
         "job_spec_json",
         [_TEST_PIPELINE_SPEC],
@@ -347,12 +344,11 @@ class TestPipelineBasedService:
             credentials=_TEST_CREDENTIALS,
         )
 
-        fake_service_display_name = self.FakePipelineBasedService.__name__.lower()
-
         self.FakePipelineBasedService._create_and_submit_pipeline_job(
             job_id=_TEST_PIPELINE_JOB_ID,
             template_params=_TEST_PIPELINE_PARAMETER_VALUES,
             pipeline_root=_TEST_PIPELINE_ROOT,
+            display_name=_TEST_PIPELINE_JOB_DISPLAY_NAME,
             service_account=_TEST_SERVICE_ACCOUNT,
             network=_TEST_NETWORK,
         )
@@ -368,7 +364,7 @@ class TestPipelineBasedService:
 
         # Construct expected request
         expected_gapic_pipeline_job = gca_pipeline_job_v1.PipelineJob(
-            display_name=fake_service_display_name,
+            display_name=_TEST_PIPELINE_JOB_DISPLAY_NAME,
             pipeline_spec={
                 "components": {},
                 "pipelineInfo": pipeline_spec["pipelineInfo"],

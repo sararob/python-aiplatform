@@ -16,25 +16,20 @@
 #
 
 import abc
-import json
 from google.auth import credentials as auth_credentials
 
 from google.cloud.aiplatform import base
 from google.cloud.aiplatform import utils
 from google.cloud.aiplatform import pipeline_jobs
 from google.cloud.aiplatform.utils import yaml_utils
-from google.protobuf import json_format
-from dictdiffer import diff, patch, swap, revert
 
 from google.cloud.aiplatform.compat.types import (
     pipeline_job_v1 as gca_pipeline_job_v1,
-    pipeline_state_v1 as gca_pipeline_state_v1,
 )
 
 from typing import (
     Any,
     Dict,
-    List,
     Optional,
 )
 
@@ -111,7 +106,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
     ):
         """Retrieves an existing Pipeline Based Service given the ID of the pipeline execution.
         Example Usage:
-            pipeline_service = aiplatform.VertexAiPipelineBasedService(
+            pipeline_service = aiplatform._pipeline_based_service._VertexAiPipelineBasedService(
                 pipeline_job_id = "projects/123/locations/us-central1/pipelinesJobs/456"
             )
             pipeline_service = aiplatform.VertexAiPipelinebasedService(
@@ -153,6 +148,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         cls,
         template_params: Dict[str, Any],
         pipeline_root: str,
+        display_name: Optional[str],
         service_account: Optional[str] = None,
         network: Optional[str] = None,
         job_id: Optional[str] = None,
@@ -170,6 +166,8 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
                 Required. The parameters to pass to the given pipeline template.
             pipeline_root (str)
                 Required. The GCS directory to store the pipeline run output.
+            display_name (str)
+                Optional. The user-defined name of the PipelineJob created by this Pipeline Based Service.
             service_account (str):
                 Specifies the service account for workload run-as account.
                 Users submitting jobs must have act-as permission on this run-as account.
@@ -196,7 +194,8 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         """
 
         # TODO: use cls._generate_display_name()
-        service_name = cls.__name__.lower()
+        if not display_name:
+            display_name = cls._generate_display_name()
 
         self = cls._empty_constructor(
             project=project,
@@ -205,7 +204,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         )
 
         service_pipeline_job = pipeline_jobs.PipelineJob(
-            display_name=service_name,
+            display_name=display_name,
             template_path=self._template_ref,
             parameter_values=template_params,
             pipeline_root=pipeline_root,
