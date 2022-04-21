@@ -92,6 +92,8 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         service_pipeline_json = yaml_utils.load_yaml(self._template_ref)["pipelineSpec"]
         current_pipeline_json = pipeline_job.to_dict()["pipelineSpec"]
 
+        print('canoncial',service_pipeline_json, '\n\n\ncomparison',current_pipeline_json)
+
         if current_pipeline_json != service_pipeline_json:
             raise ValueError(
                 f"The provided pipeline template is not compatible with {self.__class__.__name__}"
