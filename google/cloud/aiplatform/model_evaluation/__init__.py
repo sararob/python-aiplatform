@@ -16,6 +16,11 @@
 #
 
 from google.cloud.aiplatform.model_evaluation.model_evaluation import ModelEvaluation
-from google.cloud.aiplatform.model_evaluation.model_evaluation_job import ModelEvaluationJob
+from google.cloud.aiplatform.model_evaluation.model_evaluation_job import (
+    ModelEvaluationJob,
+)
 
-__all__ = ("ModelEvaluation","ModelEvaluationJob",)
+__all__ = (
+    "ModelEvaluation",
+    "ModelEvaluationJob",
+)

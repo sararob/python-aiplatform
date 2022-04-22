@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from multiprocessing.sharedctypes import Value
+
 import pathlib
 import proto
 import re
@@ -3362,7 +3362,7 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             target_column_name (str):
                 Required. The column name of the field containing the label for this prediction task.
             instances_format (str):
-                The format of your 
+                The format of your
             evaluation_job_display_name (str):
                 Optional. The display name of your model evaluation job. This is what will be displayed in the Vertex Pipelines
                 console for this evaluation job. If not set, a display name will be generated automatically.
@@ -3375,7 +3375,7 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             raise ValueError("Please provide a supported model prediction type.")
 
         return model_evaluation.ModelEvaluationJob.submit(
-            model_name = self.resource_name,
+            model_name=self.resource_name,
             prediction_type=prediction_type,
             pipeline_root=evaluation_staging_path,
             gcs_source_uris=gcs_source_uris,

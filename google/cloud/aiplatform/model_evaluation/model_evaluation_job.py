@@ -32,7 +32,10 @@ from google.cloud.aiplatform.compat.types import (
 _LOGGER = base.Logger(__name__)
 
 # TODO: update this to your local filepath until the template is finalized in GCS
-_MODEL_EVAL_PIPELINE_TEMPLATE = "gs://sara-vertex-demos-bucket/model-eval/sdk_pipeline_v2.json"
+_MODEL_EVAL_PIPELINE_TEMPLATE = (
+    "gs://sara-vertex-demos-bucket/model-eval/sdk_pipeline_v2.json"
+)
+
 
 class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
 
@@ -44,7 +47,7 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
         if self.state == gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED:
             for task in self.backing_pipeline_job._gca_resource.job_detail.task_details:
                 if task.task_name == "model-evaluation":
-                    return task.outputs['evaluation_metrics'].artifacts[0].name
+                    return task.outputs["evaluation_metrics"].artifacts[0].name
 
     def __init__(
         self,
@@ -88,7 +91,7 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
         cls,
         model_name: str,
         prediction_type: str,
-        pipeline_root: str,  #TODO: rename this in the caller to evaluation_staging_bucket?
+        pipeline_root: str,  # TODO: rename this in the caller to evaluation_staging_bucket?
         target_column_name: str,
         gcs_source_uris: List[str],
         class_names: Optional[List[str]],
@@ -182,7 +185,8 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
         return eval_pipeline_run
 
     def get_model_evaluation(
-        self, display_name: str,
+        self,
+        display_name: str,
     ) -> Optional[model_evaluation.ModelEvaluation]:
         """Creates a ModelEvaluation resource and instantiates its representation.
         Args:
