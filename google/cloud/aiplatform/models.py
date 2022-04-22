@@ -65,6 +65,11 @@ _SUPPORTED_MODEL_FILE_NAMES = [
     "saved_model.pbtxt",
 ]
 
+_SUPPORTED_EVAL_PREDICTION_TYPES = [
+    "classification",
+    "regression",
+]
+
 
 class Prediction(NamedTuple):
     """Prediction class envelopes returned Model predictions and the Model id.
@@ -3366,8 +3371,8 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             ModelEvaluationJob.
         """
 
-        if prediction_type != 'classification' or prediction_type != 'regression':
-            raise ValueError("Currently only `classification` and `regression` are supported for prediction_type on model evaluation jobs.")
+        if prediction_type not in _SUPPORTED_EVAL_PREDICTION_TYPES:
+            raise ValueError("Please provide a supported model prediction type.")
 
         return model_evaluation.ModelEvaluationJob.submit(
             model_name = self.resource_name,
