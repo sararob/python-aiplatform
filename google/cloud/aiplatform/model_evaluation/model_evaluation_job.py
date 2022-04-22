@@ -32,7 +32,7 @@ from google.cloud.aiplatform.compat.types import (
 _LOGGER = base.Logger(__name__)
 
 # TODO: update this to your local filepath until the template is finalized in GCS
-_MODEL_EVAL_PIPELINE_TEMPLATE = "/Users/sararob/Dev/sara-fork/python-aiplatform/google/cloud/aiplatform/model_evaluation/sdk_pipeline_v2.json"
+_MODEL_EVAL_PIPELINE_TEMPLATE = "gs://sara-vertex-demos-bucket/model-eval/sdk_pipeline_v2.json"
 
 class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
 
