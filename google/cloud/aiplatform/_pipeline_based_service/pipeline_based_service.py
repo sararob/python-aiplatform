@@ -208,7 +208,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
             parameter_values=template_params,
             pipeline_root=pipeline_root,
             job_id=job_id,
-            project=self.project,
+            project=project,
             location=location,
             credentials=credentials,
         )

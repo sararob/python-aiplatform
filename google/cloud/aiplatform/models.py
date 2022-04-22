@@ -3383,7 +3383,5 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             target_column_name=target_column_name,
             display_name=evaluation_job_display_name,
             instances_format=instances_format,
-            project=self.project,
-            location=self.location,
             credentials=self.credentials,
         )
