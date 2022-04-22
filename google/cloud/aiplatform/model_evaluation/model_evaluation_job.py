@@ -31,7 +31,8 @@ from google.cloud.aiplatform.compat.types import (
 
 _LOGGER = base.Logger(__name__)
 
-_MODEL_EVAL_PIPELINE_TEMPLATE = "/Users/sararob/Dev/sara-fork/python-aiplatform/google/cloud/aiplatform/model_evaluation/sdk_pipeline_experimental.json"
+# TODO: update this to your local filepath until the template is finalized in GCS
+_MODEL_EVAL_PIPELINE_TEMPLATE = "/Users/sararob/Dev/sara-fork/python-aiplatform/google/cloud/aiplatform/model_evaluation/sdk_pipeline_v2.json"
 
 class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
 
@@ -87,7 +88,7 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
         cls,
         model_name: str,
         prediction_type: str,
-        pipeline_root: str,  # rename this in the caller to evaluation_staging_bucket?
+        pipeline_root: str,  #TODO: rename this in the caller to evaluation_staging_bucket?
         target_column_name: str,
         gcs_source_uris: List[str],
         class_names: Optional[List[str]],
@@ -151,8 +152,6 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
         Raises:
             ValueError: If `labels` is not the correct format.
         """
-
-        # TODO: validate the passed in Model resource can be used for model eval
 
         if not display_name:
             display_name = cls._generate_display_name()

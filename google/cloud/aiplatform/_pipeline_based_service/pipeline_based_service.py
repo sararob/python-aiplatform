@@ -89,10 +89,8 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
             ValueError: if the provided pipeline ID doesn't match the pipeline service.
         """
 
-        service_pipeline_json = yaml_utils.load_yaml(self._template_ref)["pipelineSpec"]
-        current_pipeline_json = pipeline_job.to_dict()["pipelineSpec"]
-
-        print('canoncial',service_pipeline_json, '\n\n\ncomparison',current_pipeline_json)
+        service_pipeline_json = yaml_utils.load_yaml(self._template_ref)["pipelineSpec"]["components"]
+        current_pipeline_json = pipeline_job.to_dict()["pipelineSpec"]["components"]
 
         if current_pipeline_json != service_pipeline_json:
             raise ValueError(
@@ -195,7 +193,6 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
                 Instantiated representation of a Vertex AI Pipeline based service.
         """
 
-        # TODO: use cls._generate_display_name()
         if not display_name:
             display_name = cls._generate_display_name()
 

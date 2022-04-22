@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from multiprocessing.sharedctypes import Value
 import pathlib
 import proto
 import re
@@ -3313,3 +3314,71 @@ class Model(base.VertexAiResourceNounWithFutureManager):
                 evaluation_name=evaluation_resource_name,
                 credentials=self.credentials,
             )
+
+    def evaluate(
+        self,
+        gcs_source_uris: str,
+        prediction_type: str,
+        evaluation_staging_path: str,
+        class_names: List[str],
+        target_column_name: str,
+        instances_format: str,
+        evaluation_job_display_name: Optional[str] = None,
+    ) -> model_evaluation.ModelEvaluationJob:
+        """Creates a model evaluation job running on Vertex Pipelines and returns the resulting
+        ModelEvaluationJob resource.
+
+        Example usage:
+
+            my_model = Model(
+                model_name="projects/123/locations/us-central1/models/456"
+            )
+
+            my_evaluation_job = my_model.evaluate(
+                gcs_source_uris=["gs://sdk-model-eval/my-prediction-data.csv"],
+                prediction_type="classification",
+                evaluation_staging_path="gs://my-staging-bucket/eval_pipeline_root",
+                class_names = ["0", "1"],
+                target_column_name="class",
+                instances_format="csv"
+            )
+
+        Args:
+            gcs_source_uris (List[str]):
+                Required. A list of GCS filepaths containing the ground truth data to use for this evaluation job.
+                These files should contain your model's prediction column.
+            prediction_type (str): TODO: can we infer this for certain model types?
+                Required. The problem type being addressed by this evaluation run. `classification` and `regression`
+                are the currently supported problem types.
+            evaluation_staging_path (str): TODO: can we make this optional and default to the staging bucket from aiplatform.init?
+                Required. The GCS directory to use for staging files from this evaluation job.
+            class_names (List[str]):
+                Required. The list of possible class names for the prediction column in your dataset.
+            target_column_name (str):
+                Required. The column name of the field containing the label for this prediction task.
+            instances_format (str):
+                The format of your 
+            evaluation_job_display_name (str):
+                Optional. The display name of your model evaluation job. This is what will be displayed in the Vertex Pipelines
+                console for this evaluation job. If not set, a display name will be generated automatically.
+        Returns:
+            model_evaluation.ModelEvaluationJob: Instantiated representation of the
+            ModelEvaluationJob.
+        """
+
+        if prediction_type != 'classification' or prediction_type != 'regression':
+            raise ValueError("Currently only `classification` and `regression` are supported for prediction_type on model evaluation jobs.")
+
+        return model_evaluation.ModelEvaluationJob.submit(
+            model_name = self.resource_name,
+            prediction_type=prediction_type,
+            pipeline_root=evaluation_staging_path,
+            gcs_source_uris=gcs_source_uris,
+            class_names=class_names,
+            target_column_name=target_column_name,
+            display_name=evaluation_job_display_name,
+            instances_format=instances_format,
+            project=self.project,
+            location=self.location,
+            credentials=self.credentials,
+        )
