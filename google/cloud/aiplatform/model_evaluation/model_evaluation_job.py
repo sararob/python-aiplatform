@@ -31,7 +31,7 @@ from google.cloud.aiplatform.compat.types import (
 
 _LOGGER = base.Logger(__name__)
 
-# TODO: update this to your local filepath until the template is finalized in GCS
+# TODO: this is a path to the current eval template, update with the final one and decide where it'll be stored (ideally GCS)
 _MODEL_EVAL_PIPELINE_TEMPLATE = (
     "gs://sara-vertex-demos-bucket/model-eval/sdk_pipeline_v2.json"
 )
@@ -43,7 +43,7 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
 
     @property
     def _metadata_output_artifact(self) -> Optional[str]:
-        """The resource uri for the ML Metadata output artifact from the last component of the Model Evaluation pipeline"""
+        """The resource uri for the ML Metadata output artifact from the evaluation component of the Model Evaluation pipeline"""
         if self.state == gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED:
             for task in self.backing_pipeline_job._gca_resource.job_detail.task_details:
                 if task.task_name == "model-evaluation":
@@ -133,8 +133,8 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
             pipeline_root (str):
                 Required. The GCS directory to store output from the model evaluation PipelineJob.
             gcs_source_uris (List[str]):
-                Required. A list of GCS URIs containing your input data for batch prediction.
-                TODO add details on input source reqs.
+                Required. A list of GCS URIs containing your input data for batch prediction. This is used to provide
+                ground truth for each prediction instance, and should include a label column with the ground truth value.
             target_column_name (str):
                 Required. The name of your prediction column.
             class_names (List[str]):
@@ -184,6 +184,7 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
 
         return eval_pipeline_run
 
+    #TODO: still waiting on consensus for what this returns, either ModelEvaluation or MLMD artifact
     def get_model_evaluation(
         self,
         display_name: str,

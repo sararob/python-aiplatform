@@ -91,3 +91,5 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
         raise NotImplementedError(
             "Deleting a model evaluation has not been implemented yet."
         )
+
+    # TODO: decide if we should add coverage for the gapic import_model_evaluation method
