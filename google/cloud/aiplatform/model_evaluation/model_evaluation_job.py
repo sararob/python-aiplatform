@@ -159,6 +159,7 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
         if not display_name:
             display_name = cls._generate_display_name()
 
+        # TODO: should invalid template parameters be caught here or after the job has been submitted?
         template_params = {
             "batch_predict_gcs_source_uris": gcs_source_uris,
             "batch_predict_instances_format": instances_format,
@@ -209,7 +210,6 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
                 f"Your evaluation job is still in progress. For more details see the logs {self.pipeline_console_uri}"
             )
         else:
-            # TODO: waiting for updated pipeline template that creates the ModelEvaluation resource
             _LOGGER.info(
                 f"Your evaluation job ran successfully. Creating Model Evaluation with name {display_name}"
             )
