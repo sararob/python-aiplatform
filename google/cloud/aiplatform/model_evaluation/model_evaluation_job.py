@@ -185,7 +185,7 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
 
         return eval_pipeline_run
 
-    #TODO: still waiting on consensus for what this returns, either ModelEvaluation or MLMD artifact
+    # TODO: still waiting on consensus for what this returns, either ModelEvaluation or MLMD artifact
     def get_model_evaluation(
         self,
         display_name: str,
@@ -234,3 +234,31 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
             pipeline_run._block_until_complete()
         else:
             pipeline_run.wait()
+
+    @classmethod
+    def list(
+        cls,
+        project: Optional[str] = None,
+        location: Optional[str] = None,
+        credentials: Optional[auth_credentials.Credentials] = None,
+    ) -> List[model_evaluation.ModelEvaluationJob]:
+        """Returns a list of all ModelEvaluationJob resources associated with this project.
+        Args:
+            project (str):
+                Optional. The project to retrieve the ModelEvaluationJob resources from. If not set,
+                the project set in aiplatform.init will be used.
+            location (str):
+                Optional. Location to retrieve the ModelEvaluationJob resources from. If not set,
+                location set in aiplatform.init will be used.
+            credentials (auth_credentials.Credentials):
+                Optional. Custom credentials to use to retrieve the ModelEvaluationJob resources from.
+                Overrides credentials set in aiplatform.init.
+        Returns:
+            (List[ModelEvaluationJob]):
+                A list of ModelEvaluationJob resource objects.
+        """
+        return super().list(
+            project=project,
+            location=location,
+            credentials=credentials,
+        )

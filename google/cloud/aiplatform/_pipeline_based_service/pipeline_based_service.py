@@ -31,6 +31,7 @@ from typing import (
     Any,
     Dict,
     Optional,
+    List,
 )
 
 _LOGGER = base.Logger(__name__)
@@ -88,7 +89,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         Raises:
             ValueError: if the provided pipeline ID doesn't match the pipeline service.
         """
-        #TODO: should this validate the whole pipelineSpec or just the components level?
+        # TODO: should this validate the whole pipelineSpec or just the components level?
         service_pipeline_json = yaml_utils.load_yaml(self._template_ref)[
             "pipelineSpec"
         ]["components"]
@@ -223,3 +224,48 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         self._gca_resource = self._get_gca_resource(service_pipeline_job.resource_name)
 
         return self
+
+    @classmethod
+    def list(
+        cls,
+        project: Optional[str] = None,
+        location: Optional[str] = None,
+        credentials: Optional[str] = None,
+    ) -> List["pipeline_jobs.PipelineJob"]:
+        """Lists all PipelineJob resources associated with this Pipeline Based service.
+        Args:
+            project (str):
+                Optional. The project to retrieve the Pipeline Based Services from. If not set,
+                the project set in aiplatform.init will be used.
+            location (str):
+                Optional. Location to retrieve the Pipeline Based Services from. If not set,
+                location set in aiplatform.init will be used.
+            credentials (auth_credentials.Credentials):
+                Optional. Custom credentials to use to retrieve the Pipeline Based Services from.
+                Overrides credentials set in aiplatform.init.
+        Returns:
+            (List[PipelineJob]):
+                A list of PipelineJob resource objects.
+        """
+        self = cls._empty_constructor(
+            project=project,
+            location=location,
+            credentials=credentials,
+        )
+
+        # TODO: this takes a long time for projects with many pipeline executions. Is there a faster way to do this?
+        all_pipeline_jobs = pipeline_jobs.PipelineJob.list(
+            project=project,
+            location=location,
+            credentials=credentials,
+        )
+
+        service_pipeline_jobs = []
+
+        for job in all_pipeline_jobs:
+            try:
+                self._validate_pipeline_template_matches_service(job)
+                service_pipeline_jobs.append(job)
+
+            finally:
+                return service_pipeline_jobs

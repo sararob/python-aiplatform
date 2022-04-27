@@ -58,7 +58,9 @@ _TEST_MODEL_RESOURCE_NAME = model_service_client.ModelServiceClient.model_path(
     _TEST_PROJECT, _TEST_LOCATION, _TEST_MODEL_ID
 )
 
-_TEST_INVALID_MODEL_RESOURCE_NAME = f"prj/{_TEST_PROJECT}/locations/{_TEST_LOCATION}/models/{_TEST_MODEL_ID}"
+_TEST_INVALID_MODEL_RESOURCE_NAME = (
+    f"prj/{_TEST_PROJECT}/locations/{_TEST_LOCATION}/models/{_TEST_MODEL_ID}"
+)
 
 _TEST_MODEL_EVAL_RESOURCE_NAME = (
     model_service_client.ModelServiceClient.model_evaluation_path(
