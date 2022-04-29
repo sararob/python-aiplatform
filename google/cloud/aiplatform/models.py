@@ -3322,13 +3322,14 @@ class Model(base.VertexAiResourceNounWithFutureManager):
 
     def evaluate(
         self,
-        gcs_source_uris: str,
         prediction_type: str,
+        target_column_name: str,
+        gcs_source_uris: str,
         evaluation_staging_path: str,
         class_names: List[str],
-        target_column_name: str,
         instances_format: str,
         evaluation_job_display_name: Optional[str] = None,
+        network: Optional[str] = None,
     ) -> model_evaluation.ModelEvaluationJob:
         """Creates a model evaluation job running on Vertex Pipelines and returns the resulting
         ModelEvaluationJob resource.
@@ -3349,23 +3350,28 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             )
 
         Args:
+            prediction_type (str):
+                Required. The problem type being addressed by this evaluation run. `classification` and `regression`
+                are the currently supported problem types.
+            target_column_name (str):
+                Required. The column name of the field containing the label for this prediction task.
             gcs_source_uris (List[str]):
                 Required. A list of GCS filepaths containing the ground truth data to use for this evaluation job.
                 These files should contain your model's prediction column.
-            prediction_type (str): TODO: can we infer this for certain model types?
-                Required. The problem type being addressed by this evaluation run. `classification` and `regression`
-                are the currently supported problem types.
             evaluation_staging_path (str): TODO: can we make this optional and default to the staging bucket from aiplatform.init?
                 Required. The GCS directory to use for staging files from this evaluation job.
             class_names (List[str]):
                 Required. The list of possible class names for the prediction column in your dataset.
-            target_column_name (str):
-                Required. The column name of the field containing the label for this prediction task.
             instances_format (str):
                 The format of your
-            evaluation_job_display_name (str):
+            evaluation_job_display_name (Ostr):
                 Optional. The display name of your model evaluation job. This is what will be displayed in the Vertex Pipelines
                 console for this evaluation job. If not set, a display name will be generated automatically.
+            network (str):
+                The full name of the Compute Engine network to which the job
+                should be peered. For example, projects/12345/global/networks/myVPC.
+                Private services access must already be configured for the network.
+                If left unspecified, the job is not peered with any network.
         Returns:
             model_evaluation.ModelEvaluationJob: Instantiated representation of the
             ModelEvaluationJob.
@@ -3377,11 +3383,12 @@ class Model(base.VertexAiResourceNounWithFutureManager):
         return model_evaluation.ModelEvaluationJob.submit(
             model_name=self.resource_name,
             prediction_type=prediction_type,
-            pipeline_root=evaluation_staging_path,
-            gcs_source_uris=gcs_source_uris,
-            class_names=class_names,
             target_column_name=target_column_name,
-            display_name=evaluation_job_display_name,
+            gcs_source_uris=gcs_source_uris,
+            pipeline_root=evaluation_staging_path,
+            class_names=class_names,
             instances_format=instances_format,
+            display_name=evaluation_job_display_name,
+            network=network,
             credentials=self.credentials,
         )

@@ -16,10 +16,10 @@
 #
 
 from google.auth import credentials as auth_credentials
+from google.cloud import aiplatform
 
 from google.cloud.aiplatform import base
 from google.cloud.aiplatform import utils
-from google.cloud.aiplatform import models
 from google.protobuf import struct_pb2
 
 from typing import Optional
@@ -82,7 +82,7 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
 
         self._gca_resource = self._get_gca_resource(
             resource_name=evaluation_name,
-            parent_resource_name_fields={models.Model._resource_noun: model_id}
+            parent_resource_name_fields={aiplatform.Model._resource_noun: model_id}
             if model_id
             else model_id,
         )

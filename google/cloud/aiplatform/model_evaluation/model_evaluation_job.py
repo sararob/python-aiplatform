@@ -33,7 +33,7 @@ _LOGGER = base.Logger(__name__)
 
 # TODO: this is a path to the current eval template, update with the final one and decide where it'll be stored (ideally GCS)
 _MODEL_EVAL_PIPELINE_TEMPLATE = (
-    "gs://sara-vertex-demos-bucket/model-eval/sdk_pipeline_v2.json"
+    "gs://sara-vertex-demos-bucket/model-eval/sdk_pipeline_0429.json"
 )
 
 
@@ -91,12 +91,13 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
         cls,
         model_name: str,
         prediction_type: str,
-        pipeline_root: str,  # TODO: rename this in the caller to evaluation_staging_bucket?
         target_column_name: str,
         gcs_source_uris: List[str],
+        pipeline_root: str,
         class_names: Optional[List[str]],
-        display_name: Optional[str] = None,
         instances_format: Optional[str] = "jsonl",
+        display_name: Optional[str] = None,
+        job_id: Optional[str] = None,
         service_account: Optional[str] = None,
         network: Optional[str] = None,
         project: Optional[str] = None,
@@ -130,18 +131,23 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
                 "456" when project and location are initialized or passed.
             prediction_type (str):
                 Required. The type of prediction performed by the Model. One of "classification" or "regression".
-            pipeline_root (str):
-                Required. The GCS directory to store output from the model evaluation PipelineJob.
+            target_column_name (str):
+                Required. The name of your prediction column.
             gcs_source_uris (List[str]):
                 Required. A list of GCS URIs containing your input data for batch prediction. This is used to provide
                 ground truth for each prediction instance, and should include a label column with the ground truth value.
-            target_column_name (str):
-                Required. The name of your prediction column.
+            pipeline_root (str):
+                Required. The GCS directory to store output from the model evaluation PipelineJob.
             class_names (List[str]):
                 Required when `prediction_type` is "classification". A list of all possible class names
                 for your classification model's output, in the same order as they appear in the batch prediction input file.
             instances_format (str):
                 The format in which instances are given, must be one of the Model's supportedInputStorageFormats. If not set, defaults to "jsonl".
+            display_name (str)
+                Optional. The user-defined name of the PipelineJob created by this Pipeline Based Service.
+            job_id (str):
+                Optional. The unique ID of the job run.
+                If not specified, pipeline name + timestamp will be used.
             service_account (str):
                 Specifies the service account for workload run-as account.
                 Users submitting jobs must have act-as permission on this run-as account.
@@ -150,10 +156,17 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
                 should be peered. For example, projects/12345/global/networks/myVPC.
                 Private services access must already be configured for the network.
                 If left unspecified, the job is not peered with any network.
+            project (str):
+                Optional. The project to run this PipelineJob in. If not set,
+                the project set in aiplatform.init will be used.
+            location (str):
+                Optional. Location to create PipelineJob. If not set,
+                location set in aiplatform.init will be used.
+            credentials (auth_credentials.Credentials):
+                Optional. Custom credentials to use to create the PipelineJob.
+                Overrides credentials set in aiplatform.init.
         Returns:
-            model: Updated model resource.
-        Raises:
-            ValueError: If `labels` is not the correct format.
+            (ModelEvaluationJob): Instantiated represnetation of the model evaluation job.
         """
 
         if not display_name:
@@ -173,9 +186,10 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
         }
 
         eval_pipeline_run = cls._create_and_submit_pipeline_job(
-            display_name=display_name,
             template_params=template_params,
             pipeline_root=pipeline_root,
+            display_name=display_name,
+            job_id=job_id,
             service_account=service_account,
             network=network,
             project=project,
@@ -189,7 +203,7 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
     def get_model_evaluation(
         self,
         display_name: str,
-    ) -> Optional[model_evaluation.ModelEvaluation]:
+    ) -> Optional["model_evaluation.ModelEvaluation"]:
         """Creates a ModelEvaluation resource and instantiates its representation.
         Args:
             display_name (str):
@@ -241,7 +255,7 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
         project: Optional[str] = None,
         location: Optional[str] = None,
         credentials: Optional[auth_credentials.Credentials] = None,
-    ) -> List[model_evaluation.ModelEvaluationJob]:
+    ) -> List["model_evaluation.ModelEvaluationJob"]:
         """Returns a list of all ModelEvaluationJob resources associated with this project.
         Args:
             project (str):

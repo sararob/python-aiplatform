@@ -151,26 +151,25 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         cls,
         template_params: Dict[str, Any],
         pipeline_root: str,
-        display_name: Optional[str],
+        display_name: Optional[str] = None,
+        job_id: Optional[str] = None,
         service_account: Optional[str] = None,
         network: Optional[str] = None,
-        job_id: Optional[str] = None,
         project: Optional[str] = None,
         location: Optional[str] = None,
         credentials: Optional[auth_credentials.Credentials] = None,
     ) -> "_VertexAiPipelineBasedService":
         """Create a new PipelineJob using the provided template and parameters.
         Args:
-            template_ref (str):
-                Required. The path of the compiled Pipeline JSON template file in the template artifact registry.
-            template_artifacts (Dict[str, Any]) TODO: dependent on pipelines backend work
-                Required. The MLMD artifact resources to pass to the given pipeline template.
             template_params (Dict[str, Any]):
                 Required. The parameters to pass to the given pipeline template.
             pipeline_root (str)
                 Required. The GCS directory to store the pipeline run output.
             display_name (str)
                 Optional. The user-defined name of the PipelineJob created by this Pipeline Based Service.
+            job_id (str):
+                Optional. The unique ID of the job run.
+                If not specified, pipeline name + timestamp will be used.
             service_account (str):
                 Specifies the service account for workload run-as account.
                 Users submitting jobs must have act-as permission on this run-as account.
@@ -179,18 +178,15 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
                 should be peered. For example, projects/12345/global/networks/myVPC.
                 Private services access must already be configured for the network.
                 If left unspecified, the job is not peered with any network.
-            job_id (str):
-                Optional. The unique ID of the job run.
-                If not specified, pipeline name + timestamp will be used.
-            credentials (auth_credentials.Credentials):
-                Optional. Custom credentials to use to create the PipelineJob.
-                Overrides credentials set in aiplatform.init.
             project (str):
                 Optional. The project to run this PipelineJob in. If not set,
                 the project set in aiplatform.init will be used.
             location (str):
                 Optional. Location to create PipelineJob. If not set,
                 location set in aiplatform.init will be used.
+            credentials (auth_credentials.Credentials):
+                Optional. Custom credentials to use to create the PipelineJob.
+                Overrides credentials set in aiplatform.init.
         Returns:
             (VertexAiPipelineBasedService):
                 Instantiated representation of a Vertex AI Pipeline based service.
@@ -208,9 +204,9 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         service_pipeline_job = pipeline_jobs.PipelineJob(
             display_name=display_name,
             template_path=self._template_ref,
-            parameter_values=template_params,
-            pipeline_root=pipeline_root,
             job_id=job_id,
+            pipeline_root=pipeline_root,
+            parameter_values=template_params,
             project=project,
             location=location,
             credentials=credentials,
