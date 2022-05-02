@@ -127,13 +127,15 @@ _TEST_MODEL_EVAL_JOB_DISPLAY_NAME = "test-eval-job"
 _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES = {
     "batch_predict_gcs_source_uris": ["gs://my-bucket/my-prediction-data.csv"],
     "batch_predict_instances_format": "csv",
-    "class_names": ["0", "1"],
     "model_name": _TEST_MODEL_RESOURCE_NAME,
     "prediction_type": "classification",
     "project": _TEST_PROJECT,
     "location": _TEST_LOCATION,
     "root_dir": _TEST_GCS_BUCKET_NAME,
     "target_column_name": "predict_class",
+    "dataflow_service_account": _TEST_SERVICE_ACCOUNT,
+    "dataflow_subnetwork": "",
+    "dataflow_use_public_ips": True,
 }
 
 
@@ -145,13 +147,15 @@ _TEST_MODEL_EVAL_PIPELINE_SPEC = {
             "parameters": {
                 "batch_predict_gcs_source_uris": {"type": "STRING"},
                 "batch_predict_instances_format": {"type": "STRING"},
-                "class_names": {"type": "STRING"},
                 "model_name": {"type": "STRING"},
                 "prediction_type": {"type": "STRING"},
                 "project": {"type": "STRING"},
                 "location": {"type": "STRING"},
                 "root_dir": {"type": "STRING"},
                 "target_column_name": {"type": "STRING"},
+                "dataflow_service_account": {"type": "STRING"},
+                "dataflow_subnetwork": {"type": "STRING"},
+                "dataflow_use_public_ips": {"type": "BOOLEAN"},
             }
         },
     },
@@ -168,13 +172,15 @@ _TEST_INVALID_MODEL_EVAL_PIPELINE_SPEC = {
             "parameters": {
                 "batch_predict_gcs_source_uris": {"type": "STRING"},
                 "batch_predict_instances_format": {"type": "STRING"},
-                "class_names": {"type": "STRING"},
                 "model_name": {"type": "STRING"},
                 "prediction_type": {"type": "STRING"},
                 "project": {"type": "STRING"},
                 "location": {"type": "STRING"},
                 "root_dir": {"type": "STRING"},
                 "target_column_name": {"type": "STRING"},
+                "dataflow_service_account": {"type": "STRING"},
+                "dataflow_subnetwork": {"type": "STRING"},
+                "dataflow_use_public_ips": {"type": "BOOLEAN"},
             }
         },
     },
@@ -192,13 +198,15 @@ _TEST_MODEL_EVAL_PIPELINE_SPEC_JSON = json.dumps(
                 "parameters": {
                     "batch_predict_gcs_source_uris": {"type": "STRING"},
                     "batch_predict_instances_format": {"type": "STRING"},
-                    "class_names": {"type": "STRING"},
                     "model_name": {"type": "STRING"},
                     "prediction_type": {"type": "STRING"},
                     "project": {"type": "STRING"},
                     "location": {"type": "STRING"},
                     "root_dir": {"type": "STRING"},
                     "target_column_name": {"type": "STRING"},
+                    "dataflow_service_account": {"type": "STRING"},
+                    "dataflow_subnetwork": {"type": "STRING"},
+                    "dataflow_use_public_ips": {"type": "BOOLEAN"},
                 }
             },
         },
@@ -227,13 +235,15 @@ _TEST_INVALID_MODEL_EVAL_PIPELINE_SPEC_JSON = json.dumps(
                 "parameters": {
                     "batch_predict_gcs_source_uris": {"type": "STRING"},
                     "batch_predict_instances_format": {"type": "STRING"},
-                    "class_names": {"type": "STRING"},
                     "model_name": {"type": "STRING"},
                     "prediction_type": {"type": "STRING"},
                     "project": {"type": "STRING"},
                     "location": {"type": "STRING"},
                     "root_dir": {"type": "STRING"},
                     "target_column_name": {"type": "STRING"},
+                    "dataflow_service_account": {"type": "STRING"},
+                    "dataflow_subnetwork": {"type": "STRING"},
+                    "dataflow_use_public_ips": {"type": "BOOLEAN"},
                 }
             },
         },
@@ -612,12 +622,14 @@ class TestModelEvaluationJob:
             gcs_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "batch_predict_gcs_source_uris"
             ],
-            class_names=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES["class_names"],
             instances_format=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "batch_predict_instances_format"
             ],
             service_account=_TEST_SERVICE_ACCOUNT,
             network=_TEST_NETWORK,
+            dataflow_service_account=_TEST_SERVICE_ACCOUNT,
+            dataflow_use_public_ips=True,
+            dataflow_subnetwork="",
         )
 
         test_model_eval_job.wait()
