@@ -94,12 +94,14 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
         target_column_name: str,
         gcs_source_uris: List[str],
         pipeline_root: str,
-        class_names: Optional[List[str]],
         instances_format: Optional[str] = "jsonl",
         display_name: Optional[str] = None,
         job_id: Optional[str] = None,
         service_account: Optional[str] = None,
         network: Optional[str] = None,
+        dataflow_service_account: Optional[str] = None,
+        dataflow_subnetwork: Optional[str] = None,
+        dataflow_use_public_ips: Optional[bool] = True,
         project: Optional[str] = None,
         location: Optional[str] = None,
         credentials: Optional[auth_credentials.Credentials] = None,
@@ -138,9 +140,6 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
                 ground truth for each prediction instance, and should include a label column with the ground truth value.
             pipeline_root (str):
                 Required. The GCS directory to store output from the model evaluation PipelineJob.
-            class_names (List[str]):
-                Required when `prediction_type` is "classification". A list of all possible class names
-                for your classification model's output, in the same order as they appear in the batch prediction input file.
             instances_format (str):
                 The format in which instances are given, must be one of the Model's supportedInputStorageFormats. If not set, defaults to "jsonl".
             display_name (str)
@@ -172,17 +171,24 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
         if not display_name:
             display_name = cls._generate_display_name()
 
-        # TODO: should invalid template parameters be caught here or after the job has been submitted?
+        if not dataflow_service_account:
+            dataflow_service_account = ""
+
+        if not dataflow_subnetwork:
+            dataflow_subnetwork = ""
+
         template_params = {
             "batch_predict_gcs_source_uris": gcs_source_uris,
             "batch_predict_instances_format": instances_format,
-            "class_names": class_names,
             "model_name": model_name,
             "prediction_type": prediction_type,
             "project": project or initializer.global_config.project,
             "location": location or initializer.global_config.location,
             "root_dir": pipeline_root,
             "target_column_name": target_column_name,
+            "dataflow_service_account": dataflow_service_account,
+            "dataflow_subnetwork": dataflow_subnetwork,
+            "dataflow_use_public_ips": dataflow_use_public_ips,
         }
 
         eval_pipeline_run = cls._create_and_submit_pipeline_job(

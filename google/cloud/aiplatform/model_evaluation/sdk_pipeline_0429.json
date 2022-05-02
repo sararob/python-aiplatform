@@ -531,7 +531,11 @@
               },
               "parameters": {
                 "class_names": {
-                  "componentInputParameter": "class_names"
+                  "runtimeValue": {
+                    "constantValue": {
+                      "stringValue": "{}"
+                    }
+                  }
                 },
                 "classification_type": {
                   "runtimeValue": {
@@ -550,25 +554,13 @@
                   "componentInputParameter": "dataflow_max_num_workers"
                 },
                 "dataflow_service_account": {
-                  "runtimeValue": {
-                    "constantValue": {
-                      "stringValue": ""
-                    }
-                  }
+                  "componentInputParameter": "dataflow_service_account"
                 },
                 "dataflow_subnetwork": {
-                  "runtimeValue": {
-                    "constantValue": {
-                      "stringValue": ""
-                    }
-                  }
+                  "componentInputParameter": "dataflow_subnetwork"
                 },
                 "dataflow_use_public_ips": {
-                  "runtimeValue": {
-                    "constantValue": {
-                      "stringValue": "true"
-                    }
-                  }
+                  "componentInputParameter": "dataflow_use_public_ips"
                 },
                 "dataflow_workers_num": {
                   "runtimeValue": {
@@ -578,11 +570,7 @@
                   }
                 },
                 "encryption_spec_key_name": {
-                  "runtimeValue": {
-                    "constantValue": {
-                      "stringValue": ""
-                    }
-                  }
+                  "componentInputParameter": "encryption_spec_key_name"
                 },
                 "example_weight_column": {
                   "runtimeValue": {
@@ -640,10 +628,18 @@
                   }
                 },
                 "prediction_label_column": {
-                  "componentInputParameter": "prediction_label_column"
+                  "runtimeValue": {
+                    "constantValue": {
+                      "stringValue": ""
+                    }
+                  }
                 },
                 "prediction_score_column": {
-                  "componentInputParameter": "prediction_score_column"
+                  "runtimeValue": {
+                    "constantValue": {
+                      "stringValue": ""
+                    }
+                  }
                 },
                 "predictions_format": {
                   "runtimeValue": {
@@ -686,9 +682,6 @@
           "batch_predict_starting_replica_count": {
             "type": "INT"
           },
-          "class_names": {
-            "type": "STRING"
-          },
           "dataflow_disk_size_gb": {
             "type": "INT"
           },
@@ -698,6 +691,15 @@
           "dataflow_max_num_workers": {
             "type": "INT"
           },
+          "dataflow_service_account": {
+            "type": "STRING"
+          },
+          "dataflow_subnetwork": {
+            "type": "STRING"
+          },
+          "dataflow_use_public_ips": {
+            "type": "STRING"
+          },
           "encryption_spec_key_name": {
             "type": "STRING"
           },
@@ -705,12 +707,6 @@
             "type": "STRING"
           },
           "model_name": {
-            "type": "STRING"
-          },
-          "prediction_label_column": {
-            "type": "STRING"
-          },
-          "prediction_score_column": {
             "type": "STRING"
           },
           "prediction_type": {
@@ -752,9 +748,6 @@
       "batch_predict_starting_replica_count": {
         "intValue": "5"
       },
-      "class_names": {
-        "stringValue": "[]"
-      },
       "dataflow_disk_size_gb": {
         "intValue": "50"
       },
@@ -764,13 +757,16 @@
       "dataflow_max_num_workers": {
         "intValue": "25"
       },
+      "dataflow_service_account": {
+        "stringValue": ""
+      },
+      "dataflow_subnetwork": {
+        "stringValue": ""
+      },
+      "dataflow_use_public_ips": {
+        "stringValue": "True"
+      },
       "encryption_spec_key_name": {
-        "stringValue": ""
-      },
-      "prediction_label_column": {
-        "stringValue": ""
-      },
-      "prediction_score_column": {
         "stringValue": ""
       }
     }

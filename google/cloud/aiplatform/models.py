@@ -3326,10 +3326,12 @@ class Model(base.VertexAiResourceNounWithFutureManager):
         target_column_name: str,
         gcs_source_uris: str,
         evaluation_staging_path: str,
-        class_names: List[str],
         instances_format: str,
         evaluation_job_display_name: Optional[str] = None,
         network: Optional[str] = None,
+        dataflow_service_account: Optional[str] = None,
+        dataflow_subnetwork: Optional[str] = None,
+        dataflow_use_public_ips: Optional[bool] = True,
     ) -> model_evaluation.ModelEvaluationJob:
         """Creates a model evaluation job running on Vertex Pipelines and returns the resulting
         ModelEvaluationJob resource.
@@ -3360,8 +3362,6 @@ class Model(base.VertexAiResourceNounWithFutureManager):
                 These files should contain your model's prediction column.
             evaluation_staging_path (str): TODO: can we make this optional and default to the staging bucket from aiplatform.init?
                 Required. The GCS directory to use for staging files from this evaluation job.
-            class_names (List[str]):
-                Required. The list of possible class names for the prediction column in your dataset.
             instances_format (str):
                 The format of your
             evaluation_job_display_name (Ostr):
@@ -3386,9 +3386,11 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             target_column_name=target_column_name,
             gcs_source_uris=gcs_source_uris,
             pipeline_root=evaluation_staging_path,
-            class_names=class_names,
             instances_format=instances_format,
             display_name=evaluation_job_display_name,
             network=network,
+            dataflow_service_account=dataflow_service_account,
+            dataflow_subnetwork=dataflow_subnetwork,
+            dataflow_use_public_ips=dataflow_use_public_ips,
             credentials=self.credentials,
         )
