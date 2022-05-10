@@ -25,6 +25,7 @@ from unittest.mock import patch
 from google.api_core import operation as ga_operation
 from google.api_core import exceptions as api_exceptions
 from google.auth import credentials as auth_credentials
+from google.protobuf.struct_pb2 import Struct, Value
 
 from google.cloud import aiplatform
 from google.cloud.aiplatform import base
@@ -190,34 +191,15 @@ _TEST_MODEL_EVAL_METRICS = {
     "auPrc": 0.80592036,
     "auRoc": 0.8100363,
     "logLoss": 0.53061414,
-    "confidenceMetrics": [
-        {
-            "confidenceThreshold": -0.01,
-            "recall": 1.0,
-            "precision": 0.5,
-            "falsePositiveRate": 1.0,
-            "f1Score": 0.6666667,
-            "recallAt1": 1.0,
-            "precisionAt1": 0.5,
-            "falsePositiveRateAt1": 1.0,
-            "f1ScoreAt1": 0.6666667,
-            "truePositiveCount": "415",
-            "falsePositiveCount": "415",
-        },
-        {
-            "recall": 1.0,
-            "precision": 0.5,
-            "falsePositiveRate": 1.0,
-            "f1Score": 0.6666667,
-            "recallAt1": 0.74216866,
-            "precisionAt1": 0.74216866,
-            "falsePositiveRateAt1": 0.25783134,
-            "f1ScoreAt1": 0.74216866,
-            "truePositiveCount": "415",
-            "falsePositiveCount": "415",
-        },
-    ],
 }
+
+_TEST_MODEL_EVAL_METRICS_PROTO = Struct(
+    fields={
+        "auPrc": Value(number_value=_TEST_MODEL_EVAL_METRICS["auPrc"]),
+        "auRoc": Value(number_value=_TEST_MODEL_EVAL_METRICS["auRoc"]),
+        "logLoss": Value(number_value=_TEST_MODEL_EVAL_METRICS["logLoss"]),
+    }
+)
 
 _TEST_MODEL_EVAL_LIST = [
     gca_model_evaluation.ModelEvaluation(
@@ -230,6 +212,8 @@ _TEST_MODEL_EVAL_LIST = [
         name=_TEST_MODEL_EVAL_RESOURCE_NAME,
     ),
 ]
+
+_TEST_CLASSIFICATION_METRICS_SCHEMA_URI = "gs://google-cloud-aiplatform/schema/modelevaluation/classification_metrics_1.0.0.yaml"
 
 
 @pytest.fixture
@@ -538,6 +522,20 @@ def list_model_evaluations_mock():
     ) as list_model_evaluations_mock:
         list_model_evaluations_mock.return_value = _TEST_MODEL_EVAL_LIST
         yield list_model_evaluations_mock
+
+
+@pytest.fixture
+def import_model_evaluation_mock():
+    with mock.patch.object(
+        model_service_client.ModelServiceClient, "import_model_evaluation"
+    ) as import_model_evaluation_mock:
+        import_model_evaluation_mock.return_value = (
+            gca_model_evaluation.ModelEvaluation(
+                name=_TEST_MODEL_EVAL_RESOURCE_NAME,
+                metrics=_TEST_MODEL_EVAL_METRICS,
+            )
+        )
+        yield import_model_evaluation_mock
 
 
 class TestModel:
@@ -2037,3 +2035,41 @@ class TestModel:
         )
 
         assert len(eval_list) == len(_TEST_MODEL_EVAL_LIST)
+
+    def test_import_model_evaluation_without_explanation(
+        self,
+        get_model_mock,
+        mock_model_eval_get,
+        import_model_evaluation_mock,
+    ):
+
+        test_model = models.Model(model_name=_TEST_MODEL_RESOURCE_NAME)
+
+        test_model.import_model_evaluation(
+            problem_type="classification", evaluation_metrics=_TEST_MODEL_EVAL_METRICS
+        )
+
+        import_model_evaluation_mock.assert_called_once_with(
+            parent=_TEST_MODEL_RESOURCE_NAME,
+            model_evaluation={
+                "metrics_schema_uri": _TEST_CLASSIFICATION_METRICS_SCHEMA_URI,
+                "metrics": _TEST_MODEL_EVAL_METRICS_PROTO,
+            },
+        )
+
+        mock_model_eval_get.assert_called_once_with(
+            name=_TEST_MODEL_EVAL_RESOURCE_NAME,
+            retry=base._DEFAULT_RETRY,
+        )
+
+    def test_import_model_evaluation_with_invalid_problem_type_raises(
+        self,
+        get_model_mock,
+    ):
+        test_model = models.Model(model_name=_TEST_MODEL_RESOURCE_NAME)
+
+        with pytest.raises(ValueError):
+            test_model.import_model_evaluation(
+                problem_type="classify",
+                evaluation_metrics=_TEST_MODEL_EVAL_METRICS,
+            )

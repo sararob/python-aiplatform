@@ -3375,19 +3375,18 @@ class Model(base.VertexAiResourceNounWithFutureManager):
 
         metrics_struct = Struct()
 
-        for k,v in evaluation_metrics.items():
+        for k, v in evaluation_metrics.items():
             metrics_struct[k] = v
 
         # TODO: add support for passing model_explanation to metrics
 
         formatted_metrics = {
-            'metrics_schema_uri': schema_uri,
-            'metrics': metrics_struct,
+            "metrics_schema_uri": schema_uri,
+            "metrics": metrics_struct,
         }
 
         evaluation = api_client.import_model_evaluation(
-            parent=self.resource_name,
-            model_evaluation=formatted_metrics
+            parent=self.resource_name, model_evaluation=formatted_metrics
         )
 
         self._gca_resource = evaluation
