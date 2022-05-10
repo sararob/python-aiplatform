@@ -19,11 +19,12 @@ import proto
 import re
 import shutil
 import tempfile
-from typing import Dict, List, NamedTuple, Optional, Sequence, Tuple, Union
+from typing import Dict, List, NamedTuple, Optional, Sequence, Tuple, Union, Any
 
 from google.api_core import operation
 from google.api_core import exceptions as api_exceptions
 from google.auth import credentials as auth_credentials
+from google.protobuf.struct_pb2 import Struct
 
 from google.cloud import aiplatform
 from google.cloud.aiplatform import base
@@ -63,6 +64,17 @@ _SUPPORTED_MODEL_FILE_NAMES = [
     "saved_model.pb",
     "saved_model.pbtxt",
 ]
+
+_PROBLEM_TYPE_TO_SCHEMA_URI = {
+    "classification": "gs://google-cloud-aiplatform/schema/modelevaluation/classification_metrics_1.0.0.yaml",
+    "regression": "gs://google-cloud-aiplatform/schema/modelevaluation/regression_metrics_1.0.0.yaml",
+    "forecasting": "gs://google-cloud-aiplatform/schema/modelevaluation/forecasting_metrics_1.0.0.yaml",
+    "image_object_detection": "gs://google-cloud-aiplatform/schema/modelevaluation/image_object_detection_metrics_1.0.0.yaml",
+    "text_extraction": "gs://google-cloud-aiplatform/schema/modelevaluation/text_extraction_metrics_1.0.0.yaml",
+    "text_sentiment": "gs://google-cloud-aiplatform/schema/modelevaluation/text_sentiment_metrics_1.0.0.yaml",
+    "video_action_recognition": "gs://google-cloud-aiplatform/schema/modelevaluation/video_action_recognition_metrics_1.0.0.yaml",
+    "video_object_tracking": "gs://google-cloud-aiplatform/schema/modelevaluation/video_object_tracking_metrics_1.0.0.yaml",
+}
 
 
 class Prediction(NamedTuple):
@@ -3313,3 +3325,74 @@ class Model(base.VertexAiResourceNounWithFutureManager):
                 evaluation_name=evaluation_resource_name,
                 credentials=self.credentials,
             )
+
+    def import_model_evaluation(
+        self,
+        problem_type: str,
+        evaluation_metrics: Dict[str, Any],
+        model_explanation: Optional[Dict[str, Any]] = None,
+    ) -> Optional[model_evaluation.ModelEvaluation]:
+        """Imports evaluation metrics to an aiplatform.Model resource and returns
+        the instantiated ModelEvaluation.
+
+        Example usage:
+
+            my_model = Model(
+                model_name="projects/123/locations/us-central1/models/456"
+            )
+
+            # Regression metrics example
+            my_uploaded_evaluation = my_model.import_model_evaluation(
+                problem_type='classiication',
+                evaluation_metrics={
+                    "rootMeanSquaredError": 49.5,
+                    "meanAbsoluteError": 40.0,
+                    "meanAbsolutePercentageError: 28530.0,
+                }
+            )
+
+        Args:
+            problem_type (str):
+                Required. The type of prediction task your model is solving. One of
+                'regression', 'classification', 'forecasting', 'image_object_detection',
+                'text_extraction', 'text_sentiment', 'video_action_recognition',
+                or 'video_object_tracking'.
+            evaluation_metrics (Dict[str, Any]):
+                Required. A dictionary of the metrics to upload to your Model resource.
+                The metrics keys must match the metrics defined in the metrics schemas.
+            model_explanation (Dict[str, Any]):
+                Optional. The feature attributions to upload to your Model resource.
+        Returns:
+            model_evaluation.ModelEvaluation: Instantiated representation of the
+            ModelEvaluation resource.
+        """
+        if problem_type not in _PROBLEM_TYPE_TO_SCHEMA_URI.keys():
+            raise ValueError("The `problem_type` you provided is not supported.")
+
+        api_client = self._instantiate_client(self.location, self.credentials)
+
+        schema_uri = _PROBLEM_TYPE_TO_SCHEMA_URI[problem_type]
+
+        metrics_struct = Struct()
+
+        for k,v in evaluation_metrics.items():
+            metrics_struct[k] = v
+
+        # TODO: add support for passing model_explanation to metrics
+
+        formatted_metrics = {
+            'metrics_schema_uri': schema_uri,
+            'metrics': metrics_struct,
+        }
+
+        evaluation = api_client.import_model_evaluation(
+            parent=self.resource_name,
+            model_evaluation=formatted_metrics
+        )
+
+        self._gca_resource = evaluation
+
+        return model_evaluation.ModelEvaluation(
+            evaluation_name=self._gca_resource.name,
+            credentials=self.credentials,
+        )
