@@ -32,8 +32,8 @@ from google.cloud.aiplatform import base
 from google.cloud.aiplatform import models
 from google.cloud.aiplatform import model_evaluation
 
-from google.cloud.aiplatform_v1.services.model_service import (
-    client as model_service_client,
+from google.cloud.aiplatform.compat.services import (
+    model_service_client,
 )
 
 from google.cloud.aiplatform_v1.services.pipeline_service import (
@@ -46,7 +46,9 @@ from google.cloud.aiplatform_v1.types import (
 
 from google.cloud.aiplatform.compat.types import model as gca_model
 
-from google.cloud.aiplatform_v1.types import model_evaluation as gca_model_evaluation
+from google.cloud.aiplatform.compat.types import (
+    model_evaluation as gca_model_evaluation,
+)
 
 _TEST_PROJECT = "test-project"
 _TEST_LOCATION = "us-central1"
