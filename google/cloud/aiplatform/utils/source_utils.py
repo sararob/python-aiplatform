@@ -15,6 +15,7 @@
 #
 
 
+import setuptools
 import functools
 import os
 import pathlib
@@ -27,6 +28,9 @@ from typing import Optional, Sequence, Callable
 from google.auth import credentials as auth_credentials
 from google.cloud.aiplatform import base
 from google.cloud.aiplatform import utils
+import venv
+
+from numpy import source
 
 _LOGGER = base.Logger(__name__)
 
@@ -40,7 +44,16 @@ def _get_python_executable() -> str:
         EnvironmentError: If Python executable is not found.
     """
 
-    python_executable = sys.executable
+    if sys.executable is not None:
+        python_executable = sys.executable
+    else:
+        tempdir = tempfile.mkdtemp()
+
+        venv_dir = pathlib.Path(tempdir)
+        venv.create(venv_dir)
+        python_exe = str(venv_dir / "bin" / "python")
+        print(python_exe)
+        python_executable = python_exe
 
     if not python_executable:
         raise EnvironmentError("Cannot find Python executable for packaging.")
@@ -179,25 +192,35 @@ setup(
             # Copy script as module of python package.
             shutil.copy(self.script_path, script_out_path)
 
-        # Run setup.py to create the source distribution.
-        setup_cmd = [
-            _get_python_executable()
-        ] + self._SETUP_PY_SOURCE_DISTRIBUTION_CMD.split()
 
-        p = subprocess.Popen(
-            args=setup_cmd,
-            cwd=trainer_root_path,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+        # Initial work on using setuptools API instead of subprocess
+        from distutils.core import setup
+        from distutils.command.sdist import sdist
+
+        print(str(setup_py_path))
+
+        dist_dir = f"--dist-dir={package_directory + '/' + self._TRAINER_FOLDER + '/dist'}"
+
+        source_dist = setup(
+            name=self._ROOT_MODULE,
+            version=self._SETUP_PY_VERSION,
+            package_dir={'': package_directory + "/" + self._TRAINER_FOLDER},
+            script_name=str(setup_py_path),
+            script_args=["sdist", "--formats=gztar", dist_dir],
+            command_options={"cwd": trainer_root_path},
         )
-        output, error = p.communicate()
+        sdist(source_dist)
+
+        print(source_dist)
+
 
         # Raise informative error if packaging fails.
-        if p.returncode != 0:
-            raise RuntimeError(
-                "Packaging of training script failed with code %d\n%s \n%s"
-                % (p.returncode, output.decode(), error.decode())
-            )
+        # if p.returncode != 0:
+        #     raise RuntimeError(
+        #         "Packaging of training script failed with code %d\n%s \n%s"
+        #         % (p.returncode, output.decode(), error.decode())
+        #     )
+
 
         return str(source_distribution_path)
 
