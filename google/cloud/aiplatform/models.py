@@ -63,6 +63,10 @@ _SUPPORTED_MODEL_FILE_NAMES = [
     "saved_model.pbtxt",
 ]
 
+_SUPPORTED_EVAL_PREDICTION_TYPES = [
+    "classification",
+    "regression",
+]
 
 class Prediction(NamedTuple):
     """Prediction class envelopes returned Model predictions and the Model id.
@@ -3407,3 +3411,74 @@ class Model(base.VertexAiResourceNounWithFutureManager):
                 evaluation_name=evaluation_resource_name,
                 credentials=self.credentials,
             )
+
+    def evaluate(
+        self,
+        prediction_type: str,
+        target_column_name: str,
+        gcs_source_uris: str,
+        evaluation_staging_path: str,
+        instances_format: str,
+        evaluation_job_display_name: Optional[str] = None,
+        network: Optional[str] = None,
+        dataflow_service_account: Optional[str] = None,
+        dataflow_subnetwork: Optional[str] = None,
+        dataflow_use_public_ips: Optional[bool] = True,
+    ) -> model_evaluation.ModelEvaluationJob:
+        """Creates a model evaluation job running on Vertex Pipelines and returns the resulting
+        ModelEvaluationJob resource.
+        Example usage:
+            my_model = Model(
+                model_name="projects/123/locations/us-central1/models/456"
+            )
+            my_evaluation_job = my_model.evaluate(
+                gcs_source_uris=["gs://sdk-model-eval/my-prediction-data.csv"],
+                prediction_type="classification",
+                evaluation_staging_path="gs://my-staging-bucket/eval_pipeline_root",
+                class_names = ["0", "1"],
+                target_column_name="class",
+                instances_format="csv"
+            )
+        Args:
+            prediction_type (str):
+                Required. The problem type being addressed by this evaluation run. `classification` and `regression`
+                are the currently supported problem types.
+            target_column_name (str):
+                Required. The column name of the field containing the label for this prediction task.
+            gcs_source_uris (List[str]):
+                Required. A list of GCS filepaths containing the ground truth data to use for this evaluation job.
+                These files should contain your model's prediction column.
+            evaluation_staging_path (str): TODO: can we make this optional and default to the staging bucket from aiplatform.init?
+                Required. The GCS directory to use for staging files from this evaluation job.
+            instances_format (str):
+                The format of your
+            evaluation_job_display_name (Ostr):
+                Optional. The display name of your model evaluation job. This is what will be displayed in the Vertex Pipelines
+                console for this evaluation job. If not set, a display name will be generated automatically.
+            network (str):
+                The full name of the Compute Engine network to which the job
+                should be peered. For example, projects/12345/global/networks/myVPC.
+                Private services access must already be configured for the network.
+                If left unspecified, the job is not peered with any network.
+        Returns:
+            model_evaluation.ModelEvaluationJob: Instantiated representation of the
+            ModelEvaluationJob.
+        """
+
+        if prediction_type not in _SUPPORTED_EVAL_PREDICTION_TYPES:
+            raise ValueError("Please provide a supported model prediction type.")
+
+        return model_evaluation.ModelEvaluationJob.submit(
+            model_name=self.resource_name,
+            prediction_type=prediction_type,
+            target_column_name=target_column_name,
+            gcs_source_uris=gcs_source_uris,
+            pipeline_root=evaluation_staging_path,
+            instances_format=instances_format,
+            display_name=evaluation_job_display_name,
+            network=network,
+            dataflow_service_account=dataflow_service_account,
+            dataflow_subnetwork=dataflow_subnetwork,
+            dataflow_use_public_ips=dataflow_use_public_ips,
+            credentials=self.credentials,
+        )
