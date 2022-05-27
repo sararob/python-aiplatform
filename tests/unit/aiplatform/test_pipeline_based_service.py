@@ -231,7 +231,7 @@ def mock_pipeline_based_service_get():
         )
         yield mock_get_pipeline_based_service
 
-
+@pytest.mark.usefixtures("google_auth_mock")
 class TestPipelineBasedService:
     class FakePipelineBasedService(_VertexAiPipelineBasedService):
         _template_ref = _TEST_TEMPLATE_PATH

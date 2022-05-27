@@ -131,13 +131,11 @@ _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES = {
     "batch_predict_instances_format": "csv",
     "model_name": _TEST_MODEL_RESOURCE_NAME,
     "prediction_type": "classification",
+    "data_type": "tabular", 
     "project": _TEST_PROJECT,
     "location": _TEST_LOCATION,
     "root_dir": _TEST_GCS_BUCKET_NAME,
     "target_column_name": "predict_class",
-    "dataflow_service_account": _TEST_SERVICE_ACCOUNT,
-    "dataflow_subnetwork": "",
-    "dataflow_use_public_ips": True,
 }
 
 
@@ -155,9 +153,6 @@ _TEST_MODEL_EVAL_PIPELINE_SPEC = {
                 "location": {"type": "STRING"},
                 "root_dir": {"type": "STRING"},
                 "target_column_name": {"type": "STRING"},
-                "dataflow_service_account": {"type": "STRING"},
-                "dataflow_subnetwork": {"type": "STRING"},
-                "dataflow_use_public_ips": {"type": "BOOLEAN"},
             }
         },
     },
@@ -180,9 +175,6 @@ _TEST_INVALID_MODEL_EVAL_PIPELINE_SPEC = {
                 "location": {"type": "STRING"},
                 "root_dir": {"type": "STRING"},
                 "target_column_name": {"type": "STRING"},
-                "dataflow_service_account": {"type": "STRING"},
-                "dataflow_subnetwork": {"type": "STRING"},
-                "dataflow_use_public_ips": {"type": "BOOLEAN"},
             }
         },
     },
@@ -206,9 +198,6 @@ _TEST_MODEL_EVAL_PIPELINE_SPEC_JSON = json.dumps(
                     "location": {"type": "STRING"},
                     "root_dir": {"type": "STRING"},
                     "target_column_name": {"type": "STRING"},
-                    "dataflow_service_account": {"type": "STRING"},
-                    "dataflow_subnetwork": {"type": "STRING"},
-                    "dataflow_use_public_ips": {"type": "BOOLEAN"},
                 }
             },
         },
@@ -243,9 +232,6 @@ _TEST_INVALID_MODEL_EVAL_PIPELINE_SPEC_JSON = json.dumps(
                     "location": {"type": "STRING"},
                     "root_dir": {"type": "STRING"},
                     "target_column_name": {"type": "STRING"},
-                    "dataflow_service_account": {"type": "STRING"},
-                    "dataflow_subnetwork": {"type": "STRING"},
-                    "dataflow_use_public_ips": {"type": "BOOLEAN"},
                 }
             },
         },
@@ -468,7 +454,7 @@ def mock_model_eval_job_get():
         )
         yield mock_get_model_eval_job
 
-
+@pytest.mark.usefixtures("google_auth_mock")
 class TestModelEvaluation:
     def test_init_model_evaluation_with_only_resource_name(self, mock_model_eval_get):
         aiplatform.init(project=_TEST_PROJECT)
@@ -529,7 +515,7 @@ class TestModelEvaluation:
         with pytest.raises(NotImplementedError):
             my_eval.delete()
 
-
+@pytest.mark.usefixtures("google_auth_mock")
 class TestModelEvaluationJob:
     class FakeModelEvaluationJob(model_evaluation.ModelEvaluationJob):
         _template_ref = _TEST_TEMPLATE_PATH
@@ -620,6 +606,7 @@ class TestModelEvaluationJob:
             target_column_name=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "target_column_name"
             ],
+            data_type=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES["data_type"],
             display_name=_TEST_MODEL_EVAL_JOB_DISPLAY_NAME,
             gcs_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "batch_predict_gcs_source_uris"
@@ -629,9 +616,6 @@ class TestModelEvaluationJob:
             ],
             service_account=_TEST_SERVICE_ACCOUNT,
             network=_TEST_NETWORK,
-            dataflow_service_account=_TEST_SERVICE_ACCOUNT,
-            dataflow_use_public_ips=True,
-            dataflow_subnetwork="",
         )
 
         test_model_eval_job.wait()
