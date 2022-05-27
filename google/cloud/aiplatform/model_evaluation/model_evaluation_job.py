@@ -167,6 +167,8 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
             (ModelEvaluationJob): Instantiated represnetation of the model evaluation job.
         """
 
+        # TODO: determine the template to use based on the provided parameters.
+
         if not display_name:
             display_name = cls._generate_display_name()
 
