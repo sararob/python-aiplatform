@@ -94,14 +94,13 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
         target_column_name: str,
         gcs_source_uris: List[str],
         pipeline_root: str,
+        data_type: str,
+        generate_feature_attributions: Optional[bool] = False,
         instances_format: Optional[str] = "jsonl",
         display_name: Optional[str] = None,
         job_id: Optional[str] = None,
         service_account: Optional[str] = None,
         network: Optional[str] = None,
-        dataflow_service_account: Optional[str] = None,
-        dataflow_subnetwork: Optional[str] = None,
-        dataflow_use_public_ips: Optional[bool] = True,
         project: Optional[str] = None,
         location: Optional[str] = None,
         credentials: Optional[auth_credentials.Credentials] = None,
@@ -170,12 +169,6 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
 
         if not display_name:
             display_name = cls._generate_display_name()
-
-        if not dataflow_service_account:
-            dataflow_service_account = ""
-
-        if not dataflow_subnetwork:
-            dataflow_subnetwork = ""
 
         template_params = {
             "batch_predict_gcs_source_uris": gcs_source_uris,

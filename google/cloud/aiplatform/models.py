@@ -68,6 +68,11 @@ _SUPPORTED_EVAL_PREDICTION_TYPES = [
     "regression",
 ]
 
+_SUPPORTED_MODEL_EVAL_DATA_TYPES = [
+    "tabular",
+    "unstructured",
+]
+
 class Prediction(NamedTuple):
     """Prediction class envelopes returned Model predictions and the Model id.
 
@@ -3419,11 +3424,10 @@ class Model(base.VertexAiResourceNounWithFutureManager):
         gcs_source_uris: str,
         evaluation_staging_path: str,
         instances_format: str,
+        data_type: str,
+        generate_feature_attributions: Optional[bool] = False,
         evaluation_job_display_name: Optional[str] = None,
         network: Optional[str] = None,
-        dataflow_service_account: Optional[str] = None,
-        dataflow_subnetwork: Optional[str] = None,
-        dataflow_use_public_ips: Optional[bool] = True,
     ) -> model_evaluation.ModelEvaluationJob:
         """Creates a model evaluation job running on Vertex Pipelines and returns the resulting
         ModelEvaluationJob resource.
@@ -3451,8 +3455,12 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             evaluation_staging_path (str): TODO: can we make this optional and default to the staging bucket from aiplatform.init?
                 Required. The GCS directory to use for staging files from this evaluation job.
             instances_format (str):
-                The format of your
-            evaluation_job_display_name (Ostr):
+                Required. The format of your prediction data.
+            data_type (str):
+                Required. The type of data used to train your model. One of `tabular` or `unstructured`.
+            generate_feature_attributions (boolean):
+                Optional. Whether the model evaluation job should generate feature attributions. Defaults to False if not specified.
+            evaluation_job_display_name (str):
                 Optional. The display name of your model evaluation job. This is what will be displayed in the Vertex Pipelines
                 console for this evaluation job. If not set, a display name will be generated automatically.
             network (str):
@@ -3468,6 +3476,9 @@ class Model(base.VertexAiResourceNounWithFutureManager):
         if prediction_type not in _SUPPORTED_EVAL_PREDICTION_TYPES:
             raise ValueError("Please provide a supported model prediction type.")
 
+        if data_type not in _SUPPORTED_MODEL_EVAL_DATA_TYPES:
+            raise ValueError("Please provide a supported data type.")
+
         return model_evaluation.ModelEvaluationJob.submit(
             model_name=self.resource_name,
             prediction_type=prediction_type,
@@ -3475,10 +3486,9 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             gcs_source_uris=gcs_source_uris,
             pipeline_root=evaluation_staging_path,
             instances_format=instances_format,
+            data_type=data_type,
+            generate_feature_attributions=generate_feature_attributions,
             display_name=evaluation_job_display_name,
             network=network,
-            dataflow_service_account=dataflow_service_account,
-            dataflow_subnetwork=dataflow_subnetwork,
-            dataflow_use_public_ips=dataflow_use_public_ips,
             credentials=self.credentials,
         )
