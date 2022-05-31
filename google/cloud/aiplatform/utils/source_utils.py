@@ -204,10 +204,10 @@ setup(
         source_dist = setup(
             name=self._ROOT_MODULE,
             version=self._SETUP_PY_VERSION,
-            package_dir={'': package_directory + "/" + self._TRAINER_FOLDER},
-            script_name=str(setup_py_path),
+            package_dir={'': package_directory + "/" + self._TRAINER_FOLDER + "/" + self._ROOT_MODULE},
+            # script_name=str(setup_py_path),
             script_args=["sdist", "--formats=gztar", dist_dir],
-            command_options={"cwd": trainer_root_path},
+            # command_options={"cwd": trainer_root_path},
         )
         sdist(source_dist)
 
