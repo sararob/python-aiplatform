@@ -3505,3 +3505,80 @@ class Model(base.VertexAiResourceNounWithFutureManager):
                 evaluation_name=evaluation_resource_name,
                 credentials=self.credentials,
             )
+
+    def evaluate(
+        self,
+        prediction_type: str,
+        target_column_name: str,
+        gcs_source_uris: str,
+        evaluation_staging_path: str,
+        instances_format: str,
+        data_type: str,
+        generate_feature_attributions: Optional[bool] = False,
+        evaluation_job_display_name: Optional[str] = None,
+        network: Optional[str] = None,
+    ) -> model_evaluation.ModelEvaluationJob:
+        """Creates a model evaluation job running on Vertex Pipelines and returns the resulting
+        ModelEvaluationJob resource.
+        Example usage:
+            my_model = Model(
+                model_name="projects/123/locations/us-central1/models/456"
+            )
+            my_evaluation_job = my_model.evaluate(
+                gcs_source_uris=["gs://sdk-model-eval/my-prediction-data.csv"],
+                prediction_type="classification",
+                evaluation_staging_path="gs://my-staging-bucket/eval_pipeline_root",
+                class_names = ["0", "1"],
+                target_column_name="class",
+                instances_format="csv"
+            )
+        Args:
+            prediction_type (str):
+                Required. The problem type being addressed by this evaluation run. `classification` and `regression`
+                are the currently supported problem types.
+            target_column_name (str):
+                Required. The column name of the field containing the label for this prediction task.
+            gcs_source_uris (List[str]):
+                Required. A list of GCS filepaths containing the ground truth data to use for this evaluation job.
+                These files should contain your model's prediction column.
+            evaluation_staging_path (str): TODO: can we make this optional and default to the staging bucket from aiplatform.init?
+                Required. The GCS directory to use for staging files from this evaluation job.
+            instances_format (str):
+                Required. The format of your prediction data.
+            data_type (str):
+                Required. The type of data used to train your model. One of `tabular` or `unstructured`.
+            generate_feature_attributions (boolean):
+                Optional. Whether the model evaluation job should generate feature attributions. Defaults to False if not specified.
+            evaluation_job_display_name (str):
+                Optional. The display name of your model evaluation job. This is what will be displayed in the Vertex Pipelines
+                console for this evaluation job. If not set, a display name will be generated automatically.
+            network (str):
+                The full name of the Compute Engine network to which the job
+                should be peered. For example, projects/12345/global/networks/myVPC.
+                Private services access must already be configured for the network.
+                If left unspecified, the job is not peered with any network.
+        Returns:
+            model_evaluation.ModelEvaluationJob: Instantiated representation of the
+            ModelEvaluationJob.
+        """
+
+        if prediction_type not in _SUPPORTED_EVAL_PREDICTION_TYPES:
+            raise ValueError("Please provide a supported model prediction type.")
+
+        if data_type not in _SUPPORTED_MODEL_EVAL_DATA_TYPES:
+            raise ValueError("Please provide a supported data type.")
+
+        return model_evaluation.ModelEvaluationJob.submit(
+            model_name=self.resource_name,
+            prediction_type=prediction_type,
+            target_column_name=target_column_name,
+            gcs_source_uris=gcs_source_uris,
+            pipeline_root=evaluation_staging_path,
+            instances_format=instances_format,
+            data_type=data_type,
+            generate_feature_attributions=generate_feature_attributions,
+            display_name=evaluation_job_display_name,
+            network=network,
+            credentials=self.credentials,
+        )
+        
