@@ -150,6 +150,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
     def _create_and_submit_pipeline_job(
         cls,
         template_params: Dict[str, Any],
+        template_path: str,
         pipeline_root: str,
         display_name: Optional[str] = None,
         job_id: Optional[str] = None,
@@ -163,6 +164,8 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         Args:
             template_params (Dict[str, Any]):
                 Required. The parameters to pass to the given pipeline template.
+            template_params (Dict[str, Any]):
+                Required. The path of the pipeline template to use for this pipeline run.
             pipeline_root (str)
                 Required. The GCS directory to store the pipeline run output.
             display_name (str)

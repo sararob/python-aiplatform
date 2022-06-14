@@ -31,15 +31,18 @@ from google.cloud.aiplatform.compat.types import (
 
 _LOGGER = base.Logger(__name__)
 
-# TODO: this is a path to the current eval template, update with the final one and decide where it'll be stored (ideally GCS)
-_MODEL_EVAL_PIPELINE_TEMPLATE = (
-    "gs://sara-vertex-demos-bucket/model-eval/evaluation_default_pipeline.json"
-)
+# TODO: update this with the final gcs pipeline template urls
+_MODEL_EVAL_PIPELINE_TEMPLATES = {
+    "tabular_without_feature_attribution": "gs://sara-vertex-demos-bucket/model-eval/evaluation_default_pipeline.json",
+    "tabular_with_feature_attribution": "TODO",
+    "unstructured_without_feature_attribution": "TODO",
+    "unstructured_with_feature_attribution": "TODO",
+}
 
 
 class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
 
-    _template_ref = _MODEL_EVAL_PIPELINE_TEMPLATE
+    _template_ref = _MODEL_EVAL_PIPELINE_TEMPLATES
 
     @property
     def _metadata_output_artifact(self) -> Optional[str]:
@@ -85,6 +88,18 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
             location=location,
             credentials=credentials,
         )
+
+    @staticmethod
+    def _get_template_url(self, data_type, feature_attributions) -> str:
+
+        template_type = data_type
+
+        if feature_attributions:
+            template_type += "_with_feature_attribution"
+        else:
+            template_type += "_without_feature_attribution"
+
+        return self._template_ref[template_type]
 
     @classmethod
     def submit(
@@ -185,6 +200,7 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
 
         eval_pipeline_run = cls._create_and_submit_pipeline_job(
             template_params=template_params,
+            template_path=cls._get_template_url(data_type, generate_feature_attributions),
             pipeline_root=pipeline_root,
             display_name=display_name,
             job_id=job_id,

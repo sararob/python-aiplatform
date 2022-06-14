@@ -64,6 +64,15 @@ _SUPPORTED_MODEL_FILE_NAMES = [
     "saved_model.pbtxt",
 ]
 
+_SUPPORTED_EVAL_PREDICTION_TYPES = [
+    "classification",
+    "regression",
+]
+
+_SUPPORTED_MODEL_EVAL_DATA_TYPES = [
+    "tabular",
+    "unstructured",
+]
 
 class Prediction(NamedTuple):
     """Prediction class envelopes returned Model predictions and the Model id.
@@ -3581,4 +3590,3 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             network=network,
             credentials=self.credentials,
         )
-        
