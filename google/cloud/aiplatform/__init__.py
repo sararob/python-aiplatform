@@ -55,7 +55,7 @@ from google.cloud.aiplatform.jobs import (
     HyperparameterTuningJob,
 )
 from google.cloud.aiplatform.pipeline_jobs import PipelineJob
-from google.cloud.aiplatform._pipeline_based_service import (
+from google.cloud.aiplatform._pipeline_based_service.pipeline_based_service import (
     _VertexAiPipelineBasedService,
 )
 from google.cloud.aiplatform.tensorboard import (

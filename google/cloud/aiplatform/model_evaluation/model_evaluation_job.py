@@ -21,7 +21,7 @@ from google.auth import credentials as auth_credentials
 
 from google.cloud.aiplatform import base
 from google.cloud.aiplatform import initializer
-from google.cloud.aiplatform import _pipeline_based_service
+from google.cloud.aiplatform._pipeline_based_service import pipeline_based_service
 from google.cloud.aiplatform import model_evaluation
 from google.cloud.aiplatform import pipeline_jobs
 
@@ -29,17 +29,19 @@ from google.cloud.aiplatform.compat.types import (
     pipeline_state_v1 as gca_pipeline_state_v1,
 )
 
+import json
+
 _LOGGER = base.Logger(__name__)
-# TODO: update this with the final gcs pipeline template urls
+# TODO: update this with the final gcs pipeline template urls and add templates for unstructured data
 _MODEL_EVAL_PIPELINE_TEMPLATES = {
     "tabular_without_feature_attribution": "gs://vertex-evaluation-templates/20220615_0621/evaluation_default_pipeline.json",
     "tabular_with_feature_attribution": "gs://vertex-evaluation-templates/20220615_0621/evaluation_feature_attribution_pipeline.json",
-    "unstructured_without_feature_attribution": "TODO",
-    "unstructured_with_feature_attribution": "TODO",
+    # "unstructured_without_feature_attribution": "TODO",
+    # "unstructured_with_feature_attribution": "TODO",
 }
 
 
-class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
+class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
 
     _template_ref = _MODEL_EVAL_PIPELINE_TEMPLATES
 
@@ -212,7 +214,7 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
 
         return eval_pipeline_run
 
-    # TODO: still waiting on consensus for what this returns, either ModelEvaluation or MLMD artifact
+    # TODO: use the MLMD resource to get the ModelEval resource name and instantiate
     def get_model_evaluation(
         self,
         display_name: str,
@@ -242,16 +244,19 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
             )
 
             # TODO: set ModelEvaluation properties for BP job, eval metrics
-            for component in self._gca_resource.job_detail.task_details:
-                for key in component.outputs:
-                    if key == "batchpredictionjob":
-                        batch_pred_mlmd_uri = component.outputs[key].artifacts[0].name
-                        batch_pred_resource_uri = (
-                            component.outputs[key].artifacts[0].metadata["resourceName"]
-                        )
-                    if key == "evaluation_metrics":
-                        eval_metrics_mlmd_uri = component.outputs[key].artifacts[0].name
-                        # eval_metrics_resource_uri = component.outputs[key].artifacts[0].metadata['resourceName'] # not available yet
+            # print(self.resource_name, 'yo')
+            # print(self.backing_pipeline_job.task_details, 'hey')
+            # completed_pipeline = 
+            for component in self.backing_pipeline_job.task_details:
+                for metadata_key in (component.execution.metadata):
+                    if metadata_key == "output:gcp_resources" and json.loads(component.execution.metadata[metadata_key])["resources"][0]["resourceType"] == "ModelEvaluation":
+                        print((json.loads(component.execution.metadata[metadata_key])))
+
+                        eval_resource_name = json.loads(component.execution.metadata[metadata_key])["resources"][0]["resourceUri"]
+                        print(eval_resource_name.split("v1"))
+
+                        # return model_evaluation.ModelEvaluation(evaluation_name=eval_resource_name)
+                        
 
     def wait(self):
         """Wait for thie PipelineJob to complete."""
