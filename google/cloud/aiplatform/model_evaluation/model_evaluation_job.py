@@ -89,7 +89,7 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
         )
 
     @staticmethod
-    def _get_template_url(self, data_type, feature_attributions) -> str:
+    def _get_template_url(data_type, feature_attributions) -> str:
 
         template_type = data_type
 
@@ -98,7 +98,7 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
         else:
             template_type += "_without_feature_attribution"
 
-        return self._template_ref[template_type]
+        return ModelEvaluationJob._template_ref[template_type]
 
     @classmethod
     def submit(
@@ -197,7 +197,9 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
 
         eval_pipeline_run = cls._create_and_submit_pipeline_job(
             template_params=template_params,
-            template_path=cls._get_template_url(data_type, generate_feature_attributions),
+            template_path=cls._get_template_url(
+                data_type, generate_feature_attributions
+            ),
             pipeline_root=pipeline_root,
             display_name=display_name,
             job_id=job_id,

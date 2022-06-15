@@ -25,6 +25,7 @@ from google.cloud.aiplatform.utils import yaml_utils
 
 from google.cloud.aiplatform.compat.types import (
     pipeline_job_v1 as gca_pipeline_job_v1,
+    pipeline_state as gca_pipeline_state,
 )
 
 from typing import (
@@ -35,6 +36,15 @@ from typing import (
 )
 
 _LOGGER = base.Logger(__name__)
+
+_PIPELINE_COMPLETE_STATES = set(
+    [
+        gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED,
+        gca_pipeline_state.PipelineState.PIPELINE_STATE_FAILED,
+        gca_pipeline_state.PipelineState.PIPELINE_STATE_CANCELLED,
+        gca_pipeline_state.PipelineState.PIPELINE_STATE_PAUSED,
+    ]
+)
 
 
 class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
@@ -48,7 +58,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
     _parse_resource_name_method = "parse_pipeline_job_path"
     _format_resource_name_method = "pipeline_job_path"
 
-    _valid_done_states = pipeline_jobs._PIPELINE_COMPLETE_STATES
+    _valid_done_states = _PIPELINE_COMPLETE_STATES
 
     @property
     @classmethod
@@ -58,7 +68,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         an identifier for that template and the value is the url of that pipeline template.
 
         For example: {"tabular_classification": "gs://path/to/tabular/pipeline/template.json"}
-        
+
         """
         pass
 
@@ -69,7 +79,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         pass
 
     @property
-    def backing_pipeline_job(self) -> pipeline_jobs.PipelineJob:
+    def backing_pipeline_job(self) -> "pipeline_jobs.PipelineJob":
         """The PipelineJob associated with the resource."""
         return pipeline_jobs.PipelineJob.get(resource_name=self.resource_name)
 
@@ -87,14 +97,14 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         return None
 
     def _validate_pipeline_template_matches_service(
-        self, pipeline_job: pipeline_jobs.PipelineJob
+        self, pipeline_job: "pipeline_jobs.PipelineJob"
     ):
         """Utility function to validate that the passed in pipeline ID matches
         the template of the Pipeline Based Service.
         Raises:
             ValueError: if the provided pipeline ID doesn't match the pipeline service.
         """
-        
+
         pipeline_match = False
 
         for pipeline_template in self._template_ref.values():
@@ -218,7 +228,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
 
         service_pipeline_job = pipeline_jobs.PipelineJob(
             display_name=display_name,
-            template_path=self._template_ref,
+            template_path=template_path,
             job_id=job_id,
             pipeline_root=pipeline_root,
             parameter_values=template_params,
@@ -242,7 +252,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         project: Optional[str] = None,
         location: Optional[str] = None,
         credentials: Optional[str] = None,
-    ) -> List[pipeline_jobs.PipelineJob]:
+    ) -> List["pipeline_jobs.PipelineJob"]:
         """Lists all PipelineJob resources associated with this Pipeline Based service.
         Args:
             project (str):

@@ -131,7 +131,7 @@ _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES = {
     "batch_predict_instances_format": "csv",
     "model_name": _TEST_MODEL_RESOURCE_NAME,
     "prediction_type": "classification",
-    "data_type": "tabular", 
+    "data_type": "tabular",
     "project": _TEST_PROJECT,
     "location": _TEST_LOCATION,
     "root_dir": _TEST_GCS_BUCKET_NAME,
@@ -252,6 +252,7 @@ _TEST_INVALID_MODEL_EVAL_PIPELINE_JOB = json.dumps(
 
 _TEST_EVAL_RESOURCE_NAME = f"projects/{_TEST_ID}/locations/{_TEST_LOCATION}/models/{_TEST_ID}/evaluations/{_TEST_ID}"
 
+
 @pytest.fixture
 def get_model_mock():
     with mock.patch.object(
@@ -290,6 +291,8 @@ def mock_model_eval_get():
             metrics=_TEST_MODEL_EVAL_METRICS,
         )
         yield mock_get_model_eval
+
+
 @pytest.fixture
 def mock_pipeline_service_create():
     with mock.patch.object(
@@ -451,6 +454,7 @@ def mock_model_eval_job_get():
         )
         yield mock_get_model_eval_job
 
+
 @pytest.mark.usefixtures("google_auth_mock")
 class TestModelEvaluation:
     def test_init_model_evaluation_with_only_resource_name(self, mock_model_eval_get):
@@ -511,6 +515,7 @@ class TestModelEvaluation:
 
         with pytest.raises(NotImplementedError):
             my_eval.delete()
+
 
 @pytest.mark.usefixtures("google_auth_mock")
 class TestModelEvaluationJob:

@@ -74,6 +74,7 @@ _SUPPORTED_MODEL_EVAL_DATA_TYPES = [
     "unstructured",
 ]
 
+
 class Prediction(NamedTuple):
     """Prediction class envelopes returned Model predictions and the Model id.
 
