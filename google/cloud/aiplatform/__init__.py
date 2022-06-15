@@ -45,13 +45,19 @@ from google.cloud.aiplatform.matching_engine import (
 from google.cloud.aiplatform import metadata
 from google.cloud.aiplatform.models import Endpoint
 from google.cloud.aiplatform.models import Model
-from google.cloud.aiplatform.model_evaluation import ModelEvaluation
+from google.cloud.aiplatform.model_evaluation import (
+    ModelEvaluation,
+    ModelEvaluationJob
+)
 from google.cloud.aiplatform.jobs import (
     BatchPredictionJob,
     CustomJob,
     HyperparameterTuningJob,
 )
 from google.cloud.aiplatform.pipeline_jobs import PipelineJob
+from google.cloud.aiplatform._pipeline_based_service.pipeline_based_service import (
+    _VertexAiPipelineBasedService
+)
 from google.cloud.aiplatform.tensorboard import (
     Tensorboard,
     TensorboardExperiment,
@@ -135,6 +141,7 @@ __all__ = (
     "HyperparameterTuningJob",
     "Model",
     "ModelEvaluation",
+    "ModelEvaluationJob",
     "PipelineJob",
     "SequenceToSequencePlusForecastingTrainingJob",
     "TabularDataset",
@@ -144,5 +151,6 @@ __all__ = (
     "TensorboardTimeSeries",
     "TextDataset",
     "TimeSeriesDataset",
+    "_VertexAiPipelineBasedService",
     "VideoDataset",
 )

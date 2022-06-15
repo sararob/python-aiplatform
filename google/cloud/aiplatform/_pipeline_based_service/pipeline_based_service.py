@@ -69,7 +69,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         pass
 
     @property
-    def backing_pipeline_job(self) -> pipeline_jobs.PipelineJob:
+    def backing_pipeline_job(self) -> "pipeline_jobs.PipelineJob":
         """The PipelineJob associated with the resource."""
         return pipeline_jobs.PipelineJob.get(resource_name=self.resource_name)
 

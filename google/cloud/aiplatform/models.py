@@ -3526,7 +3526,7 @@ class Model(base.VertexAiResourceNounWithFutureManager):
         generate_feature_attributions: Optional[bool] = False,
         evaluation_job_display_name: Optional[str] = None,
         network: Optional[str] = None,
-    ) -> model_evaluation.ModelEvaluationJob:
+    ) -> "model_evaluation.ModelEvaluationJob":
         """Creates a model evaluation job running on Vertex Pipelines and returns the resulting
         ModelEvaluationJob resource.
         Example usage:
