@@ -47,7 +47,7 @@ from google.cloud.aiplatform.models import Endpoint
 from google.cloud.aiplatform.models import Model
 from google.cloud.aiplatform.model_evaluation import (
     ModelEvaluation,
-    ModelEvaluationJob
+    ModelEvaluationJob,
 )
 from google.cloud.aiplatform.jobs import (
     BatchPredictionJob,
@@ -55,8 +55,8 @@ from google.cloud.aiplatform.jobs import (
     HyperparameterTuningJob,
 )
 from google.cloud.aiplatform.pipeline_jobs import PipelineJob
-from google.cloud.aiplatform._pipeline_based_service.pipeline_based_service import (
-    _VertexAiPipelineBasedService
+from google.cloud.aiplatform._pipeline_based_service import (
+    _VertexAiPipelineBasedService,
 )
 from google.cloud.aiplatform.tensorboard import (
     Tensorboard,

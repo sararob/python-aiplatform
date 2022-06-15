@@ -30,7 +30,6 @@ from google.cloud.aiplatform.compat.types import (
 )
 
 _LOGGER = base.Logger(__name__)
-
 # TODO: update this with the final gcs pipeline template urls
 _MODEL_EVAL_PIPELINE_TEMPLATES = {
     "tabular_without_feature_attribution": "gs://vertex-evaluation-templates/20220615_0621/evaluation_default_pipeline.json",
