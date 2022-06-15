@@ -53,8 +53,13 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
     @property
     @classmethod
     @abc.abstractmethod
-    def _template_ref(self) -> str:
-        """The pipeline template URL for this service."""
+    def _template_ref(self) -> Dict[str, str]:
+        """A dictionary of the pipeline template URLs for this servicewhere the key is
+        an identifier for that template and the value is the url of that pipeline template.
+
+        For example: {"tabular_classification": "gs://path/to/tabular/pipeline/template.json"}
+        
+        """
         pass
 
     @property
@@ -89,13 +94,20 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         Raises:
             ValueError: if the provided pipeline ID doesn't match the pipeline service.
         """
-        # TODO: should this validate the whole pipelineSpec or just the components level?
-        service_pipeline_json = yaml_utils.load_yaml(self._template_ref)[
-            "pipelineSpec"
-        ]["components"]
-        current_pipeline_json = pipeline_job.to_dict()["pipelineSpec"]["components"]
+        
+        pipeline_match = False
 
-        if current_pipeline_json != service_pipeline_json:
+        for pipeline_template in self._template_ref.values():
+            # TODO: should this validate the whole pipelineSpec or just the components level?
+            service_pipeline_json = yaml_utils.load_yaml(pipeline_template)[
+                "pipelineSpec"
+            ]["components"]
+            current_pipeline_json = pipeline_job.to_dict()["pipelineSpec"]["components"]
+
+            if service_pipeline_json == current_pipeline_json:
+                pipeline_match = True
+
+        if not pipeline_match:
             raise ValueError(
                 f"The provided pipeline template is not compatible with {self.__class__.__name__}"
             )

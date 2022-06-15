@@ -33,8 +33,8 @@ _LOGGER = base.Logger(__name__)
 
 # TODO: update this with the final gcs pipeline template urls
 _MODEL_EVAL_PIPELINE_TEMPLATES = {
-    "tabular_without_feature_attribution": "gs://sara-vertex-demos-bucket/model-eval/evaluation_default_pipeline.json",
-    "tabular_with_feature_attribution": "TODO",
+    "tabular_without_feature_attribution": "gs://vertex-evaluation-templates/20220615_0621/evaluation_default_pipeline.json",
+    "tabular_with_feature_attribution": "gs://vertex-evaluation-templates/20220615_0621/evaluation_feature_attribution_pipeline.json",
     "unstructured_without_feature_attribution": "TODO",
     "unstructured_with_feature_attribution": "TODO",
 }
@@ -181,8 +181,6 @@ class ModelEvaluationJob(_pipeline_based_service._VertexAiPipelineBasedService):
         Returns:
             (ModelEvaluationJob): Instantiated represnetation of the model evaluation job.
         """
-
-        # TODO: determine the template to use based on the provided parameters.
 
         if not display_name:
             display_name = cls._generate_display_name()
