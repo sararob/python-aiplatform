@@ -35,6 +35,7 @@ from google.cloud.aiplatform import model_evaluation
 from google.cloud.aiplatform.compat.services import (
     model_service_client,
 )
+from google.cloud.aiplatform.model_evaluation import model_evaluation_job
 
 from google.cloud.aiplatform_v1.services.pipeline_service import (
     client as pipeline_service_client_v1,
@@ -132,7 +133,7 @@ _TEST_INVALID_PIPELINE_JOB_NAME = (
 _TEST_MODEL_EVAL_JOB_DISPLAY_NAME = "test-eval-job"
 
 _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES = {
-    "batch_predict_gcs_source_uris": ['gs://my-bucket/my-prediction-data.csv'],
+    "batch_predict_gcs_source_uris": "[\"gs://my-bucket/my-prediction-data.csv\"]",
     "batch_predict_instances_format": "csv",
     "model_name": _TEST_MODEL_RESOURCE_NAME,
     "prediction_type": "classification",
@@ -199,7 +200,7 @@ _TEST_INVALID_MODEL_EVAL_PIPELINE_SPEC = {
         "inputDefinitions": {
             "parameters": {
                 "batch_predict_gcs_source_uris": {"type": "STRING"},
-                "batch_predict_instances_format": {"type": "STRING"},
+                # "batch_predict_instances_format": {"type": "STRING"},
                 "model_name": {"type": "STRING"},
                 "prediction_type": {"type": "STRING"},
                 "project": {"type": "STRING"},
@@ -231,7 +232,7 @@ _TEST_INVALID_MODEL_EVAL_PIPELINE_SPEC_JSON = json.dumps(
             "inputDefinitions": {
                 "parameters": {
                     "batch_predict_gcs_source_uris": {"type": "STRING"},
-                    "batch_predict_instances_format": {"type": "STRING"},
+                    # "batch_predict_instances_format": {"type": "STRING"},
                     "model_name": {"type": "STRING"},
                     "prediction_type": {"type": "STRING"},
                     "project": {"type": "STRING"},
@@ -525,8 +526,6 @@ class TestModelEvaluation:
 
 @pytest.mark.usefixtures("google_auth_mock")
 class TestModelEvaluationJob:
-    class FakeModelEvaluationJob(model_evaluation.ModelEvaluationJob):
-        _template_ref = _TEST_TEMPLATE_REF
 
     @pytest.mark.parametrize(
         "job_spec",
@@ -544,7 +543,7 @@ class TestModelEvaluationJob:
     ):
         aiplatform.init(project=_TEST_PROJECT)
 
-        self.FakeModelEvaluationJob(evaluation_pipeline_run=_TEST_PIPELINE_JOB_NAME)
+        model_evaluation_job.ModelEvaluationJob(evaluation_pipeline_run=_TEST_PIPELINE_JOB_NAME)
 
         mock_model_eval_job_get.assert_called_once_with(
             name=_TEST_PIPELINE_JOB_NAME, retry=base._DEFAULT_RETRY
@@ -566,11 +565,11 @@ class TestModelEvaluationJob:
     ):
         aiplatform.init(project=_TEST_PROJECT)
 
-        # _template_ref should be a dict, not a string
-        self.FakeModelEvaluationJob._template_ref = _TEST_TEMPLATE_PATH
+        # this tests that _template_ref is a Dict and is not a string with the template path
+        model_evaluation_job.ModelEvaluationJob._template_ref = _TEST_TEMPLATE_PATH
 
         with pytest.raises(AttributeError):
-            self.FakeModelEvaluationJob(evaluation_pipeline_run=_TEST_PIPELINE_JOB_NAME)
+            model_evaluation_job.ModelEvaluationJob(evaluation_pipeline_run=_TEST_PIPELINE_JOB_NAME)
 
     @pytest.mark.parametrize(
         "job_spec",
@@ -587,8 +586,11 @@ class TestModelEvaluationJob:
         mock_model_eval_job_create,
     ):
         aiplatform.init(project=_TEST_PROJECT)
+
+        model_evaluation_job.ModelEvaluationJob._template_ref = _TEST_TEMPLATE_REF
+
         with pytest.raises(ValueError):
-            self.FakeModelEvaluationJob(evaluation_pipeline_run=_TEST_PIPELINE_JOB_NAME)
+            model_evaluation_job.ModelEvaluationJob(evaluation_pipeline_run=_TEST_PIPELINE_JOB_NAME)
 
     def test_init_model_evaluation_job_with_invalid_pipeline_job_name_raises(
         self,
@@ -626,7 +628,7 @@ class TestModelEvaluationJob:
             staging_bucket=_TEST_GCS_BUCKET_NAME,
         )
 
-        test_model_eval_job = self.FakeModelEvaluationJob.submit(
+        test_model_eval_job = model_evaluation_job.ModelEvaluationJob.submit(
             model_name=_TEST_MODEL_RESOURCE_NAME,
             prediction_type=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "prediction_type"

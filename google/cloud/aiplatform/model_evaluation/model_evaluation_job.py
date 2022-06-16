@@ -243,7 +243,6 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
                 "Your evaluation job ran successfully. Creating Model Evaluation resource..."
             )
 
-            # TODO: set ModelEvaluation properties for BP job, eval metrics?
             for component in self.backing_pipeline_job.task_details:
                 for metadata_key in component.execution.metadata:
                     if (metadata_key == "output:gcp_resources" and json.loads(component.execution.metadata[metadata_key])["resources"][0]["resourceType"] == "ModelEvaluation"):

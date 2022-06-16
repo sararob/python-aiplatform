@@ -52,6 +52,7 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
         Returns:
             The pipeline job ID if this evaluation ran from a managed pipeline or None.
         """
+        # TODO: implement this when metadata is available in the gca_resource
         # if self._gca_resource.metadata["pipeline_job_id"]:
         #     return self._gca_resource.metadata["pipeline_job_id"]
         raise NotImplementedError
@@ -63,6 +64,7 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
         Returns:
             An instantiated representation of the Batch Prediction Job if it exists.
         """
+        # TODO: implement when self.backing_pipeline_job is available
         raise NotImplementedError
 
     @property
@@ -72,7 +74,8 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
         Returns:
             The MLMD uri string if this Model Evaluation was created from a pipeline run.
         """
-        return self._gca_resource.metadata
+        # TODO: implement when self.backing_pipeline_job is available
+        raise NotImplementedError
 
     def __init__(
         self,
