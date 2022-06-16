@@ -22,7 +22,7 @@ from google.cloud.aiplatform import utils
 from google.cloud.aiplatform import models
 from google.protobuf import struct_pb2
 
-from typing import Optional
+from typing import Dict, Optional
 
 
 class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
@@ -36,7 +36,7 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
     _format_resource_name_method = "model_evaluation_path"
 
     @property
-    def metrics(self) -> Optional[struct_pb2.Value]:
+    def metrics(self) -> Optional[Dict]:
         """Gets the evaluation metrics from the Model Evaluation.
         Returns:
             A dict with model metrics created from the Model Evaluation or
@@ -52,8 +52,9 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
         Returns:
             The pipeline job ID if this evaluation ran from a managed pipeline or None.
         """
-        if self._gca_resource.metadata["pipeline_job_id"]:
-            return self._gca_resource.metadata["pipeline_job_id"]
+        # if self._gca_resource.metadata["pipeline_job_id"]:
+        #     return self._gca_resource.metadata["pipeline_job_id"]
+        raise NotImplementedError
 
     @property
     def batch_prediction_job(self) -> Optional[jobs.BatchPredictionJob]:

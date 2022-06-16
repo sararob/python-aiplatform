@@ -3531,18 +3531,26 @@ class Model(base.VertexAiResourceNounWithFutureManager):
     ) -> "model_evaluation.ModelEvaluationJob":
         """Creates a model evaluation job running on Vertex Pipelines and returns the resulting
         ModelEvaluationJob resource.
+
         Example usage:
             my_model = Model(
                 model_name="projects/123/locations/us-central1/models/456"
             )
+
             my_evaluation_job = my_model.evaluate(
-                gcs_source_uris=["gs://sdk-model-eval/my-prediction-data.csv"],
                 prediction_type="classification",
+                target_column_name="type",
+                gcs_source_uris=["gs://sdk-model-eval/my-prediction-data.csv"],
                 evaluation_staging_path="gs://my-staging-bucket/eval_pipeline_root",
-                class_names = ["0", "1"],
-                target_column_name="class",
                 instances_format="csv"
             )
+
+            my_evaluation_job.wait()
+
+            my_evaluation = my_evaluation_job.get_model_evaluation()
+
+            my_evaluation.metrics
+    
         Args:
             prediction_type (str):
                 Required. The problem type being addressed by this evaluation run. `classification` and `regression`

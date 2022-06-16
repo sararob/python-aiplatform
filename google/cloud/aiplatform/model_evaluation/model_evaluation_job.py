@@ -33,11 +33,11 @@ import json
 
 _LOGGER = base.Logger(__name__)
 
-# TODO: update this with the final gcs pipeline template urls and
-# add templates for unstructured data when they are available
+# TODO: update this with the final gcs pipeline template urls and add templates for unstructured data when they are available
+
 _MODEL_EVAL_PIPELINE_TEMPLATES = {
-    "tabular_without_feature_attribution": "gs://vertex-evaluation-templates/20220615_0621/evaluation_default_pipeline.json",
-    "tabular_with_feature_attribution": "gs://vertex-evaluation-templates/20220615_0621/evaluation_feature_attribution_pipeline.json",
+    "tabular_without_feature_attribution": "gs://vertex-evaluation-templates/20220616_2055/evaluation_tabular_pipeline.json",
+    "tabular_with_feature_attribution": "gs://vertex-evaluation-templates/20220616_2055/evaluation_tabular_feature_attribution_pipeline.json",
     # "unstructured_without_feature_attribution": "TODO",
     # "unstructured_with_feature_attribution": "TODO",
 }
@@ -47,13 +47,12 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
 
     _template_ref = _MODEL_EVAL_PIPELINE_TEMPLATES
 
-    # TODO: update this based on the latest template
     @property
     def _metadata_output_artifact(self) -> Optional[str]:
         """The resource uri for the ML Metadata output artifact from the evaluation component of the Model Evaluation pipeline"""
         if self.state == gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED:
             for task in self.backing_pipeline_job._gca_resource.job_detail.task_details:
-                if task.task_name == "model-evaluation":
+                if task.task_name.startswith("model-evaluation") and "evaluation_metrics" in task.outputs:
                     return task.outputs["evaluation_metrics"].artifacts[0].name
 
     def __init__(
@@ -126,18 +125,19 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
     ) -> "ModelEvaluationJob":
         """Submits a Model Evaluation Job using aiplatform.PipelineJob and returns
         the ModelEvaluationJob resource.
+
         Example usage:
         my_evaluation = ModelEvaluationJob.submit(
-            model=aiplatform.Model(model_name="..."),
+            model="projects/123/locations/us-central1/models/456",
             prediction_type="classification",
             pipeline_root="gs://my-pipeline-bucket/runpath",
             gcs_source_uris=["gs://test-prediction-data"],
-            class_names=["cat", "dog"],
-            target_column_name=["animal_type"],
+            target_column_name=["prediction_class"],
             instances_format="jsonl",
         )
+
         my_evaluation = ModelEvaluationJob.submit(
-            model=aiplatform.Model(model_name="..."),
+            model="projects/123/locations/us-central1/models/456",
             prediction_type="regression",
             pipeline_root="gs://my-pipeline-bucket/runpath",
             gcs_source_uris=["gs://test-prediction-data"],
@@ -217,7 +217,7 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
 
         return eval_pipeline_run
 
-    # TODO: use the MLMD resource to get the ModelEval resource name and instantiate
+    # TODO: not sure if this is the best way to get the eval resource uri
     def get_model_evaluation(
         self,
     ) -> Optional["model_evaluation.ModelEvaluation"]:
