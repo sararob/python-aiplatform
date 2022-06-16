@@ -16,9 +16,11 @@
 #
 
 from google.auth import credentials as auth_credentials
+from google.cloud.aiplatform import jobs
 from google.cloud.aiplatform import base
 from google.cloud.aiplatform import utils
 from google.cloud.aiplatform import models
+from google.cloud.aiplatform import pipeline_jobs
 from google.protobuf import struct_pb2
 
 from typing import Optional
@@ -42,6 +44,34 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
             None if the metrics for this evaluation are empty.
         """
         return self._gca_resource.metrics
+
+    @property
+    def backing_pipeline_job(self) -> Optional[str]:
+        """The id of the managed pipeline for this model evaluation job.
+
+        Returns:
+            The pipeline job ID if this evaluation ran from a managed pipeline or None.
+        """
+        if self._gca_resource.metadata["pipeline_job_id"]:
+            return self._gca_resource.metadata["pipeline_job_id"]
+    
+    @property
+    def batch_prediction_job(self) -> Optional[jobs.BatchPredictionJob]:
+        """The batch prediction job used for this evaluation if this ran as a
+        Model Evaluation pipeline.
+        Returns:
+            An instantiated representation of the Batch Prediction Job if it exists.
+        """
+        raise NotImplementedError
+
+    @property
+    def metadata_output_artifact(self) -> Optional[str]:
+        """The MLMD metadata artifact uri created by the Model Evaluation pipeline.
+
+        Returns:
+            The MLMD uri string if this Model Evaluation was created from a pipeline run.
+        """
+        return self._gca_resource.metadata
 
     def __init__(
         self,

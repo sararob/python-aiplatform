@@ -32,7 +32,9 @@ from google.cloud.aiplatform.compat.types import (
 import json
 
 _LOGGER = base.Logger(__name__)
-# TODO: update this with the final gcs pipeline template urls and add templates for unstructured data
+
+# TODO: update this with the final gcs pipeline template urls and 
+# add templates for unstructured data when they are available
 _MODEL_EVAL_PIPELINE_TEMPLATES = {
     "tabular_without_feature_attribution": "gs://vertex-evaluation-templates/20220615_0621/evaluation_default_pipeline.json",
     "tabular_with_feature_attribution": "gs://vertex-evaluation-templates/20220615_0621/evaluation_feature_attribution_pipeline.json",
@@ -217,12 +219,9 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
     # TODO: use the MLMD resource to get the ModelEval resource name and instantiate
     def get_model_evaluation(
         self,
-        display_name: str,
     ) -> Optional["model_evaluation.ModelEvaluation"]:
         """Creates a ModelEvaluation resource and instantiates its representation.
-        Args:
-            display_name (str):
-                Required. The display name for your model evaluation resource.
+
         Returns:
             aiplatform.ModelEvaluation: Instantiated representation of the ModelEvaluation resource.
         Raises:
@@ -240,22 +239,18 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
             )
         else:
             _LOGGER.info(
-                f"Your evaluation job ran successfully. Creating Model Evaluation with name {display_name}"
+                f"Your evaluation job ran successfully. Creating Model Evaluation resource..."
             )
 
-            # TODO: set ModelEvaluation properties for BP job, eval metrics
-            # print(self.resource_name, 'yo')
-            # print(self.backing_pipeline_job.task_details, 'hey')
-            # completed_pipeline = 
+            # TODO: set ModelEvaluation properties for BP job, eval metrics?
             for component in self.backing_pipeline_job.task_details:
                 for metadata_key in (component.execution.metadata):
                     if metadata_key == "output:gcp_resources" and json.loads(component.execution.metadata[metadata_key])["resources"][0]["resourceType"] == "ModelEvaluation":
-                        print((json.loads(component.execution.metadata[metadata_key])))
 
-                        eval_resource_name = json.loads(component.execution.metadata[metadata_key])["resources"][0]["resourceUri"]
-                        print(eval_resource_name.split("v1"))
+                        eval_resource_uri = json.loads(component.execution.metadata[metadata_key])["resources"][0]["resourceUri"]
+                        eval_resource_name = eval_resource_uri.split("v1/")[1]
 
-                        # return model_evaluation.ModelEvaluation(evaluation_name=eval_resource_name)
+                        return model_evaluation.ModelEvaluation(evaluation_name=eval_resource_name)
                         
 
     def wait(self):
