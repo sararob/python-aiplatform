@@ -3521,7 +3521,7 @@ class Model(base.VertexAiResourceNounWithFutureManager):
         self,
         prediction_type: str,
         target_column_name: str,
-        gcs_source_uris: str,
+        gcs_source_uris: List[str],
         instances_format: str,
         evaluation_staging_path: Optional[str] = None,
         data_type: Optional[str] = "tabular",

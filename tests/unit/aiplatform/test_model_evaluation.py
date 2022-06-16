@@ -116,8 +116,10 @@ _TEST_SERVICE_ACCOUNT = "abcde@my-project.iam.gserviceaccount.com"
 _TEST_PIPELINE_ROOT = f"gs://{_TEST_GCS_BUCKET_NAME}/pipeline_root"
 _TEST_PIPELINE_CREATE_TIME = datetime.now()
 
+_TEST_TEMPLATE_PATH = f"gs://{_TEST_GCS_BUCKET_NAME}/evaluation_default_pipeline.json"
+
 _TEST_TEMPLATE_REF = {
-    "tabular_without_feature_attribution": f"gs://{_TEST_GCS_BUCKET_NAME}/evaluation_default_pipeline.json",
+    "tabular_without_feature_attribution": _TEST_TEMPLATE_PATH,
     "tabular_with_feature_attribution": f"gs://{_TEST_GCS_BUCKET_NAME}/evaluation_feature_attribution_pipeline.json",
 }
 _TEST_PARENT = f"projects/{_TEST_PROJECT}/locations/{_TEST_LOCATION}"
@@ -134,7 +136,6 @@ _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES = {
     "batch_predict_instances_format": "csv",
     "model_name": _TEST_MODEL_RESOURCE_NAME,
     "prediction_type": "classification",
-    # "data_type": "tabular",
     "project": _TEST_PROJECT,
     "location": _TEST_LOCATION,
     "root_dir": _TEST_GCS_BUCKET_NAME,
@@ -166,28 +167,6 @@ _TEST_MODEL_EVAL_PIPELINE_SPEC = {
     "components": {},
 }
 
-_TEST_INVALID_MODEL_EVAL_PIPELINE_SPEC = {
-    "pipelineInfo": {"name": "my-pipeline"},
-    "root": {
-        "dag": {"tasks": {}},
-        "inputDefinitions": {
-            "parameters": {
-                "batch_predict_gcs_source_uris": {"type": "STRING"},
-                "batch_predict_instances_format": {"type": "STRING"},
-                "model_name": {"type": "STRING"},
-                "prediction_type": {"type": "STRING"},
-                "project": {"type": "STRING"},
-                "location": {"type": "STRING"},
-                "root_dir": {"type": "STRING"},
-                "target_column_name": {"type": "STRING"},
-            }
-        },
-    },
-    "schemaVersion": "2.0.0",
-    "sdkVersion": "kfp-1.8.12",
-    "components": {"test_component": {}},
-}
-
 _TEST_MODEL_EVAL_PIPELINE_SPEC_JSON = json.dumps(
 {
     "pipelineInfo": {"name": "evaluation-default-pipeline"},
@@ -213,6 +192,27 @@ _TEST_MODEL_EVAL_PIPELINE_SPEC_JSON = json.dumps(
 }
 )
 
+_TEST_INVALID_MODEL_EVAL_PIPELINE_SPEC = {
+    "pipelineInfo": {"name": "my-pipeline"},
+    "root": {
+        "dag": {"tasks": {}},
+        "inputDefinitions": {
+            "parameters": {
+                "batch_predict_gcs_source_uris": {"type": "STRING"},
+                "batch_predict_instances_format": {"type": "STRING"},
+                "model_name": {"type": "STRING"},
+                "prediction_type": {"type": "STRING"},
+                "project": {"type": "STRING"},
+                "location": {"type": "STRING"},
+                "root_dir": {"type": "STRING"},
+                "target_column_name": {"type": "STRING"},
+            }
+        },
+    },
+    "schemaVersion": "2.0.0",
+    "sdkVersion": "kfp-1.8.12",
+    "components": {"test_component": {}},
+}
 
 _TEST_MODEL_EVAL_PIPELINE_JOB = json.dumps(
     {
@@ -549,6 +549,28 @@ class TestModelEvaluationJob:
         mock_model_eval_job_get.assert_called_once_with(
             name=_TEST_PIPELINE_JOB_NAME, retry=base._DEFAULT_RETRY
         )
+
+    @pytest.mark.parametrize(
+        "job_spec",
+        [_TEST_MODEL_EVAL_PIPELINE_JOB],
+    )
+    def test_init_model_eval_job_class_with_invalid_template_ref_raises(
+        self,
+        mock_pipeline_service_create,
+        job_spec,
+        mock_load_yaml_and_json,
+        mock_model,
+        get_model_mock,
+        mock_model_eval_job_get,
+        mock_model_eval_job_create,
+    ):
+        aiplatform.init(project=_TEST_PROJECT)
+
+        # _template_ref should be a dict, not a string
+        self.FakeModelEvaluationJob._template_ref = _TEST_TEMPLATE_PATH
+
+        with pytest.raises(AttributeError):
+            self.FakeModelEvaluationJob(evaluation_pipeline_run=_TEST_PIPELINE_JOB_NAME)
 
     @pytest.mark.parametrize(
         "job_spec",

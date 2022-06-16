@@ -47,6 +47,7 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
 
     _template_ref = _MODEL_EVAL_PIPELINE_TEMPLATES
 
+    # TODO: update this based on the latest template
     @property
     def _metadata_output_artifact(self) -> Optional[str]:
         """The resource uri for the ML Metadata output artifact from the evaluation component of the Model Evaluation pipeline"""

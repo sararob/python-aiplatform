@@ -16,6 +16,7 @@
 #
 
 from datetime import datetime
+from re import template
 import pytest
 import json
 
@@ -37,9 +38,7 @@ from google.cloud.aiplatform_v1.types import (
     pipeline_state as gca_pipeline_state_v1,
 )
 
-from google.cloud.aiplatform._pipeline_based_service import (
-    _VertexAiPipelineBasedService,
-)
+from google.cloud.aiplatform._pipeline_based_service import pipeline_based_service
 
 # pipeline job
 _TEST_PROJECT = "test-project"
@@ -51,6 +50,11 @@ _TEST_CREDENTIALS = auth_credentials.AnonymousCredentials()
 _TEST_SERVICE_ACCOUNT = "abcde@my-project.iam.gserviceaccount.com"
 
 _TEST_TEMPLATE_PATH = f"gs://{_TEST_GCS_BUCKET_NAME}/job_spec.json"
+
+_TEST_TEMPLATE_REF = {
+    "test_pipeline_type": _TEST_TEMPLATE_PATH
+}
+
 _TEST_PIPELINE_ROOT = f"gs://{_TEST_GCS_BUCKET_NAME}/pipeline_root"
 _TEST_PARENT = f"projects/{_TEST_PROJECT}/locations/{_TEST_LOCATION}"
 _TEST_NETWORK = f"projects/{_TEST_PROJECT}/global/networks/{_TEST_PIPELINE_JOB_ID}"
@@ -234,8 +238,8 @@ def mock_pipeline_based_service_get():
 
 @pytest.mark.usefixtures("google_auth_mock")
 class TestPipelineBasedService:
-    class FakePipelineBasedService(_VertexAiPipelineBasedService):
-        _template_ref = _TEST_TEMPLATE_PATH
+    class FakePipelineBasedService(pipeline_based_service._VertexAiPipelineBasedService):
+        _template_ref = _TEST_TEMPLATE_REF
         _metadata_output_artifact = "TODO"
 
     @pytest.mark.parametrize(
@@ -269,34 +273,9 @@ class TestPipelineBasedService:
         assert not mock_pipeline_service_create.called
 
     @pytest.mark.parametrize(
-        "job_spec_json",
-        [_TEST_INVALID_PIPELINE_JOB],
-    )
-    @pytest.mark.parametrize(
         "pipeline_name", [_TEST_PIPELINE_JOB_ID, _TEST_PIPELINE_JOB_NAME]
     )
-    def test_init_pipeline_based_service_with_invalid_template_ref_raises(
-        self,
-        pipeline_name,
-        mock_pipeline_service_get,
-        mock_pipeline_based_service_get,
-        mock_load_json,
-        job_spec_json,
-        mock_pipeline_service_create,
-    ):
-        aiplatform.init(
-            project=_TEST_PROJECT,
-            location=_TEST_LOCATION,
-            credentials=_TEST_CREDENTIALS,
-        )
-
-        with pytest.raises(ValueError):
-            self.FakePipelineBasedService(pipeline_job_id=_TEST_PIPELINE_JOB_ID)
-
-    @pytest.mark.parametrize(
-        "pipeline_name", [_TEST_PIPELINE_JOB_ID, _TEST_PIPELINE_JOB_NAME]
-    )
-    def test_init_pipeline_based_service_without_template_ref(
+    def test_init_pipeline_based_service_without_template_ref_raises(
         self,
         pipeline_name,
         mock_pipeline_service_get,
@@ -309,11 +288,11 @@ class TestPipelineBasedService:
         """
 
         with pytest.raises(TypeError):
-            _VertexAiPipelineBasedService(
+            pipeline_based_service._VertexAiPipelineBasedService(
                 pipeline_job_id=pipeline_name,
             )
 
-    def test_init_pipeline_based_service_with_invalid_pipeline_run_id(
+    def test_init_pipeline_based_service_with_invalid_pipeline_run_id_raises(
         self,
         mock_pipeline_service_get,
     ):
@@ -348,6 +327,7 @@ class TestPipelineBasedService:
         self.FakePipelineBasedService._create_and_submit_pipeline_job(
             job_id=_TEST_PIPELINE_JOB_ID,
             template_params=_TEST_PIPELINE_PARAMETER_VALUES,
+            template_path=_TEST_TEMPLATE_PATH,
             pipeline_root=_TEST_PIPELINE_ROOT,
             display_name=_TEST_PIPELINE_JOB_DISPLAY_NAME,
             service_account=_TEST_SERVICE_ACCOUNT,
