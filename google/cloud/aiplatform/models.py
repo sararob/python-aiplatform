@@ -69,9 +69,10 @@ _SUPPORTED_EVAL_PREDICTION_TYPES = [
     "regression",
 ]
 
+#TODO: update when unstructured pipeline templates are supported
 _SUPPORTED_MODEL_EVAL_DATA_TYPES = [
     "tabular",
-    "unstructured",
+    # "unstructured",
 ]
 
 
@@ -3521,9 +3522,9 @@ class Model(base.VertexAiResourceNounWithFutureManager):
         prediction_type: str,
         target_column_name: str,
         gcs_source_uris: str,
-        evaluation_staging_path: str,
         instances_format: str,
-        data_type: str,
+        evaluation_staging_path: Optional[str] = None,
+        data_type: Optional[str] = "tabular",
         generate_feature_attributions: Optional[bool] = False,
         evaluation_job_display_name: Optional[str] = None,
         network: Optional[str] = None,
@@ -3551,12 +3552,14 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             gcs_source_uris (List[str]):
                 Required. A list of GCS filepaths containing the ground truth data to use for this evaluation job.
                 These files should contain your model's prediction column.
-            evaluation_staging_path (str): TODO: can we make this optional and default to the staging bucket from aiplatform.init?
-                Required. The GCS directory to use for staging files from this evaluation job.
             instances_format (str):
                 Required. The format of your prediction data.
+            evaluation_staging_path (str):
+                Required. The GCS directory to use for staging files from this evaluation job. Defaults to the value set in
+                aiplatform.init(staging_bucket=...) if not provided.
             data_type (str):
-                Required. The type of data used to train your model. One of `tabular` or `unstructured`.
+                Required. The type of data used to train your model. Currently only tabular data is supported for evaluation.
+                Defaults to "tabular" if not provided.
             generate_feature_attributions (boolean):
                 Optional. Whether the model evaluation job should generate feature attributions. Defaults to False if not specified.
             evaluation_job_display_name (str):
@@ -3571,6 +3574,10 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             model_evaluation.ModelEvaluationJob: Instantiated representation of the
             ModelEvaluationJob.
         """
+        if not evaluation_staging_path and initializer.global_config.staging_bucket:
+            evaluation_staging_path = initializer.global_config.staging_bucket
+        elif not evaluation_staging_path and not initializer.global_config.staging_bucket:
+            raise ValueError("Please provide `evaluation_staging_bucket` when calling evaluate or set one using aiplatform.init(staging_bucket=...)")
 
         if prediction_type not in _SUPPORTED_EVAL_PREDICTION_TYPES:
             raise ValueError("Please provide a supported model prediction type.")

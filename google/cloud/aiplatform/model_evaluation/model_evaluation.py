@@ -20,7 +20,6 @@ from google.cloud.aiplatform import jobs
 from google.cloud.aiplatform import base
 from google.cloud.aiplatform import utils
 from google.cloud.aiplatform import models
-from google.cloud.aiplatform import pipeline_jobs
 from google.protobuf import struct_pb2
 
 from typing import Optional
@@ -43,7 +42,8 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
             A dict with model metrics created from the Model Evaluation or
             None if the metrics for this evaluation are empty.
         """
-        return self._gca_resource.metrics
+        if self._gca_resource.metrics:
+            return self.to_dict()["metrics"]
 
     @property
     def backing_pipeline_job(self) -> Optional[str]:
@@ -54,7 +54,7 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
         """
         if self._gca_resource.metadata["pipeline_job_id"]:
             return self._gca_resource.metadata["pipeline_job_id"]
-    
+
     @property
     def batch_prediction_job(self) -> Optional[jobs.BatchPredictionJob]:
         """The batch prediction job used for this evaluation if this ran as a
