@@ -116,7 +116,10 @@ _TEST_SERVICE_ACCOUNT = "abcde@my-project.iam.gserviceaccount.com"
 _TEST_PIPELINE_ROOT = f"gs://{_TEST_GCS_BUCKET_NAME}/pipeline_root"
 _TEST_PIPELINE_CREATE_TIME = datetime.now()
 
-_TEST_TEMPLATE_PATH = f"gs://{_TEST_GCS_BUCKET_NAME}/job_spec.json"
+_TEST_TEMPLATE_REF = {
+    "tabular_without_feature_attribution": f"gs://{_TEST_GCS_BUCKET_NAME}/evaluation_default_pipeline.json",
+    "tabular_with_feature_attribution": f"gs://{_TEST_GCS_BUCKET_NAME}/evaluation_feature_attribution_pipeline.json",
+}
 _TEST_PARENT = f"projects/{_TEST_PROJECT}/locations/{_TEST_LOCATION}"
 _TEST_NETWORK = f"projects/{_TEST_PROJECT}/global/networks/{_TEST_PIPELINE_JOB_ID}"
 
@@ -127,11 +130,11 @@ _TEST_INVALID_PIPELINE_JOB_NAME = (
 _TEST_MODEL_EVAL_JOB_DISPLAY_NAME = "test-eval-job"
 
 _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES = {
-    "batch_predict_gcs_source_uris": ["gs://my-bucket/my-prediction-data.csv"],
+    "batch_predict_gcs_source_uris": ['gs://my-bucket/my-prediction-data.csv'],
     "batch_predict_instances_format": "csv",
     "model_name": _TEST_MODEL_RESOURCE_NAME,
     "prediction_type": "classification",
-    "data_type": "tabular",
+    # "data_type": "tabular",
     "project": _TEST_PROJECT,
     "location": _TEST_LOCATION,
     "root_dir": _TEST_GCS_BUCKET_NAME,
@@ -140,23 +143,25 @@ _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES = {
 
 
 _TEST_MODEL_EVAL_PIPELINE_SPEC = {
-    "pipelineInfo": {"name": "evaluation-sdk-pipeline"},
+    "pipelineInfo": {"name": "evaluation-default-pipeline"},
     "root": {
         "dag": {"tasks": {}},
         "inputDefinitions": {
             "parameters": {
                 "batch_predict_gcs_source_uris": {"type": "STRING"},
                 "batch_predict_instances_format": {"type": "STRING"},
+                "batch_predict_machine_type": {"type": "STRING"},
+                "location": {"type": "STRING"},
                 "model_name": {"type": "STRING"},
                 "prediction_type": {"type": "STRING"},
                 "project": {"type": "STRING"},
-                "location": {"type": "STRING"},
+
                 "root_dir": {"type": "STRING"},
                 "target_column_name": {"type": "STRING"},
             }
         },
     },
-    "schemaVersion": "2.1.0",
+    "schemaVersion": "2.0.0",
     "sdkVersion": "kfp-1.8.12",
     "components": {},
 }
@@ -184,27 +189,28 @@ _TEST_INVALID_MODEL_EVAL_PIPELINE_SPEC = {
 }
 
 _TEST_MODEL_EVAL_PIPELINE_SPEC_JSON = json.dumps(
-    {
-        "pipelineInfo": {"name": "evaluation-sdk-pipeline"},
-        "root": {
-            "dag": {"tasks": {}},
-            "inputDefinitions": {
-                "parameters": {
-                    "batch_predict_gcs_source_uris": {"type": "STRING"},
-                    "batch_predict_instances_format": {"type": "STRING"},
-                    "model_name": {"type": "STRING"},
-                    "prediction_type": {"type": "STRING"},
-                    "project": {"type": "STRING"},
-                    "location": {"type": "STRING"},
-                    "root_dir": {"type": "STRING"},
-                    "target_column_name": {"type": "STRING"},
-                }
-            },
+{
+    "pipelineInfo": {"name": "evaluation-default-pipeline"},
+    "root": {
+        "dag": {"tasks": {}},
+        "inputDefinitions": {
+            "parameters": {
+                "batch_predict_gcs_source_uris": {"type": "STRING"},
+                "batch_predict_instances_format": {"type": "STRING"},
+                "batch_predict_machine_type": {"type": "STRING"},
+                "location": {"type": "STRING"},
+                "model_name": {"type": "STRING"},
+                "prediction_type": {"type": "STRING"},
+                "project": {"type": "STRING"},
+                "root_dir": {"type": "STRING"},
+                "target_column_name": {"type": "STRING"},
+            }
         },
-        "schemaVersion": "2.1.0",
-        "sdkVersion": "kfp-1.8.12",
-        "components": {},
-    }
+    },
+    "schemaVersion": "2.0.0",
+    "sdkVersion": "kfp-1.8.12",
+    "components": {},
+}
 )
 
 
@@ -520,8 +526,7 @@ class TestModelEvaluation:
 @pytest.mark.usefixtures("google_auth_mock")
 class TestModelEvaluationJob:
     class FakeModelEvaluationJob(model_evaluation.ModelEvaluationJob):
-        _template_ref = _TEST_TEMPLATE_PATH
-        metadat_output_artifact = "TODO"
+        _template_ref = _TEST_TEMPLATE_REF
 
     @pytest.mark.parametrize(
         "job_spec",
@@ -608,7 +613,7 @@ class TestModelEvaluationJob:
             target_column_name=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "target_column_name"
             ],
-            data_type=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES["data_type"],
+            data_type="tabular",
             display_name=_TEST_MODEL_EVAL_JOB_DISPLAY_NAME,
             gcs_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "batch_predict_gcs_source_uris"
@@ -640,7 +645,7 @@ class TestModelEvaluationJob:
                 "components": {},
                 "pipelineInfo": pipeline_spec["pipelineInfo"],
                 "root": pipeline_spec["root"],
-                "schemaVersion": "2.1.0",
+                "schemaVersion": "2.0.0",
                 "sdkVersion": "kfp-1.8.12",
             },
             runtime_config=runtime_config,
@@ -653,7 +658,7 @@ class TestModelEvaluationJob:
         mock_model_eval_job_create.assert_called_with(
             parent=_TEST_PARENT,
             pipeline_job=expected_gapic_pipeline_job,
-            pipeline_job_id=f"evaluation-sdk-pipeline-{test_job_create_time_str}",
+            pipeline_job_id=f"evaluation-default-pipeline-{test_job_create_time_str}",
             timeout=None,
         )
 
