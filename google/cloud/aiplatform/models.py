@@ -69,7 +69,7 @@ _SUPPORTED_EVAL_PREDICTION_TYPES = [
     "regression",
 ]
 
-#TODO: update when unstructured pipeline templates are supported
+# TODO: update when unstructured pipeline templates are supported
 _SUPPORTED_MODEL_EVAL_DATA_TYPES = [
     "tabular",
     # "unstructured",
@@ -3550,7 +3550,7 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             my_evaluation = my_evaluation_job.get_model_evaluation()
 
             my_evaluation.metrics
-    
+
         Args:
             prediction_type (str):
                 Required. The problem type being addressed by this evaluation run. `classification` and `regression`
@@ -3584,8 +3584,12 @@ class Model(base.VertexAiResourceNounWithFutureManager):
         """
         if not evaluation_staging_path and initializer.global_config.staging_bucket:
             evaluation_staging_path = initializer.global_config.staging_bucket
-        elif not evaluation_staging_path and not initializer.global_config.staging_bucket:
-            raise ValueError("Please provide `evaluation_staging_bucket` when calling evaluate or set one using aiplatform.init(staging_bucket=...)")
+        elif (
+            not evaluation_staging_path and not initializer.global_config.staging_bucket
+        ):
+            raise ValueError(
+                "Please provide `evaluation_staging_bucket` when calling evaluate or set one using aiplatform.init(staging_bucket=...)"
+            )
 
         if prediction_type not in _SUPPORTED_EVAL_PREDICTION_TYPES:
             raise ValueError("Please provide a supported model prediction type.")

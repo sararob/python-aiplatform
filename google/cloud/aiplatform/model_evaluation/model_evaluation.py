@@ -20,7 +20,6 @@ from google.cloud.aiplatform import jobs
 from google.cloud.aiplatform import base
 from google.cloud.aiplatform import utils
 from google.cloud.aiplatform import models
-from google.protobuf import struct_pb2
 
 from typing import Dict, Optional
 

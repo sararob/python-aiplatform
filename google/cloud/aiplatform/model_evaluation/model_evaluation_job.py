@@ -52,7 +52,10 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         """The resource uri for the ML Metadata output artifact from the evaluation component of the Model Evaluation pipeline"""
         if self.state == gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED:
             for task in self.backing_pipeline_job._gca_resource.job_detail.task_details:
-                if task.task_name.startswith("model-evaluation") and "evaluation_metrics" in task.outputs:
+                if (
+                    task.task_name.startswith("model-evaluation")
+                    and "evaluation_metrics" in task.outputs
+                ):
                     return task.outputs["evaluation_metrics"].artifacts[0].name
 
     def __init__(
@@ -246,16 +249,26 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
             # TODO: is there a better way to get the eval resource name?
             for component in self.backing_pipeline_job.task_details:
                 for metadata_key in component.execution.metadata:
-                    if (metadata_key == "output:gcp_resources" and json.loads(component.execution.metadata[metadata_key])["resources"][0]["resourceType"] == "ModelEvaluation"):
+                    if (
+                        metadata_key == "output:gcp_resources"
+                        and json.loads(component.execution.metadata[metadata_key])[
+                            "resources"
+                        ][0]["resourceType"]
+                        == "ModelEvaluation"
+                    ):
                         print(component)
-                        eval_resource_uri = json.loads(component.execution.metadata[metadata_key])["resources"][0]["resourceUri"]
+                        eval_resource_uri = json.loads(
+                            component.execution.metadata[metadata_key]
+                        )["resources"][0]["resourceUri"]
                         eval_resource_name = eval_resource_uri.split("v1/")[1]
 
                         eval_resource = model_evaluation.ModelEvaluation(
                             evaluation_name=eval_resource_name
                         )
 
-                        eval_resource._gca_resource = eval_resource._get_gca_resource(resource_name=eval_resource_name)
+                        eval_resource._gca_resource = eval_resource._get_gca_resource(
+                            resource_name=eval_resource_name
+                        )
 
                         return eval_resource
 

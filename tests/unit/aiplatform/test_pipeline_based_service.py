@@ -16,7 +16,6 @@
 #
 
 from datetime import datetime
-from re import template
 import pytest
 import json
 
@@ -51,9 +50,7 @@ _TEST_SERVICE_ACCOUNT = "abcde@my-project.iam.gserviceaccount.com"
 
 _TEST_TEMPLATE_PATH = f"gs://{_TEST_GCS_BUCKET_NAME}/job_spec.json"
 
-_TEST_TEMPLATE_REF = {
-    "test_pipeline_type": _TEST_TEMPLATE_PATH
-}
+_TEST_TEMPLATE_REF = {"test_pipeline_type": _TEST_TEMPLATE_PATH}
 
 _TEST_PIPELINE_ROOT = f"gs://{_TEST_GCS_BUCKET_NAME}/pipeline_root"
 _TEST_PARENT = f"projects/{_TEST_PROJECT}/locations/{_TEST_LOCATION}"
@@ -238,7 +235,9 @@ def mock_pipeline_based_service_get():
 
 @pytest.mark.usefixtures("google_auth_mock")
 class TestPipelineBasedService:
-    class FakePipelineBasedService(pipeline_based_service._VertexAiPipelineBasedService):
+    class FakePipelineBasedService(
+        pipeline_based_service._VertexAiPipelineBasedService
+    ):
         _template_ref = _TEST_TEMPLATE_REF
         _metadata_output_artifact = "TODO"
 
