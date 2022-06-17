@@ -243,16 +243,21 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
                 "Your evaluation job ran successfully. Creating Model Evaluation resource..."
             )
 
+            # TODO: is there a better way to get the eval resource name?
             for component in self.backing_pipeline_job.task_details:
                 for metadata_key in component.execution.metadata:
                     if (metadata_key == "output:gcp_resources" and json.loads(component.execution.metadata[metadata_key])["resources"][0]["resourceType"] == "ModelEvaluation"):
-
+                        print(component)
                         eval_resource_uri = json.loads(component.execution.metadata[metadata_key])["resources"][0]["resourceUri"]
                         eval_resource_name = eval_resource_uri.split("v1/")[1]
 
-                        return model_evaluation.ModelEvaluation(
+                        eval_resource = model_evaluation.ModelEvaluation(
                             evaluation_name=eval_resource_name
                         )
+
+                        eval_resource._gca_resource = eval_resource._get_gca_resource(resource_name=eval_resource_name)
+
+                        return eval_resource
 
     def wait(self):
         """Wait for thie PipelineJob to complete."""

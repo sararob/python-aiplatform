@@ -18,9 +18,11 @@
 import importlib
 from concurrent import futures
 import pathlib
+from numpy import isin
 import pytest
 from unittest import mock
 from unittest.mock import patch
+from datetime import datetime
 
 from google.api_core import operation as ga_operation
 from google.api_core import exceptions as api_exceptions
@@ -55,6 +57,7 @@ from google.cloud.aiplatform.compat.types import (
 )
 
 from google.protobuf import field_mask_pb2
+from google.cloud.aiplatform.model_evaluation import model_evaluation_job
 
 from test_endpoints import create_endpoint_mock  # noqa: F401
 
@@ -232,6 +235,11 @@ _TEST_MODEL_EVAL_LIST = [
     ),
 ]
 
+# model.evaluate
+_TEST_PIPELINE_JOB_ID = "sample-test-pipeline-202111111"
+_TEST_PIPELINE_JOB_NAME = f"projects/{_TEST_PROJECT}/locations/{_TEST_LOCATION}/pipelineJobs/{_TEST_PIPELINE_JOB_ID}"
+_TEST_PIPELINE_CREATE_TIME = datetime.now()
+_TEST_NETWORK = f"projects/{_TEST_PROJECT}/global/networks/{_TEST_PIPELINE_JOB_ID}"
 
 @pytest.fixture
 def mock_model():
@@ -540,6 +548,81 @@ def list_model_evaluations_mock():
         list_model_evaluations_mock.return_value = _TEST_MODEL_EVAL_LIST
         yield list_model_evaluations_mock
 
+# model.evaluate fixtures
+
+from google.cloud.aiplatform_v1.services.pipeline_service import (
+    client as pipeline_service_client_v1,
+)
+
+
+from google.cloud.aiplatform.compat.types import (
+    pipeline_job as gca_pipeline_job,
+    pipeline_state as gca_pipeline_state,
+    context as gca_context,
+)
+
+@pytest.fixture
+def mock_pipeline_service_create():
+    with mock.patch.object(
+        pipeline_service_client_v1.PipelineServiceClient, "create_pipeline_job"
+    ) as mock_create_pipeline_job:
+        mock_create_pipeline_job.return_value = gca_pipeline_job.PipelineJob(
+            name=_TEST_PIPELINE_JOB_NAME,
+            state=gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED,
+            create_time=_TEST_PIPELINE_CREATE_TIME,
+            service_account=_TEST_SERVICE_ACCOUNT,
+            network=_TEST_NETWORK,
+        )
+        yield mock_create_pipeline_job
+
+def make_pipeline_job(state):
+    return gca_pipeline_job.PipelineJob(
+        name=_TEST_PIPELINE_JOB_NAME,
+        state=state,
+        create_time=_TEST_PIPELINE_CREATE_TIME,
+        service_account=_TEST_SERVICE_ACCOUNT,
+        network=_TEST_NETWORK,
+        job_detail=gca_pipeline_job.PipelineJobDetail(
+            pipeline_run_context=gca_context.Context(
+                name=_TEST_PIPELINE_JOB_NAME,
+            )
+        ),
+    )
+
+@pytest.fixture
+def mock_pipeline_service_get():
+    with mock.patch.object(
+        pipeline_service_client.PipelineServiceClient, "get_pipeline_job"
+    ) as mock_get_pipeline_job:
+        mock_get_pipeline_job.side_effect = [
+            make_pipeline_job(gca_pipeline_state.PipelineState.PIPELINE_STATE_RUNNING),
+            make_pipeline_job(
+                gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED
+            ),
+            make_pipeline_job(
+                gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED
+            ),
+            make_pipeline_job(
+                gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED
+            ),
+            make_pipeline_job(
+                gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED
+            ),
+            make_pipeline_job(
+                gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED
+            ),
+            make_pipeline_job(
+                gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED
+            ),
+            make_pipeline_job(
+                gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED
+            ),
+            make_pipeline_job(
+                gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED
+            ),
+        ]
+
+        yield mock_get_pipeline_job
 
 @pytest.mark.usefixtures("google_auth_mock")
 class TestModel:
@@ -2039,3 +2122,117 @@ class TestModel:
         )
 
         assert len(eval_list) == len(_TEST_MODEL_EVAL_LIST)
+
+
+    def test_model_evaluate(
+        self,
+        get_model_mock,
+        mock_model_eval_get,
+        mock_pipeline_service_create,
+        mock_pipeline_service_get,
+    ):
+        aiplatform.init(project=_TEST_PROJECT)
+
+        test_model = models.Model(model_name=_TEST_MODEL_RESOURCE_NAME)
+
+        eval_job = test_model.evaluate(
+            data_type="tabular",
+            prediction_type="classification",
+            target_column_name="class",
+            evaluation_staging_path="gs://my-eval-staging-path",
+            gcs_source_uris=["gs://test-bucket/test-file.csv"],
+            instances_format="csv",
+        )
+
+        assert isinstance(eval_job, model_evaluation_job.ModelEvaluationJob)
+
+        assert mock_pipeline_service_create.called_once
+
+        assert mock_pipeline_service_get.called_once
+
+        eval_job.wait()
+
+        # TODO: mock completed evaluation pipeline with metrics
+        eval = eval_job.get_model_evaluation()
+
+    def test_model_evaluate_using_initialized_staging_bucket(
+        self,
+        get_model_mock,
+        mock_model_eval_get,
+        mock_pipeline_service_create,
+        mock_pipeline_service_get,
+    ):
+        aiplatform.init(project=_TEST_PROJECT, staging_bucket="gs://my-bucket")
+
+        test_model = models.Model(model_name=_TEST_MODEL_RESOURCE_NAME)
+
+        eval_job = test_model.evaluate(
+            data_type="tabular",
+            prediction_type="classification",
+            target_column_name="class",
+            gcs_source_uris=["gs://test-bucket/test-file.csv"],
+            instances_format="csv",
+        )
+
+        assert isinstance(eval_job, model_evaluation_job.ModelEvaluationJob)
+
+        assert mock_pipeline_service_create.called_once
+
+        assert mock_pipeline_service_get.called_once
+
+    def test_model_evaluate_with_no_staging_path_or_initialized_staging_bucket_raises(
+        self,
+        get_model_mock,
+        mock_model_eval_get,
+    ):
+
+        aiplatform.init(project=_TEST_PROJECT)
+
+        test_model = models.Model(model_name=_TEST_MODEL_RESOURCE_NAME)
+
+        with pytest.raises(ValueError):
+            test_model.evaluate(
+                data_type="tabular",
+                prediction_type="classification",
+                target_column_name="class",
+                gcs_source_uris=["gs://test-bucket/test-file.csv"],
+                instances_format="csv",
+            )
+
+    def test_model_evaluate_with_invalid_prediction_type_raises(
+        self,
+        get_model_mock,
+        mock_model_eval_get,
+    ):
+
+        aiplatform.init(project=_TEST_PROJECT)
+
+        test_model = models.Model(model_name=_TEST_MODEL_RESOURCE_NAME)
+
+        with pytest.raises(ValueError):
+            test_model.evaluate(
+                data_type="tabular",
+                prediction_type="invalid_prediction_type",
+                target_column_name="class",
+                gcs_source_uris=["gs://test-bucket/test-file.csv"],
+                instances_format="csv",
+            )
+
+    def test_model_evaluate_with_invalid_data_type_raises(
+        self,
+        get_model_mock,
+        mock_model_eval_get,
+    ):
+
+        aiplatform.init(project=_TEST_PROJECT)
+
+        test_model = models.Model(model_name=_TEST_MODEL_RESOURCE_NAME)
+
+        with pytest.raises(ValueError):
+            test_model.evaluate(
+                data_type="video",
+                prediction_type="invalid_prediction_type",
+                target_column_name="class",
+                gcs_source_uris=["gs://test-bucket/test-file.csv"],
+                instances_format="csv",
+            )

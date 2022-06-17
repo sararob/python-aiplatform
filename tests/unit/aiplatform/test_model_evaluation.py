@@ -40,16 +40,20 @@ from google.cloud.aiplatform.model_evaluation import model_evaluation_job
 from google.cloud.aiplatform_v1.services.pipeline_service import (
     client as pipeline_service_client_v1,
 )
-from google.cloud.aiplatform_v1.types import (
-    pipeline_job as gca_pipeline_job_v1,
-    pipeline_state as gca_pipeline_state_v1,
-)
+# from google.cloud.aiplatform_v1.types import (
+#     pipeline_job as gca_pipeline_job,
+#     pipeline_state as gca_pipeline_state_v1,
+# )
 
 from google.cloud.aiplatform.compat.types import model as gca_model
 
 from google.cloud.aiplatform.compat.types import (
+    pipeline_job as gca_pipeline_job,
+    pipeline_state as gca_pipeline_state,
     model_evaluation as gca_model_evaluation,
+    context as gca_context,
 )
+from google.cloud.aiplatform_v1.types.pipeline_job import PipelineTaskDetail
 
 _TEST_PROJECT = "test-project"
 _TEST_LOCATION = "us-central1"
@@ -133,7 +137,7 @@ _TEST_INVALID_PIPELINE_JOB_NAME = (
 _TEST_MODEL_EVAL_JOB_DISPLAY_NAME = "test-eval-job"
 
 _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES = {
-    "batch_predict_gcs_source_uris": "[\"gs://my-bucket/my-prediction-data.csv\"]",
+    "batch_predict_gcs_source_uris": ["gs://my-bucket/my-prediction-data.csv"],
     "batch_predict_instances_format": "csv",
     "model_name": _TEST_MODEL_RESOURCE_NAME,
     "prediction_type": "classification",
@@ -143,6 +147,16 @@ _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES = {
     "target_column_name": "predict_class",
 }
 
+_TEST_JSON_FORMATTED_MODEL_EVAL_PIPELINE_PARAMETER_VALUES = {
+    "batch_predict_gcs_source_uris": "[\"gs://sdk-model-eval/batch-pred-heart.csv\"]",
+    "batch_predict_instances_format": "csv",
+    "model_name": _TEST_MODEL_RESOURCE_NAME,
+    "prediction_type": "classification",
+    "project": _TEST_PROJECT,
+    "location": _TEST_LOCATION,
+    "root_dir": _TEST_GCS_BUCKET_NAME,
+    "target_column_name": "predict_class",
+}
 
 _TEST_MODEL_EVAL_PIPELINE_SPEC = {
     "pipelineInfo": {"name": "evaluation-default-pipeline"},
@@ -200,7 +214,7 @@ _TEST_INVALID_MODEL_EVAL_PIPELINE_SPEC = {
         "inputDefinitions": {
             "parameters": {
                 "batch_predict_gcs_source_uris": {"type": "STRING"},
-                # "batch_predict_instances_format": {"type": "STRING"},
+                "batch_predict_instances_format": {"type": "STRING"},
                 "model_name": {"type": "STRING"},
                 "prediction_type": {"type": "STRING"},
                 "project": {"type": "STRING"},
@@ -218,7 +232,7 @@ _TEST_INVALID_MODEL_EVAL_PIPELINE_SPEC = {
 _TEST_MODEL_EVAL_PIPELINE_JOB = json.dumps(
     {
         "runtimeConfig": {
-            "parameterValues": _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES
+            "parameters": _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES
         },
         "pipelineSpec": json.loads(_TEST_MODEL_EVAL_PIPELINE_SPEC_JSON),
     }
@@ -232,7 +246,7 @@ _TEST_INVALID_MODEL_EVAL_PIPELINE_SPEC_JSON = json.dumps(
             "inputDefinitions": {
                 "parameters": {
                     "batch_predict_gcs_source_uris": {"type": "STRING"},
-                    # "batch_predict_instances_format": {"type": "STRING"},
+                    "batch_predict_instances_format": {"type": "STRING"},
                     "model_name": {"type": "STRING"},
                     "prediction_type": {"type": "STRING"},
                     "project": {"type": "STRING"},
@@ -257,8 +271,18 @@ _TEST_INVALID_MODEL_EVAL_PIPELINE_JOB = json.dumps(
     }
 )
 
-_TEST_EVAL_RESOURCE_NAME = f"projects/{_TEST_ID}/locations/{_TEST_LOCATION}/models/{_TEST_ID}/evaluations/{_TEST_ID}"
-
+# _TEST_EVAL_PIPELINE_JOB_TASK_DETAIL = gca_pipeline_job.PipelineTaskDetail(
+#     execution={
+#         "metadata": {
+#             "output:gcp_resources": {
+#                 "resources": [
+#                     "resourceType": "ModelEvaluation", 
+#                     "resourceUri": _TEST_MODEL_EVAL_RESOURCE_NAME
+#                 ]
+#             }
+#         }
+#     }
+# )
 
 @pytest.fixture
 def get_model_mock():
@@ -305,9 +329,9 @@ def mock_pipeline_service_create():
     with mock.patch.object(
         pipeline_service_client_v1.PipelineServiceClient, "create_pipeline_job"
     ) as mock_create_pipeline_job:
-        mock_create_pipeline_job.return_value = gca_pipeline_job_v1.PipelineJob(
+        mock_create_pipeline_job.return_value = gca_pipeline_job.PipelineJob(
             name=_TEST_PIPELINE_JOB_NAME,
-            state=gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED,
+            state=gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED,
             create_time=_TEST_PIPELINE_CREATE_TIME,
             service_account=_TEST_SERVICE_ACCOUNT,
             network=_TEST_NETWORK,
@@ -316,7 +340,7 @@ def mock_pipeline_service_create():
 
 
 def make_pipeline_job(state):
-    return gca_pipeline_job_v1.PipelineJob(
+    return gca_pipeline_job.PipelineJob(
         name=_TEST_PIPELINE_JOB_NAME,
         state=state,
         create_time=_TEST_PIPELINE_CREATE_TIME,
@@ -332,31 +356,31 @@ def mock_pipeline_service_get():
     ) as mock_get_pipeline_job:
         mock_get_pipeline_job.side_effect = [
             make_pipeline_job(
-                gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_RUNNING
+                gca_pipeline_state.PipelineState.PIPELINE_STATE_RUNNING
             ),
             make_pipeline_job(
-                gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED
+                gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED
             ),
             make_pipeline_job(
-                gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED
+                gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED
             ),
             make_pipeline_job(
-                gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED
+                gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED
             ),
             make_pipeline_job(
-                gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED
+                gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED
             ),
             make_pipeline_job(
-                gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED
+                gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED
             ),
             make_pipeline_job(
-                gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED
+                gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED
             ),
             make_pipeline_job(
-                gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED
+                gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED
             ),
             make_pipeline_job(
-                gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED
+                gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED
             ),
         ]
 
@@ -370,13 +394,13 @@ def mock_pipeline_service_get_with_fail():
     ) as mock_get_pipeline_job:
         mock_get_pipeline_job.side_effect = [
             make_pipeline_job(
-                gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_RUNNING
+                gca_pipeline_state.PipelineState.PIPELINE_STATE_RUNNING
             ),
             make_pipeline_job(
-                gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_RUNNING
+                gca_pipeline_state.PipelineState.PIPELINE_STATE_RUNNING
             ),
             make_pipeline_job(
-                gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_FAILED
+                gca_pipeline_state.PipelineState.PIPELINE_STATE_FAILED
             ),
         ]
 
@@ -390,10 +414,10 @@ def mock_pipeline_service_get_pending():
     ) as mock_get_pipeline_job:
         mock_get_pipeline_job.side_effect = [
             make_pipeline_job(
-                gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_RUNNING
+                gca_pipeline_state.PipelineState.PIPELINE_STATE_RUNNING
             ),
             make_pipeline_job(
-                gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_RUNNING
+                gca_pipeline_state.PipelineState.PIPELINE_STATE_RUNNING
             ),
         ]
 
@@ -419,9 +443,9 @@ def mock_invalid_model_eval_job_get():
     with mock.patch.object(
         pipeline_service_client_v1.PipelineServiceClient, "get_pipeline_job"
     ) as mock_get_model_eval_job:
-        mock_get_model_eval_job.return_value = gca_pipeline_job_v1.PipelineJob(
+        mock_get_model_eval_job.return_value = gca_pipeline_job.PipelineJob(
             name=_TEST_PIPELINE_JOB_NAME,
-            state=gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED,
+            state=gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED,
             create_time=_TEST_PIPELINE_CREATE_TIME,
             service_account=_TEST_SERVICE_ACCOUNT,
             network=_TEST_NETWORK,
@@ -435,13 +459,13 @@ def mock_model_eval_job_create():
     with mock.patch.object(
         pipeline_service_client_v1.PipelineServiceClient, "create_pipeline_job"
     ) as mock_create_model_eval_job:
-        mock_create_model_eval_job.return_value = gca_pipeline_job_v1.PipelineJob(
+        mock_create_model_eval_job.return_value = gca_pipeline_job.PipelineJob(
             name=_TEST_PIPELINE_JOB_NAME,
-            state=gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED,
+            state=gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED,
             create_time=_TEST_PIPELINE_CREATE_TIME,
             service_account=_TEST_SERVICE_ACCOUNT,
             network=_TEST_NETWORK,
-            pipeline_spec=_TEST_MODEL_EVAL_PIPELINE_SPEC,  # this should be a protobuf, use json_utils parsing method, compare both dicts
+            pipeline_spec=_TEST_MODEL_EVAL_PIPELINE_SPEC,
         )
         yield mock_create_model_eval_job
 
@@ -451,9 +475,9 @@ def mock_model_eval_job_get():
     with mock.patch.object(
         pipeline_service_client_v1.PipelineServiceClient, "get_pipeline_job"
     ) as mock_get_model_eval_job:
-        mock_get_model_eval_job.return_value = gca_pipeline_job_v1.PipelineJob(
+        mock_get_model_eval_job.return_value = gca_pipeline_job.PipelineJob(
             name=_TEST_PIPELINE_JOB_NAME,
-            state=gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED,
+            state=gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED,
             create_time=_TEST_PIPELINE_CREATE_TIME,
             service_account=_TEST_SERVICE_ACCOUNT,
             network=_TEST_NETWORK,
@@ -461,6 +485,43 @@ def mock_model_eval_job_get():
         )
         yield mock_get_model_eval_job
 
+# TODO: mock the output of a successful eval pipeline job
+def make_pipeline_job(state):
+    return gca_pipeline_job.PipelineJob(
+        name=_TEST_PIPELINE_JOB_NAME,
+        state=state,
+        create_time=_TEST_PIPELINE_CREATE_TIME,
+        service_account=_TEST_SERVICE_ACCOUNT,
+        network=_TEST_NETWORK,
+        # job_detail=gca_pipeline_job.PipelineJobDetail(
+        #     task_details=gca_pipeline_job.PipelineTaskDetail(
+        #         # TODO: eval pipeline task detail
+        #     )
+        # ),
+    )
+
+def make_successfully_completed_eval_job():
+    eval_resource = model_evaluation.ModelEvaluation(
+        evaluation_name=_TEST_MODEL_EVAL_RESOURCE_NAME
+    )
+    eval_resource.backing_pipeline_job = make_pipeline_job
+    return eval_resource
+
+def make_failed_eval_job():
+    model_evaluation_job.ModelEvaluationJob._template_ref = _TEST_TEMPLATE_REF
+
+    eval_job_resource = model_evaluation_job.ModelEvaluationJob(
+        evaluation_pipeline_run=_TEST_PIPELINE_JOB_NAME
+    )
+    eval_job_resource.backing_pipeline_job = gca_pipeline_job.PipelineJob(
+        name=_TEST_PIPELINE_JOB_NAME,
+        state=gca_pipeline_state.PipelineState.PIPELINE_STATE_FAILED,
+        create_time=_TEST_PIPELINE_CREATE_TIME,
+        service_account=_TEST_SERVICE_ACCOUNT,
+        network=_TEST_NETWORK,
+        pipeline_spec=_TEST_MODEL_EVAL_PIPELINE_SPEC,
+    )
+    return eval_job_resource
 
 @pytest.mark.usefixtures("google_auth_mock")
 class TestModelEvaluation:
@@ -619,6 +680,7 @@ class TestModelEvaluationJob:
         mock_model,
         get_model_mock,
         mock_model_eval_job_get,
+        mock_pipeline_service_get,
         mock_model_eval_job_create,
     ):
         aiplatform.init(
@@ -653,17 +715,26 @@ class TestModelEvaluationJob:
 
         expected_runtime_config_dict = {
             "gcsOutputDirectory": _TEST_GCS_BUCKET_NAME,
-            "parameterValues": _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES,
+            "parameters": {
+                "batch_predict_gcs_source_uris": {"stringValue": "[\"gs://my-bucket/my-prediction-data.csv\"]"},
+                "batch_predict_instances_format": {"stringValue": "csv"},
+                "model_name": {"stringValue": _TEST_MODEL_RESOURCE_NAME},
+                "prediction_type": {"stringValue": "classification"},
+                "project": {"stringValue": _TEST_PROJECT},
+                "location": {"stringValue": _TEST_LOCATION},
+                "root_dir": {"stringValue": _TEST_GCS_BUCKET_NAME},
+                "target_column_name": {"stringValue": "predict_class"},
+            }
         }
 
-        runtime_config = gca_pipeline_job_v1.PipelineJob.RuntimeConfig()._pb
+        runtime_config = gca_pipeline_job.PipelineJob.RuntimeConfig()._pb
         json_format.ParseDict(expected_runtime_config_dict, runtime_config)
 
         job_spec = yaml.safe_load(job_spec)
         pipeline_spec = job_spec.get("pipelineSpec") or job_spec
 
         # Construct expected request
-        expected_gapic_pipeline_job = gca_pipeline_job_v1.PipelineJob(
+        expected_gapic_pipeline_job = gca_pipeline_job.PipelineJob(
             display_name=_TEST_MODEL_EVAL_JOB_DISPLAY_NAME,
             pipeline_spec={
                 "components": {},
@@ -686,10 +757,65 @@ class TestModelEvaluationJob:
             timeout=None,
         )
 
+        assert mock_pipeline_service_create.called_once
+
+        assert mock_pipeline_service_get.called_once
+
+        assert mock_model_eval_job_get.called_once
+
+    @pytest.mark.parametrize(
+        "job_spec",
+        [_TEST_MODEL_EVAL_PIPELINE_SPEC_JSON],
+    )
+    def test_get_model_evaluation_with_successful_pipeline_run_returns_resource(
+        self,
+        mock_pipeline_service_create,
+        job_spec,
+        mock_load_yaml_and_json,
+        mock_model,
+        get_model_mock,
+        mock_model_eval_get,
+        mock_model_eval_job_get,
+        mock_pipeline_service_get,
+        mock_model_eval_job_create,
+    ):
+        aiplatform.init(
+            project=_TEST_PROJECT,
+            location=_TEST_LOCATION,
+            credentials=_TEST_CREDENTIALS,
+            staging_bucket=_TEST_GCS_BUCKET_NAME,
+        )
+
+        test_model_eval_job = model_evaluation_job.ModelEvaluationJob.submit(
+            model_name=_TEST_MODEL_RESOURCE_NAME,
+            prediction_type=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+                "prediction_type"
+            ],
+            pipeline_root=_TEST_GCS_BUCKET_NAME,
+            target_column_name=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+                "target_column_name"
+            ],
+            data_type="tabular",
+            display_name=_TEST_MODEL_EVAL_JOB_DISPLAY_NAME,
+            gcs_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+                "batch_predict_gcs_source_uris"
+            ],
+            instances_format=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+                "batch_predict_instances_format"
+            ],
+            service_account=_TEST_SERVICE_ACCOUNT,
+            network=_TEST_NETWORK,
+        )
+
+        test_model_eval_job.wait()
+
+        test_eval = test_model_eval_job.get_model_evaluation()
+        
+        # TODO: need to mock a successful ModelEvaluationJob with backing_pipeline_job resource
+
+
     # TODO: test_model_evaluation_job_submit_with_invalid_*
 
     # TODO: test_model_evaluation_job_get_model_evaluation_with_failed_pipeline_run_raises
 
     # TODO: test_model_evaluation_job_get_model_evaluation_with_pending_pipeline_run
-
-    # TODO: test_get_model_evaluation_with_successful_pipeline_run_returns_resource
