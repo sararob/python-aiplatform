@@ -256,7 +256,6 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
                         ][0]["resourceType"]
                         == "ModelEvaluation"
                     ):
-                        print(component)
                         eval_resource_uri = json.loads(
                             component.execution.metadata[metadata_key]
                         )["resources"][0]["resourceUri"]
