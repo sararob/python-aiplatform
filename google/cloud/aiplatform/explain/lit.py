@@ -310,8 +310,8 @@ class _TensorFlowLitModel(lit_model.Model):
             or 'integrated_gradients'.
         """
         try:
-            import explainable_ai_sdk
-            from explainable_ai_sdk.metadata.tf.v2 import SavedModelMetadataBuilder
+            from explainable_ai_sdk.metadata.tf.v2 import saved_model_metadata_builder
+            from explainable_ai_sdk.model import configs, model_factory
         except ImportError:
             logging.info(
                 "Skipping explanations because the Explainable AI SDK is not installed."
@@ -319,7 +319,7 @@ class _TensorFlowLitModel(lit_model.Model):
             )
             return
 
-        builder = SavedModelMetadataBuilder(model)
+        builder = saved_model_metadata_builder.SavedModelMetadataBuilder(model)
         builder.get_metadata()
         builder.set_numeric_metadata(
             self._input_tensor_name,
@@ -327,11 +327,11 @@ class _TensorFlowLitModel(lit_model.Model):
         )
         builder.save_metadata(model)
         if attribution_method == "integrated_gradients":
-            explainer_config = explainable_ai_sdk.IntegratedGradientsConfig()
+            explainer_config = configs.IntegratedGradientsConfig()
         else:
-            explainer_config = explainable_ai_sdk.SampledShapleyConfig()
+            explainer_config = configs.SampledShapleyConfig()
 
-        self._attribution_explainer = explainable_ai_sdk.load_model_from_local_path(
+        self._attribution_explainer = model_factory.load_model_from_local_path(
             model, explainer_config
         )
         self._load_model(model)

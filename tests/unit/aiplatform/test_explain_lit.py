@@ -121,7 +121,7 @@ _TEST_ATTRIBUTIONS = [
 
 @pytest.fixture
 def widget_render_mock():
-    with mock.patch.object(notebook.LitWidget, "render") as render_mock:
+    with mock.patch.object(notebook, "LitWidget") as render_mock:
         yield render_mock
 
 
