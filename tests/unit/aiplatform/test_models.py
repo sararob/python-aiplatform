@@ -573,6 +573,7 @@ _TEST_PIPELINE_JOB_DETAIL = {
     "output:gcp_resources": '{\n  "resources": [\n    {\n      "resourceType": "ModelEvaluation",\n      "resourceUri": "https://us-central1-aiplatform.googleapis.com/v1/projects/123/locations/us-central1/models/456/evaluations/789"\n    }\n  ]\n}'
 }
 
+
 def make_pipeline_job(state):
     return gca_pipeline_job.PipelineJob(
         name=_TEST_PIPELINE_JOB_NAME,
@@ -600,6 +601,7 @@ def make_pipeline_job(state):
             ],
         ),
     )
+
 
 @pytest.fixture
 def mock_pipeline_service_get():
@@ -636,6 +638,7 @@ def mock_pipeline_service_get():
 
         yield mock_get_pipeline_job
 
+
 @pytest.fixture
 def mock_successfully_completed_eval_job():
     with mock.patch.object(
@@ -645,6 +648,7 @@ def mock_successfully_completed_eval_job():
             gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED
         )
         yield mock_get_model_eval_job
+
 
 @pytest.mark.usefixtures("google_auth_mock")
 class TestModel:

@@ -56,7 +56,6 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
                     task.task_name.startswith("model-evaluation")
                     and "evaluation_metrics" in task.outputs
                 ):
-                    print(task, "i am the task!")
                     return task.outputs["evaluation_metrics"].artifacts[0].name
 
     def __init__(

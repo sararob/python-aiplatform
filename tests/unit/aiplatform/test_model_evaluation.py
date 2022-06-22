@@ -51,7 +51,7 @@ from google.cloud.aiplatform.compat.types import (
 )
 
 
-from google.cloud.aiplatform_v1.types import Artifact
+from google.cloud.aiplatform_v1.types import artifact
 
 _TEST_PROJECT = "test-project"
 _TEST_LOCATION = "us-central1"
@@ -340,6 +340,11 @@ _TEST_PIPELINE_JOB_DETAIL = {
     "output:gcp_resources": '{\n  "resources": [\n    {\n      "resourceType": "ModelEvaluation",\n      "resourceUri": "https://us-central1-aiplatform.googleapis.com/v1/projects/123/locations/us-central1/models/456/evaluations/789"\n    }\n  ]\n}'
 }
 
+_TEST_EVAL_METRICS_ARTIFACT_NAME = (
+    "projects/123/locations/us-central1/metadataStores/default/artifacts/456"
+)
+_TEST_EVAL_METRICS_ARTIFACT_URI = "gs://test-bucket/eval_pipeline_root/123/evaluation-default-pipeline-20220615135923/model-evaluation-2_-789/evaluation_metrics"
+
 
 def make_pipeline_job(state):
     return gca_pipeline_job.PipelineJob(
@@ -356,7 +361,6 @@ def make_pipeline_job(state):
                 gca_pipeline_job.PipelineTaskDetail(
                     task_id=123,
                     execution={
-                        "name": "model-evaluation",
                         "metadata": struct_pb2.Struct(
                             fields={
                                 key: struct_pb2.Value(string_value=value)
@@ -365,15 +369,20 @@ def make_pipeline_job(state):
                         ),
                     },
                 ),
-                # gca_pipeline_job.PipelineTaskDetail(
-                #     task_id=456,
-                #     task_name="model-evaluation",
-                #     outputs=struct_pb2.Struct(fields={"evaluation_metrics": struct_pb2.Value(
-                #         list_value=struct_pb2.ListValue(values=[
-                #                 Artifact({"name": "projects/462141068491/locations/us-central1/metadataStores/default/artifacts/14094970957320931391"})
-                #         ])
-                #     )})
-                # )
+                gca_pipeline_job.PipelineTaskDetail(
+                    task_id=456,
+                    task_name="model-evaluation",
+                    outputs={
+                        "evaluation_metrics": gca_pipeline_job.PipelineTaskDetail.ArtifactList(
+                            artifacts=[
+                                artifact.Artifact(
+                                    name=_TEST_EVAL_METRICS_ARTIFACT_NAME,
+                                    uri=_TEST_EVAL_METRICS_ARTIFACT_URI,
+                                ),
+                            ]
+                        )
+                    },
+                ),
             ],
         ),
     )
@@ -848,6 +857,11 @@ class TestModelEvaluationJob:
 
         test_model_eval_job.wait()
 
+        assert (
+            test_model_eval_job._metadata_output_artifact
+            == _TEST_EVAL_METRICS_ARTIFACT_NAME
+        )
+
         test_eval = test_model_eval_job.get_model_evaluation()
 
         assert isinstance(test_eval, aiplatform.ModelEvaluation)
@@ -859,7 +873,7 @@ class TestModelEvaluationJob:
 
         assert mock_model_eval_get.called_once()
 
-        # TODO: add this test case after this is implemented
+        # TODO: add this test case after backing_pipeline_job is implemented
         # assert isinstance(test_eval.backing_pipeline_job, aiplatform.PipelineJob)
 
     @pytest.mark.parametrize(
