@@ -59,7 +59,7 @@ from google.cloud.aiplatform.compat.types import (
     context as gca_context,
 )
 
-from google.protobuf import field_mask_pb2
+from google.protobuf import field_mask_pb2, struct_pb2
 from google.cloud.aiplatform.model_evaluation import model_evaluation_job
 
 from test_endpoints import create_endpoint_mock  # noqa: F401
@@ -569,6 +569,10 @@ def mock_pipeline_service_create():
         yield mock_create_pipeline_job
 
 
+_TEST_PIPELINE_JOB_DETAIL = {
+    "output:gcp_resources": '{\n  "resources": [\n    {\n      "resourceType": "ModelEvaluation",\n      "resourceUri": "https://us-central1-aiplatform.googleapis.com/v1/projects/123/locations/us-central1/models/456/evaluations/789"\n    }\n  ]\n}'
+}
+
 def make_pipeline_job(state):
     return gca_pipeline_job.PipelineJob(
         name=_TEST_PIPELINE_JOB_NAME,
@@ -579,10 +583,23 @@ def make_pipeline_job(state):
         job_detail=gca_pipeline_job.PipelineJobDetail(
             pipeline_run_context=gca_context.Context(
                 name=_TEST_PIPELINE_JOB_NAME,
-            )
+            ),
+            task_details=[
+                gca_pipeline_job.PipelineTaskDetail(
+                    task_id=123,
+                    execution={
+                        "name": "model-evaluation",
+                        "metadata": struct_pb2.Struct(
+                            fields={
+                                key: struct_pb2.Value(string_value=value)
+                                for key, value in _TEST_PIPELINE_JOB_DETAIL.items()
+                            }
+                        ),
+                    },
+                ),
+            ],
         ),
     )
-
 
 @pytest.fixture
 def mock_pipeline_service_get():
@@ -619,6 +636,15 @@ def mock_pipeline_service_get():
 
         yield mock_get_pipeline_job
 
+@pytest.fixture
+def mock_successfully_completed_eval_job():
+    with mock.patch.object(
+        pipeline_service_client_v1.PipelineServiceClient, "get_pipeline_job"
+    ) as mock_get_model_eval_job:
+        mock_get_model_eval_job.return_value = make_pipeline_job(
+            gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED
+        )
+        yield mock_get_model_eval_job
 
 @pytest.mark.usefixtures("google_auth_mock")
 class TestModel:
@@ -2125,6 +2151,7 @@ class TestModel:
         mock_model_eval_get,
         mock_pipeline_service_create,
         mock_pipeline_service_get,
+        mock_successfully_completed_eval_job,
     ):
         aiplatform.init(project=_TEST_PROJECT)
 
@@ -2147,8 +2174,13 @@ class TestModel:
 
         eval_job.wait()
 
-        # TODO: mock completed evaluation pipeline with metrics
         eval = eval_job.get_model_evaluation()
+
+        assert isinstance(eval, aiplatform.ModelEvaluation)
+
+        assert eval.metrics == _TEST_MODEL_EVAL_METRICS
+
+        # TODO: add test for eval.backing_pipeline_job when available
 
     def test_model_evaluate_using_initialized_staging_bucket(
         self,
