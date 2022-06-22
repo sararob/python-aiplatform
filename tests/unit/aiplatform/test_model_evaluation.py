@@ -266,20 +266,15 @@ _TEST_INVALID_MODEL_EVAL_PIPELINE_JOB = json.dumps(
     }
 )
 
+_GCP_RESOURCES_STR = "{\n  \"resources\": [\n    {\n      \"resourceType\": \"ModelEvaluation\",\n      \"resourceUri\": \"https://us-central1-aiplatform.googleapis.com/v1/" + _TEST_MODEL_EVAL_RESOURCE_NAME + "\"\n    }\n  ]\n}"
 
-# _TEST_EVAL_PIPELINE_JOB_TASK_DETAIL = gca_pipeline_job.PipelineTaskDetail(
-#     execution={
-#         "metadata": {
-#             "output:gcp_resources": {
-#                 "resources": [
-#                     "resourceType": "ModelEvaluation",
-#                     "resourceUri": _TEST_MODEL_EVAL_RESOURCE_NAME
-#                 ]
-#             }
-#         }
-#     }
-# )
-
+_TEST_PIPELINE_JOB_DETAIL = {
+    "output:gcp_resources": _GCP_RESOURCES_STR
+}
+_TEST_EVAL_METRICS_ARTIFACT_NAME = (
+    "projects/123/locations/us-central1/metadataStores/default/artifacts/456"
+)
+_TEST_EVAL_METRICS_ARTIFACT_URI = "gs://test-bucket/eval_pipeline_root/123/evaluation-default-pipeline-20220615135923/model-evaluation-2_-789/evaluation_metrics"
 
 @pytest.fixture
 def get_model_mock():
@@ -334,16 +329,6 @@ def mock_pipeline_service_create():
             network=_TEST_NETWORK,
         )
         yield mock_create_pipeline_job
-
-
-_TEST_PIPELINE_JOB_DETAIL = {
-    "output:gcp_resources": '{\n  "resources": [\n    {\n      "resourceType": "ModelEvaluation",\n      "resourceUri": "https://us-central1-aiplatform.googleapis.com/v1/projects/123/locations/us-central1/models/456/evaluations/789"\n    }\n  ]\n}'
-}
-
-_TEST_EVAL_METRICS_ARTIFACT_NAME = (
-    "projects/123/locations/us-central1/metadataStores/default/artifacts/456"
-)
-_TEST_EVAL_METRICS_ARTIFACT_URI = "gs://test-bucket/eval_pipeline_root/123/evaluation-default-pipeline-20220615135923/model-evaluation-2_-789/evaluation_metrics"
 
 
 def make_pipeline_job(state):
@@ -862,18 +847,22 @@ class TestModelEvaluationJob:
             == _TEST_EVAL_METRICS_ARTIFACT_NAME
         )
 
+        assert test_model_eval_job.backing_pipeline_job.resource_name == _TEST_PIPELINE_JOB_NAME
+
+        assert isinstance(test_model_eval_job.backing_pipeline_job, aiplatform.PipelineJob)
+
         test_eval = test_model_eval_job.get_model_evaluation()
 
         assert isinstance(test_eval, aiplatform.ModelEvaluation)
 
         assert test_eval.metrics == _TEST_MODEL_EVAL_METRICS
 
-        # TODO: change these to called_once_with(...)
-        assert mock_pipeline_service_get.called_once()
+        mock_model_eval_get.assert_called_with(
+            name=_TEST_MODEL_EVAL_RESOURCE_NAME,
+            retry=base._DEFAULT_RETRY
+        )
 
-        assert mock_model_eval_get.called_once()
-
-        # TODO: add this test case after backing_pipeline_job is implemented
+        # TODO: add this test case after backing_pipeline_job is implemented for ModelEvaluation class
         # assert isinstance(test_eval.backing_pipeline_job, aiplatform.PipelineJob)
 
     @pytest.mark.parametrize(
@@ -971,5 +960,3 @@ class TestModelEvaluationJob:
         )
 
         assert test_model_eval_job.get_model_evaluation() is None
-
-    # TODO: test_model_evaluation_job_submit_with_invalid_*
