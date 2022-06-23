@@ -187,6 +187,9 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
             credentials (auth_credentials.Credentials):
                 Optional. Custom credentials to use to create the PipelineJob.
                 Overrides credentials set in aiplatform.init.
+            experiment (Union[str, experiments_resource.Experiment]):
+                Optional. The Vertex AI experiment name or instance to associate to the PipelineJob executing
+                this model evaluation job.
         Returns:
             (ModelEvaluationJob): Instantiated represnetation of the model evaluation job.
         """

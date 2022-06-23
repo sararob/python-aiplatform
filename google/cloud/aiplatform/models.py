@@ -3581,6 +3581,11 @@ class Model(base.VertexAiResourceNounWithFutureManager):
                 should be peered. For example, projects/12345/global/networks/myVPC.
                 Private services access must already be configured for the network.
                 If left unspecified, the job is not peered with any network.
+            experiment (Union[str, experiments_resource.Experiment]):
+                Optional. The Vertex AI experiment name or instance to associate to the PipelineJob executing
+                this model evaluation job. Metrics produced by the PipelineJob as system.Metric Artifacts
+                will be associated as metrics to the provided experiment, and parameters from this PipelineJob
+                will be associated as parameters to the provided experiment.
         Returns:
             model_evaluation.ModelEvaluationJob: Instantiated representation of the
             ModelEvaluationJob.

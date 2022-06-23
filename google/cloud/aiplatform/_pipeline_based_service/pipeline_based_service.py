@@ -216,6 +216,9 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
             credentials (auth_credentials.Credentials):
                 Optional. Custom credentials to use to create the PipelineJob.
                 Overrides credentials set in aiplatform.init.
+            experiment (Union[str, experiments_resource.Experiment]):
+                Optional. The Vertex AI experiment name or instance to associate to the PipelineJob executing
+                this model evaluation job.
         Returns:
             (VertexAiPipelineBasedService):
                 Instantiated representation of a Vertex AI Pipeline based service.
