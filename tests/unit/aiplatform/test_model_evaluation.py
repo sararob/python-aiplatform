@@ -48,10 +48,11 @@ from google.cloud.aiplatform.compat.types import (
     pipeline_state as gca_pipeline_state,
     model_evaluation as gca_model_evaluation,
     context as gca_context,
+    artifact as gca_artifact,
 )
 
 
-from google.cloud.aiplatform_v1.types import artifact
+# from google.cloud.aiplatform_v1.types import artifact
 
 _TEST_PROJECT = "test-project"
 _TEST_LOCATION = "us-central1"
@@ -266,15 +267,18 @@ _TEST_INVALID_MODEL_EVAL_PIPELINE_JOB = json.dumps(
     }
 )
 
-_GCP_RESOURCES_STR = "{\n  \"resources\": [\n    {\n      \"resourceType\": \"ModelEvaluation\",\n      \"resourceUri\": \"https://us-central1-aiplatform.googleapis.com/v1/" + _TEST_MODEL_EVAL_RESOURCE_NAME + "\"\n    }\n  ]\n}"
+_GCP_RESOURCES_STR = (
+    '{\n  "resources": [\n    {\n      "resourceType": "ModelEvaluation",\n      "resourceUri": "https://us-central1-aiplatform.googleapis.com/v1/'
+    + _TEST_MODEL_EVAL_RESOURCE_NAME
+    + '"\n    }\n  ]\n}'
+)
 
-_TEST_PIPELINE_JOB_DETAIL = {
-    "output:gcp_resources": _GCP_RESOURCES_STR
-}
+_TEST_PIPELINE_JOB_DETAIL = {"output:gcp_resources": _GCP_RESOURCES_STR}
 _TEST_EVAL_METRICS_ARTIFACT_NAME = (
     "projects/123/locations/us-central1/metadataStores/default/artifacts/456"
 )
 _TEST_EVAL_METRICS_ARTIFACT_URI = "gs://test-bucket/eval_pipeline_root/123/evaluation-default-pipeline-20220615135923/model-evaluation-2_-789/evaluation_metrics"
+
 
 @pytest.fixture
 def get_model_mock():
@@ -360,7 +364,7 @@ def make_pipeline_job(state):
                     outputs={
                         "evaluation_metrics": gca_pipeline_job.PipelineTaskDetail.ArtifactList(
                             artifacts=[
-                                artifact.Artifact(
+                                gca_artifact.Artifact(
                                     name=_TEST_EVAL_METRICS_ARTIFACT_NAME,
                                     uri=_TEST_EVAL_METRICS_ARTIFACT_URI,
                                 ),
@@ -847,9 +851,14 @@ class TestModelEvaluationJob:
             == _TEST_EVAL_METRICS_ARTIFACT_NAME
         )
 
-        assert test_model_eval_job.backing_pipeline_job.resource_name == _TEST_PIPELINE_JOB_NAME
+        assert (
+            test_model_eval_job.backing_pipeline_job.resource_name
+            == _TEST_PIPELINE_JOB_NAME
+        )
 
-        assert isinstance(test_model_eval_job.backing_pipeline_job, aiplatform.PipelineJob)
+        assert isinstance(
+            test_model_eval_job.backing_pipeline_job, aiplatform.PipelineJob
+        )
 
         test_eval = test_model_eval_job.get_model_evaluation()
 
@@ -858,8 +867,7 @@ class TestModelEvaluationJob:
         assert test_eval.metrics == _TEST_MODEL_EVAL_METRICS
 
         mock_model_eval_get.assert_called_with(
-            name=_TEST_MODEL_EVAL_RESOURCE_NAME,
-            retry=base._DEFAULT_RETRY
+            name=_TEST_MODEL_EVAL_RESOURCE_NAME, retry=base._DEFAULT_RETRY
         )
 
         # TODO: add this test case after backing_pipeline_job is implemented for ModelEvaluation class

@@ -15,10 +15,11 @@
 # limitations under the License.
 #
 
-from typing import Optional, List
+from typing import Optional, List, Union
 
 from google.auth import credentials as auth_credentials
 
+from google.cloud import aiplatform
 from google.cloud.aiplatform import base
 from google.cloud.aiplatform import initializer
 from google.cloud.aiplatform._pipeline_based_service import pipeline_based_service
@@ -125,6 +126,7 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         project: Optional[str] = None,
         location: Optional[str] = None,
         credentials: Optional[auth_credentials.Credentials] = None,
+        experiment: Optional[Union[str, "aiplatform.Experiment"]] = None,
     ) -> "ModelEvaluationJob":
         """Submits a Model Evaluation Job using aiplatform.PipelineJob and returns
         the ModelEvaluationJob resource.
@@ -216,6 +218,7 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
             project=project,
             location=location,
             credentials=credentials,
+            experiment=experiment,
         )
 
         return eval_pipeline_run

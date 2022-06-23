@@ -35,6 +35,8 @@ from google.cloud.aiplatform import utils
 from google.cloud.aiplatform.utils import gcs_utils
 from google.cloud.aiplatform import model_evaluation
 
+# from google.cloud.aiplatform.metadata import experiment_resources
+
 from google.cloud.aiplatform.compat.services import endpoint_service_client
 
 from google.cloud.aiplatform.compat.types import (
@@ -3528,6 +3530,7 @@ class Model(base.VertexAiResourceNounWithFutureManager):
         generate_feature_attributions: Optional[bool] = False,
         evaluation_job_display_name: Optional[str] = None,
         network: Optional[str] = None,
+        experiment: Optional[Union[str, "aiplatform.Experiment"]] = None,
     ) -> "model_evaluation.ModelEvaluationJob":
         """Creates a model evaluation job running on Vertex Pipelines and returns the resulting
         ModelEvaluationJob resource.
@@ -3609,4 +3612,5 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             display_name=evaluation_job_display_name,
             network=network,
             credentials=self.credentials,
+            experiment=experiment,
         )

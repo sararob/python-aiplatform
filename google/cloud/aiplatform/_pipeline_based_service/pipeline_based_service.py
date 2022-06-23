@@ -18,9 +18,11 @@
 import abc
 from google.auth import credentials as auth_credentials
 
+from google.cloud import aiplatform
 from google.cloud.aiplatform import base
 from google.cloud.aiplatform import utils
 from google.cloud.aiplatform import pipeline_jobs
+
 from google.cloud.aiplatform.utils import yaml_utils
 
 from google.cloud.aiplatform.compat.types import (
@@ -33,6 +35,7 @@ from typing import (
     Dict,
     Optional,
     List,
+    Union,
 )
 
 _LOGGER = base.Logger(__name__)
@@ -181,6 +184,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         project: Optional[str] = None,
         location: Optional[str] = None,
         credentials: Optional[auth_credentials.Credentials] = None,
+        experiment: Optional[Union[str, "aiplatform.Experiment"]] = None,
     ) -> "_VertexAiPipelineBasedService":
         """Create a new PipelineJob using the provided template and parameters.
         Args:
@@ -240,6 +244,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         service_pipeline_job.submit(
             service_account=service_account,
             network=network,
+            experiment=experiment,
         )
 
         self._gca_resource = self._get_gca_resource(service_pipeline_job.resource_name)
