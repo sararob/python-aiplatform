@@ -15,7 +15,6 @@
 # limitations under the License.
 #
 
-import copy
 import pytest
 import yaml
 import json
@@ -26,21 +25,14 @@ from unittest.mock import patch
 from datetime import datetime
 from google.auth import credentials as auth_credentials
 
-import test_tensorboard
-
+import test_metadata
 from google.cloud import storage
 
 from google.cloud import aiplatform
 from google.cloud.aiplatform import base
 from google.cloud.aiplatform import models
 from google.cloud.aiplatform import model_evaluation
-from google.cloud.aiplatform.metadata import constants
 
-from google.cloud.aiplatform_v1 import AddContextArtifactsAndExecutionsResponse
-from google.cloud.aiplatform_v1 import Context as GapicContext
-from google.cloud.aiplatform_v1 import Execution as GapicExecution
-from google.cloud.aiplatform_v1 import MetadataStore as GapicMetadataStore
-from google.cloud.aiplatform_v1 import MetadataServiceClient
 from google.cloud.aiplatform.compat.services import (
     model_service_client,
 )
@@ -51,7 +43,6 @@ from google.cloud.aiplatform_v1.services.pipeline_service import (
 )
 
 from google.cloud.aiplatform.compat.types import model as gca_model
-from google.cloud.aiplatform.compat.types import execution as gca_execution
 
 from google.cloud.aiplatform.compat.types import (
     pipeline_job as gca_pipeline_job,
@@ -60,9 +51,6 @@ from google.cloud.aiplatform.compat.types import (
     context as gca_context,
     artifact as gca_artifact,
 )
-
-
-# from google.cloud.aiplatform_v1.types import artifact
 
 _TEST_PROJECT = "test-project"
 _TEST_LOCATION = "us-central1"
@@ -290,91 +278,18 @@ _TEST_EVAL_METRICS_ARTIFACT_NAME = (
 )
 _TEST_EVAL_METRICS_ARTIFACT_URI = "gs://test-bucket/eval_pipeline_root/123/evaluation-default-pipeline-20220615135923/model-evaluation-2_-789/evaluation_metrics"
 
-
-# experiments
 _TEST_EXPERIMENT = "test-experiment"
-_TEST_EXPERIMENT_DESCRIPTION = "test-experiment-description"
-_TEST_OTHER_EXPERIMENT_DESCRIPTION = "test-other-experiment-description"
-_TEST_PROJECT = "test-project"
-_TEST_LOCATION = "us-central1"
-_TEST_PARENT = (
-    f"projects/{_TEST_PROJECT}/locations/{_TEST_LOCATION}/metadataStores/default"
-)
+_TEST_METADATASTORE = f"{_TEST_PARENT}/metadataStores/default"
+_TEST_CONTEXT_NAME = f"{_TEST_METADATASTORE}/contexts/{_TEST_EXPERIMENT}"
 
-_TEST_RUN = "run-1"
-_TEST_OTHER_RUN = "run-2"
-
-# execution
-_TEST_EXECUTION_ID = f"{_TEST_EXPERIMENT}-{_TEST_RUN}"
-_TEST_EXECUTION_NAME = f"{_TEST_PARENT}/executions/{_TEST_EXECUTION_ID}"
-_TEST_OTHER_EXECUTION_ID = f"{_TEST_EXPERIMENT}-{_TEST_OTHER_RUN}"
-_TEST_OTHER_EXECUTION_NAME = f"{_TEST_PARENT}/executions/{_TEST_OTHER_EXECUTION_ID}"
-
-# context
-_TEST_CONTEXT_ID = _TEST_EXPERIMENT
-_TEST_CONTEXT_NAME = f"{_TEST_PARENT}/contexts/{_TEST_CONTEXT_ID}"
-
-_TEST_EXPERIMENT_RUN_CONTEXT_NAME = f"{_TEST_PARENT}/contexts/{_TEST_EXECUTION_ID}"
-# _TEST_OTHER_EXPERIMENT_RUN_CONTEXT_NAME = (
-#     f"{_TEST_PARENT}/contexts/{_TEST_OTHER_EXECUTION_ID}"
-# )
-
-# metadataStore
-_TEST_METADATASTORE = (
-    f"projects/{_TEST_PROJECT}/locations/{_TEST_LOCATION}/metadataStores/default"
-)
+# experiment mocks
+get_experiment_mock = test_metadata.get_experiment_mock
+get_metadata_store_mock = test_metadata.get_metadata_store_mock
+get_context_mock = test_metadata.get_context_mock
+add_context_children_mock = test_metadata.add_context_children_mock
 
 
-
-_EXPERIMENT_MOCK = GapicContext(
-    name=_TEST_CONTEXT_NAME,
-    display_name=_TEST_EXPERIMENT,
-    description=_TEST_EXPERIMENT_DESCRIPTION,
-    schema_title=constants.SYSTEM_EXPERIMENT,
-    schema_version=constants.SCHEMA_VERSIONS[constants.SYSTEM_EXPERIMENT],
-    metadata={**constants.EXPERIMENT_METADATA},
-)
-
-_EXPERIMENT_RUN_MOCK = GapicContext(
-    name=_TEST_EXPERIMENT_RUN_CONTEXT_NAME,
-    display_name=_TEST_RUN,
-    schema_title=constants.SYSTEM_EXPERIMENT_RUN,
-    schema_version=constants.SCHEMA_VERSIONS[constants.SYSTEM_EXPERIMENT_RUN],
-    metadata={
-        constants._PARAM_KEY: {},
-        constants._METRIC_KEY: {},
-        constants._STATE_KEY: gca_execution.Execution.State.RUNNING.name,
-    },
-)
-
-_EXPERIMENT_RUN_MOCK_WITH_PARENT_EXPERIMENT = copy.deepcopy(_EXPERIMENT_RUN_MOCK)
-_EXPERIMENT_RUN_MOCK_WITH_PARENT_EXPERIMENT.parent_contexts = [_TEST_CONTEXT_NAME]
-
-_TEST_EXPERIMENT_CONTEXT = GapicContext(
-    name=_TEST_CONTEXT_NAME,
-    display_name=_TEST_EXPERIMENT,
-    description=_TEST_EXPERIMENT_DESCRIPTION,
-    schema_title=constants.SYSTEM_EXPERIMENT,
-    schema_version=constants.SCHEMA_VERSIONS[constants.SYSTEM_EXPERIMENT],
-    metadata={
-        **constants.EXPERIMENT_METADATA,
-        constants._BACKING_TENSORBOARD_RESOURCE_KEY: test_tensorboard._TEST_NAME,
-    },
-)
-
-@pytest.fixture
-def get_experiment_mock():
-    with patch.object(MetadataServiceClient, "get_context") as get_context_mock:
-        get_context_mock.return_value = _EXPERIMENT_MOCK
-        yield get_context_mock
-
-@pytest.fixture
-def add_context_children_mock():
-    with patch.object(
-        MetadataServiceClient, "add_context_children"
-    ) as add_context_children_mock:
-        yield add_context_children_mock
-
+# model eval mocks
 @pytest.fixture
 def get_model_mock():
     with mock.patch.object(
@@ -402,7 +317,6 @@ def mock_model():
     yield model
 
 
-# ModelEvaluation mocks
 @pytest.fixture
 def mock_model_eval_get():
     with mock.patch.object(
@@ -894,7 +808,6 @@ class TestModelEvaluationJob:
 
         assert mock_model_eval_job_get.called_once
 
-
     @pytest.mark.parametrize(
         "job_spec",
         [_TEST_MODEL_EVAL_PIPELINE_SPEC_JSON],
@@ -911,6 +824,8 @@ class TestModelEvaluationJob:
         mock_pipeline_service_get,
         mock_model_eval_job_create,
         add_context_children_mock,
+        get_metadata_store_mock,
+        get_context_mock,
     ):
         aiplatform.init(
             project=_TEST_PROJECT,
@@ -919,7 +834,7 @@ class TestModelEvaluationJob:
             staging_bucket=_TEST_GCS_BUCKET_NAME,
         )
 
-        test_experiment = aiplatform.Experiment(experiment_name=_TEST_EXPERIMENT)
+        test_experiment = aiplatform.Experiment(_TEST_EXPERIMENT)
 
         test_model_eval_job = model_evaluation_job.ModelEvaluationJob.submit(
             model_name=_TEST_MODEL_RESOURCE_NAME,
@@ -984,13 +899,17 @@ class TestModelEvaluationJob:
 
         test_job_create_time_str = _TEST_PIPELINE_CREATE_TIME.strftime("%Y%m%d%H%M%S")
 
-        # TODO: this is currently not passing due to differences in the parent of the created vs. expected eval job pipeline
-        # mock_model_eval_job_create.assert_called_with(
-        #     parent=_TEST_METADATASTORE,
-        #     pipeline_job=expected_gapic_pipeline_job,
-        #     pipeline_job_id=f"evaluation-default-pipeline-{test_job_create_time_str}",
-        #     timeout=None,
-        # )
+        mock_model_eval_job_create.assert_called_with(
+            parent=_TEST_PARENT,
+            pipeline_job=expected_gapic_pipeline_job,
+            pipeline_job_id=f"evaluation-default-pipeline-{test_job_create_time_str}",
+            timeout=None,
+        )
+
+        get_context_mock.assert_called_with(
+            name=_TEST_CONTEXT_NAME,
+            retry=base._DEFAULT_RETRY,
+        )
 
     @pytest.mark.parametrize(
         "job_spec",
@@ -1161,5 +1080,3 @@ class TestModelEvaluationJob:
         )
 
         assert test_model_eval_job.get_model_evaluation() is None
-
-# TODO: test_submit_eval_job_with_experiment
