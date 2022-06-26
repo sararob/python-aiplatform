@@ -15,12 +15,8 @@
 # limitations under the License.
 #
 
-from google.cloud.aiplatform.model_evaluation.model_evaluation import ModelEvaluation
-from google.cloud.aiplatform.model_evaluation.model_evaluation_job import (
-    ModelEvaluationJob,
+from google.cloud.aiplatform._pipeline_based_service.pipeline_based_service import (
+    _VertexAiPipelineBasedService,
 )
 
-__all__ = (
-    "ModelEvaluation",
-    "ModelEvaluationJob",
-)
+__all__ = "_VertexAiPipelineBasedService"
