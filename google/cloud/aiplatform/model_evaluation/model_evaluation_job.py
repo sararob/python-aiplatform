@@ -245,7 +245,6 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
 
         return eval_pipeline_run
 
-    # TODO: not sure if this is the best way to get the eval resource uri
     def get_model_evaluation(
         self,
     ) -> Optional["model_evaluation.ModelEvaluation"]:
@@ -271,7 +270,6 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
                 "Your evaluation job ran successfully. Creating Model Evaluation resource..."
             )
 
-            # TODO: is there a better way to get the eval resource name?
             for component in self.backing_pipeline_job.task_details:
                 for metadata_key in component.execution.metadata:
                     if (

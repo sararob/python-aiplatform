@@ -70,6 +70,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         """
         pass
 
+    #TODO: Consider updating this to return a dict or list in the future to support multiple outputs
     @property
     @abc.abstractmethod
     def _metadata_output_artifact(self) -> Optional[str]:
@@ -282,7 +283,6 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
             credentials=credentials,
         )
 
-        # TODO: this takes a long time for projects with many pipeline executions. Is there a faster way to do this?
         all_pipeline_jobs = pipeline_jobs.PipelineJob.list(
             project=project,
             location=location,
