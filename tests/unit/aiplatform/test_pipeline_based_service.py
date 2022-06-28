@@ -263,7 +263,7 @@ class TestPipelineBasedService:
             credentials=_TEST_CREDENTIALS,
         )
 
-        self.FakePipelineBasedService(pipeline_job_id=_TEST_PIPELINE_JOB_ID)
+        self.FakePipelineBasedService(pipeline_job_name=_TEST_PIPELINE_JOB_ID)
 
         mock_pipeline_based_service_get.assert_called_with(
             name=_TEST_PIPELINE_JOB_NAME, retry=base._DEFAULT_RETRY
@@ -303,7 +303,7 @@ class TestPipelineBasedService:
 
         with pytest.raises(ValueError):
             self.FakePipelineBasedService(
-                pipeline_job_id=_TEST_INVALID_PIPELINE_JOB_NAME,
+                pipeline_job_name=_TEST_INVALID_PIPELINE_JOB_NAME,
             )
 
     @pytest.mark.parametrize(
@@ -323,14 +323,16 @@ class TestPipelineBasedService:
             credentials=_TEST_CREDENTIALS,
         )
 
-        self.FakePipelineBasedService._create_and_submit_pipeline_job(
-            job_id=_TEST_PIPELINE_JOB_ID,
-            template_params=_TEST_PIPELINE_PARAMETER_VALUES,
-            template_path=_TEST_TEMPLATE_PATH,
-            pipeline_root=_TEST_PIPELINE_ROOT,
-            display_name=_TEST_PIPELINE_JOB_DISPLAY_NAME,
-            service_account=_TEST_SERVICE_ACCOUNT,
-            network=_TEST_NETWORK,
+        test_pipeline_service = (
+            self.FakePipelineBasedService._create_and_submit_pipeline_job(
+                job_id=_TEST_PIPELINE_JOB_ID,
+                template_params=_TEST_PIPELINE_PARAMETER_VALUES,
+                template_path=_TEST_TEMPLATE_PATH,
+                pipeline_root=_TEST_PIPELINE_ROOT,
+                display_name=_TEST_PIPELINE_JOB_DISPLAY_NAME,
+                service_account=_TEST_SERVICE_ACCOUNT,
+                network=_TEST_NETWORK,
+            )
         )
 
         expected_runtime_config_dict = {
@@ -356,15 +358,20 @@ class TestPipelineBasedService:
             network=_TEST_NETWORK,
         )
 
-        mock_pipeline_service_get.assert_called_with(
-            name=_TEST_PIPELINE_JOB_NAME, retry=base._DEFAULT_RETRY
-        )
-
-        assert mock_pipeline_service_get.call_count == 1
-
         mock_pipeline_service_create.assert_called_once_with(
             parent=_TEST_PARENT,
             pipeline_job=expected_gapic_pipeline_job,
             pipeline_job_id=_TEST_PIPELINE_JOB_ID,
             timeout=None,
+        )
+
+        assert mock_pipeline_service_create.call_count == 1
+
+        test_backing_pipeline_job = test_pipeline_service.backing_pipeline_job
+
+        assert mock_pipeline_service_get.call_count == 1
+
+        assert (
+            test_pipeline_service.gca_resource.name
+            == test_backing_pipeline_job.resource_name
         )

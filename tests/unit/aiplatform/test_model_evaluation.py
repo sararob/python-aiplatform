@@ -548,7 +548,7 @@ def make_failed_eval_job():
     model_evaluation_job.ModelEvaluationJob._template_ref = _TEST_TEMPLATE_REF
 
     eval_job_resource = model_evaluation_job.ModelEvaluationJob(
-        evaluation_pipeline_run=_TEST_PIPELINE_JOB_NAME
+        evaluation_pipeline_run_name=_TEST_PIPELINE_JOB_NAME
     )
     eval_job_resource.backing_pipeline_job = gca_pipeline_job.PipelineJob(
         name=_TEST_PIPELINE_JOB_NAME,
@@ -642,7 +642,7 @@ class TestModelEvaluationJob:
         aiplatform.init(project=_TEST_PROJECT)
 
         model_evaluation_job.ModelEvaluationJob(
-            evaluation_pipeline_run=_TEST_PIPELINE_JOB_NAME
+            evaluation_pipeline_run_name=_TEST_PIPELINE_JOB_NAME
         )
 
         mock_model_eval_job_get.assert_called_once_with(
@@ -670,7 +670,7 @@ class TestModelEvaluationJob:
 
         with pytest.raises(AttributeError):
             model_evaluation_job.ModelEvaluationJob(
-                evaluation_pipeline_run=_TEST_PIPELINE_JOB_NAME
+                evaluation_pipeline_run_name=_TEST_PIPELINE_JOB_NAME
             )
 
     @pytest.mark.parametrize(
@@ -693,7 +693,7 @@ class TestModelEvaluationJob:
 
         with pytest.raises(ValueError):
             model_evaluation_job.ModelEvaluationJob(
-                evaluation_pipeline_run=_TEST_PIPELINE_JOB_NAME
+                evaluation_pipeline_run_name=_TEST_PIPELINE_JOB_NAME
             )
 
     def test_init_model_evaluation_job_with_invalid_pipeline_job_name_raises(
@@ -708,7 +708,7 @@ class TestModelEvaluationJob:
 
         with pytest.raises(ValueError):
             model_evaluation.ModelEvaluationJob(
-                evaluation_pipeline_run=_TEST_INVALID_PIPELINE_JOB_NAME,
+                evaluation_pipeline_run_name=_TEST_INVALID_PIPELINE_JOB_NAME,
             )
 
     @pytest.mark.parametrize(

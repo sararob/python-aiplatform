@@ -127,7 +127,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
 
     def __init__(
         self,
-        pipeline_job_id: str,
+        pipeline_job_name: str,
         project: Optional[str] = None,
         location: Optional[str] = None,
         credentials: Optional[auth_credentials.Credentials] = None,
@@ -135,14 +135,14 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         """Retrieves an existing Pipeline Based Service given the ID of the pipeline execution.
         Example Usage:
             pipeline_service = aiplatform._pipeline_based_service._VertexAiPipelineBasedService(
-                pipeline_job_id = "projects/123/locations/us-central1/pipelinesJobs/456"
+                pipeline_job_name = "projects/123/locations/us-central1/pipelinesJobs/456"
             )
             pipeline_service = aiplatform.VertexAiPipelinebasedService(
-                pipeline_job_id = "456"
+                pipeline_job_name = "456"
             )
         Args:
-            pipeline_job_id(str):
-                Required. A fully-qualified pipeline job run ID.
+            pipeline_job_name (str):
+                Required. A fully-qualified pipeline job run.
                 Example: "projects/123/locations/us-central1/pipelineJobs/456" or
                 "456" when project and location are initialized or passed.
             project (str):
@@ -162,14 +162,14 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
             project=project,
             location=location,
             credentials=credentials,
-            resource_name=pipeline_job_id,
+            resource_name=pipeline_job_name,
         )
 
-        job_resource = pipeline_jobs.PipelineJob.get(resource_name=pipeline_job_id)
+        job_resource = pipeline_jobs.PipelineJob.get(resource_name=pipeline_job_name)
 
         self._validate_pipeline_template_matches_service(job_resource)
 
-        self._gca_resource = gca_pipeline_job.PipelineJob(name=pipeline_job_id)
+        self._gca_resource = gca_pipeline_job.PipelineJob(name=pipeline_job_name)
 
     @classmethod
     def _create_and_submit_pipeline_job(
@@ -250,7 +250,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
             experiment=experiment,
         )
 
-        self._gca_resource = self._get_gca_resource(service_pipeline_job.resource_name)
+        self._gca_resource = service_pipeline_job.gca_resource
 
         return self
 
@@ -296,5 +296,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
                 self._validate_pipeline_template_matches_service(job)
                 service_pipeline_jobs.append(job)
 
-            finally:
-                return service_pipeline_jobs
+            except ValueError:
+                continue
+
+        return service_pipeline_jobs

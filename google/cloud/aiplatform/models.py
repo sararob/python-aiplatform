@@ -3585,6 +3585,14 @@ class Model(base.VertexAiResourceNounWithFutureManager):
         Returns:
             model_evaluation.ModelEvaluationJob: Instantiated representation of the
             ModelEvaluationJob.
+
+        Raises:
+            ValueError:
+                If staging_bucket was not set in aiplatform.init() and evaluation_staging_bucket was not provided.
+                If the provided `prediction_type` is not valid.
+                If the provided `data_type` is not valid.
+            RuntimeError:
+                If the model evaluation job fails.
         """
         if not evaluation_staging_path and initializer.global_config.staging_bucket:
             evaluation_staging_path = initializer.global_config.staging_bucket

@@ -15,7 +15,6 @@
 # limitations under the License.
 #
 
-import tempfile
 import importlib
 import os
 import uuid
@@ -23,14 +22,11 @@ from urllib import request
 
 import pytest
 
-from google.api_core import exceptions
 from google.cloud import storage
 
 from google.cloud import aiplatform
 from google.cloud.aiplatform import initializer
-from google.cloud.aiplatform.utils import rest_utils
 from tests.system.aiplatform import e2e_base
-from tests.system.aiplatform import test_model_upload
 
 _BLOB_PATH = "california-housing-data.csv"
 _DATASET_SRC = "https://dl.google.com/mlcc/mledu-datasets/california_housing_train.csv"
@@ -52,7 +48,7 @@ _INSTANCE = {
 _TEST_PROJECT = e2e_base._PROJECT
 _TEST_LOCATION = e2e_base._LOCATION
 
-# @pytest.mark.usefixtures("delete_staging_bucket", "tear_down_resources")
+
 class TestModelEvaluationJob(e2e_base.TestEndToEnd):
 
     _temp_prefix = "temp_vertex_sdk_model_evaluation_test"
@@ -70,11 +66,13 @@ class TestModelEvaluationJob(e2e_base.TestEndToEnd):
     @pytest.fixture()
     def staging_bucket(self, storage_client):
         new_staging_bucket = f"temp-sdk-integration-{uuid.uuid4()}"
-        bucket = storage_client.create_bucket(new_staging_bucket, location='us-central1')
+        bucket = storage_client.create_bucket(
+            new_staging_bucket, location="us-central1"
+        )
 
         yield bucket
 
-        # bucket.delete(force=True)
+        bucket.delete(force=True)
 
     def test_model_evaluate_custom_model(self, staging_bucket):
         # assert shared_state["bucket"]
@@ -87,8 +85,7 @@ class TestModelEvaluationJob(e2e_base.TestEndToEnd):
             data = response.read()
             blob.upload_from_string(data)
 
-
-        dataset_gcs_source = f'gs://{staging_bucket.name}/{_BLOB_PATH}'
+        dataset_gcs_source = f"gs://{staging_bucket.name}/{_BLOB_PATH}"
 
         ds = aiplatform.TabularDataset.create(
             gcs_source=[dataset_gcs_source],
@@ -120,7 +117,6 @@ class TestModelEvaluationJob(e2e_base.TestEndToEnd):
 
         custom_model.wait()
 
-
         eval_job = custom_model.evaluate(
             data_type="tabular",
             gcs_source_uris=[dataset_gcs_source],
@@ -131,15 +127,14 @@ class TestModelEvaluationJob(e2e_base.TestEndToEnd):
             evaluation_job_display_name="test-pipeline-display-name",
         )
 
-        print(eval_job.backing_pipeline_job.state, 'state before completion')
+        print(eval_job.backing_pipeline_job.state, "state before completion")
 
         eval_job.wait()
 
-        print(eval_job.backing_pipeline_job, 'pipeline job backing eval')
-        print(eval_job.backing_pipeline_job.resource_name, 'pipeline resource name')
-        print(eval_job.backing_pipeline_job.state, 'pipeline job completed state')
-
+        print(eval_job.backing_pipeline_job, "pipeline job backing eval")
+        print(eval_job.backing_pipeline_job.resource_name, "pipeline resource name")
+        print(eval_job.backing_pipeline_job.state, "pipeline job completed state")
 
         model_eval = eval_job.get_model_evaluation()
-        print(model_eval.metrics, 'eval metrics')
-        print(model_eval.metadata_output_artifact, 'mlmd uri of eval')
+        print(model_eval.metrics, "eval metrics")
+        print(model_eval.metadata_output_artifact, "mlmd uri of eval")

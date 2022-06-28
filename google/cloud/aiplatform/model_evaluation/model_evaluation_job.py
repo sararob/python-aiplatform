@@ -61,7 +61,7 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
 
     def __init__(
         self,
-        evaluation_pipeline_run: str,
+        evaluation_pipeline_run_name: str,
         project: Optional[str] = None,
         location: Optional[str] = None,
         credentials: Optional[auth_credentials.Credentials] = None,
@@ -69,13 +69,13 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         """Retrieves a ModelEvaluationJob and instantiates its representation.
         Example Usage:
             my_evaluation = aiplatform.ModelEvaluationJob(
-                pipeline_job_id = "projects/123/locations/us-central1/pipelineJobs/456"
+                pipeline_job_name = "projects/123/locations/us-central1/pipelineJobs/456"
             )
             my_evaluation = aiplatform.ModelEvaluationJob(
-                pipeline_job_id = "456"
+                pipeline_job_name = "456"
             )
         Args:
-            evaluation_pipeline_run (str):
+            evaluation_pipeline_run_name (str):
                 Required. A fully-qualified pipeline job run ID.
                 Example: "projects/123/locations/us-central1/pipelineJobs/456" or
                 "456" when project and location are initialized or passed.
@@ -90,15 +90,29 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
                 credentials set in aiplatform.init.
         """
         super().__init__(
-            pipeline_job_id=evaluation_pipeline_run,
+            pipeline_job_name=evaluation_pipeline_run_name,
             project=project,
             location=location,
             credentials=credentials,
         )
 
     @staticmethod
-    def _get_template_url(data_type, feature_attributions) -> str:
+    def _get_template_url(
+        data_type: str,
+        feature_attributions: bool,
+    ) -> str:
+        """Gets the pipeline template URL for this model evaluation job given the type of data
+        used to train the model and whether feature attributions should be generated.
 
+        Args:
+            data_type (str):
+                Required. The type of data used to train the model.
+            feature_attributions (bool):
+                Required. Whether this evaluation job should generate feature attributions.
+
+        Returns:
+            (str): The pipeline template URL to use for this model evaluation job.
+        """
         template_type = data_type
 
         if feature_attributions:
@@ -111,7 +125,7 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
     @classmethod
     def submit(
         cls,
-        model_name: str,
+        model_name: Union[str, "aiplatform.Model"],
         prediction_type: str,
         target_column_name: str,
         gcs_source_uris: List[str],
@@ -150,8 +164,8 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
             instances_format="jsonl",
         )
         Args:
-            model_name (str):
-                Required. A fully-qualified model resource name or model ID to run the evaluation
+            model_name (Union[str, "aiplatform.Model"]):
+                Required. An instance of aiplatform.Model or a fully-qualified model resource name or model ID to run the evaluation
                 job on. Example: "projects/123/locations/us-central1/models/456" or
                 "456" when project and location are initialized or passed.
             prediction_type (str):
@@ -194,13 +208,18 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
             (ModelEvaluationJob): Instantiated represnetation of the model evaluation job.
         """
 
+        if isinstance(model_name, aiplatform.Model):
+            model_resource_name = model_name.resource_name
+        else:
+            model_resource_name = model_name
+
         if not display_name:
             display_name = cls._generate_display_name()
 
         template_params = {
             "batch_predict_gcs_source_uris": gcs_source_uris,
             "batch_predict_instances_format": instances_format,
-            "model_name": model_name,
+            "model_name": model_resource_name,
             "prediction_type": prediction_type,
             "project": project or initializer.global_config.project,
             "location": location or initializer.global_config.location,
@@ -230,7 +249,7 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
     def get_model_evaluation(
         self,
     ) -> Optional["model_evaluation.ModelEvaluation"]:
-        """Creates a ModelEvaluation resource and instantiates its representation.
+        """Gets the ModelEvaluation created by this ModelEvlauationJob.
 
         Returns:
             aiplatform.ModelEvaluation: Instantiated representation of the ModelEvaluation resource.
@@ -285,31 +304,3 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
             pipeline_run._block_until_complete()
         else:
             pipeline_run.wait()
-
-    @classmethod
-    def list(
-        cls,
-        project: Optional[str] = None,
-        location: Optional[str] = None,
-        credentials: Optional[auth_credentials.Credentials] = None,
-    ) -> List["model_evaluation.ModelEvaluationJob"]:
-        """Returns a list of all ModelEvaluationJob resources associated with this project.
-        Args:
-            project (str):
-                Optional. The project to retrieve the ModelEvaluationJob resources from. If not set,
-                the project set in aiplatform.init will be used.
-            location (str):
-                Optional. Location to retrieve the ModelEvaluationJob resources from. If not set,
-                location set in aiplatform.init will be used.
-            credentials (auth_credentials.Credentials):
-                Optional. Custom credentials to use to retrieve the ModelEvaluationJob resources from.
-                Overrides credentials set in aiplatform.init.
-        Returns:
-            (List[ModelEvaluationJob]):
-                A list of ModelEvaluationJob resource objects.
-        """
-        return super().list(
-            project=project,
-            location=location,
-            credentials=credentials,
-        )
