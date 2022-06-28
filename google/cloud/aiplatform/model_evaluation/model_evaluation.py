@@ -45,7 +45,7 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
             return self.to_dict()["metrics"]
 
     @property
-    def backing_pipeline_job(self) -> Optional[str]:
+    def _backing_pipeline_job(self) -> Optional[str]:
         """The id of the managed pipeline for this model evaluation job.
 
         Returns:
@@ -57,7 +57,7 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
         raise NotImplementedError
 
     @property
-    def batch_prediction_job(self) -> Optional[jobs.BatchPredictionJob]:
+    def _batch_prediction_job(self) -> Optional[jobs.BatchPredictionJob]:
         """The batch prediction job used for this evaluation if this ran as a
         Model Evaluation pipeline.
         Returns:
@@ -67,7 +67,7 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
         raise NotImplementedError
 
     @property
-    def metadata_output_artifact(self) -> Optional[str]:
+    def _metadata_output_artifact(self) -> Optional[str]:
         """The MLMD metadata artifact uri created by the Model Evaluation pipeline.
 
         Returns:

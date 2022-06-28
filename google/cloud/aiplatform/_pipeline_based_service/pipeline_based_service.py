@@ -16,20 +16,6 @@
 #
 
 import abc
-from google.auth import credentials as auth_credentials
-
-from google.cloud import aiplatform
-from google.cloud.aiplatform import base
-from google.cloud.aiplatform import utils
-from google.cloud.aiplatform import pipeline_jobs
-
-from google.cloud.aiplatform.utils import yaml_utils
-
-from google.cloud.aiplatform.compat.types import (
-    pipeline_job_v1 as gca_pipeline_job_v1,
-    pipeline_state as gca_pipeline_state,
-)
-
 from typing import (
     Any,
     Dict,
@@ -38,7 +24,16 @@ from typing import (
     Union,
 )
 
-_LOGGER = base.Logger(__name__)
+from google.auth import credentials as auth_credentials
+
+from google.cloud import aiplatform
+from google.cloud.aiplatform import base, utils, pipeline_jobs
+from google.cloud.aiplatform.utils import yaml_utils
+
+from google.cloud.aiplatform.compat.types import (
+    pipeline_job as gca_pipeline_job,
+    pipeline_state as gca_pipeline_state,
+)
 
 _PIPELINE_COMPLETE_STATES = set(
     [
@@ -87,13 +82,13 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         return pipeline_jobs.PipelineJob.get(resource_name=self.resource_name)
 
     @property
-    def pipeline_console_uri(self) -> str:
+    def pipeline_console_uri(self) -> Optional[str]:
         """The console URI of the PipelineJob created by the service."""
         if self.backing_pipeline_job:
             return self.backing_pipeline_job._dashboard_uri()
 
     @property
-    def state(self) -> Optional[str]:
+    def state(self) -> Optional[gca_pipeline_state.PipelineState]:
         """The state of the Pipeline run associated with the service."""
         if self.backing_pipeline_job:
             return self.backing_pipeline_job.state
@@ -102,8 +97,13 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
     def _validate_pipeline_template_matches_service(
         self, pipeline_job: "pipeline_jobs.PipelineJob"
     ):
-        """Utility function to validate that the passed in pipeline ID matches
+        """Utility function to validate that the passed in pipeline matches
         the template of the Pipeline Based Service.
+
+        Args:
+            pipeline_job (aiplatform.PipelineJob):
+                Required. The PipelineJob to validate with this Pipeline Based Service.
+
         Raises:
             ValueError: if the provided pipeline ID doesn't match the pipeline service.
         """
@@ -169,7 +169,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
 
         self._validate_pipeline_template_matches_service(job_resource)
 
-        self._gca_resource = gca_pipeline_job_v1.PipelineJob(name=pipeline_job_id)
+        self._gca_resource = gca_pipeline_job.PipelineJob(name=pipeline_job_id)
 
     @classmethod
     def _create_and_submit_pipeline_job(

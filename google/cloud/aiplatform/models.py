@@ -35,8 +35,6 @@ from google.cloud.aiplatform import utils
 from google.cloud.aiplatform.utils import gcs_utils
 from google.cloud.aiplatform import model_evaluation
 
-# from google.cloud.aiplatform.metadata import experiment_resources
-
 from google.cloud.aiplatform.compat.services import endpoint_service_client
 
 from google.cloud.aiplatform.compat.types import (
