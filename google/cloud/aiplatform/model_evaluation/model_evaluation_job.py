@@ -44,7 +44,7 @@ _MODEL_EVAL_PIPELINE_TEMPLATES = {
 }
 
 
-class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
+class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
 
     _template_ref = _MODEL_EVAL_PIPELINE_TEMPLATES
 
@@ -120,7 +120,7 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         else:
             template_type += "_without_feature_attribution"
 
-        return ModelEvaluationJob._template_ref[template_type]
+        return _ModelEvaluationJob._template_ref[template_type]
 
     @classmethod
     def submit(
@@ -141,12 +141,12 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         location: Optional[str] = None,
         credentials: Optional[auth_credentials.Credentials] = None,
         experiment: Optional[Union[str, "aiplatform.Experiment"]] = None,
-    ) -> "ModelEvaluationJob":
+    ) -> "_ModelEvaluationJob":
         """Submits a Model Evaluation Job using aiplatform.PipelineJob and returns
         the ModelEvaluationJob resource.
 
         Example usage:
-        my_evaluation = ModelEvaluationJob.submit(
+        my_evaluation = _ModelEvaluationJob.submit(
             model="projects/123/locations/us-central1/models/456",
             prediction_type="classification",
             pipeline_root="gs://my-pipeline-bucket/runpath",
@@ -155,7 +155,7 @@ class ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
             instances_format="jsonl",
         )
 
-        my_evaluation = ModelEvaluationJob.submit(
+        my_evaluation = _ModelEvaluationJob.submit(
             model="projects/123/locations/us-central1/models/456",
             prediction_type="regression",
             pipeline_root="gs://my-pipeline-bucket/runpath",

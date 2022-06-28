@@ -3584,7 +3584,7 @@ class Model(base.VertexAiResourceNounWithFutureManager):
                 will be associated as parameters to the provided experiment.
         Returns:
             model_evaluation.ModelEvaluationJob: Instantiated representation of the
-            ModelEvaluationJob.
+            _ModelEvaluationJob.
 
         Raises:
             ValueError:
@@ -3609,7 +3609,7 @@ class Model(base.VertexAiResourceNounWithFutureManager):
         if data_type not in _SUPPORTED_MODEL_EVAL_DATA_TYPES:
             raise ValueError("Please provide a supported data type.")
 
-        return model_evaluation.ModelEvaluationJob.submit(
+        return model_evaluation._ModelEvaluationJob.submit(
             model_name=self.resource_name,
             prediction_type=prediction_type,
             target_column_name=target_column_name,

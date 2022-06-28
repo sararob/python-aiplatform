@@ -70,7 +70,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         """
         pass
 
-    #TODO: Consider updating this to return a dict or list in the future to support multiple outputs
+    # TODO: Consider updating this to return a dict or list in the future to support multiple outputs
     @property
     @abc.abstractmethod
     def _metadata_output_artifact(self) -> Optional[str]:

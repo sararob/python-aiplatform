@@ -31,7 +31,6 @@ from google.cloud import storage
 from google.cloud import aiplatform
 from google.cloud.aiplatform import base
 from google.cloud.aiplatform import models
-from google.cloud.aiplatform import model_evaluation
 
 from google.cloud.aiplatform.compat.services import (
     model_service_client,
@@ -545,9 +544,9 @@ def mock_pending_eval_job():
 
 
 def make_failed_eval_job():
-    model_evaluation_job.ModelEvaluationJob._template_ref = _TEST_TEMPLATE_REF
+    model_evaluation_job._ModelEvaluationJob._template_ref = _TEST_TEMPLATE_REF
 
-    eval_job_resource = model_evaluation_job.ModelEvaluationJob(
+    eval_job_resource = model_evaluation_job._ModelEvaluationJob(
         evaluation_pipeline_run_name=_TEST_PIPELINE_JOB_NAME
     )
     eval_job_resource.backing_pipeline_job = gca_pipeline_job.PipelineJob(
@@ -641,7 +640,7 @@ class TestModelEvaluationJob:
     ):
         aiplatform.init(project=_TEST_PROJECT)
 
-        model_evaluation_job.ModelEvaluationJob(
+        model_evaluation_job._ModelEvaluationJob(
             evaluation_pipeline_run_name=_TEST_PIPELINE_JOB_NAME
         )
 
@@ -666,10 +665,10 @@ class TestModelEvaluationJob:
         aiplatform.init(project=_TEST_PROJECT)
 
         # this tests that _template_ref is a Dict and is not a string with the template path
-        model_evaluation_job.ModelEvaluationJob._template_ref = _TEST_TEMPLATE_PATH
+        model_evaluation_job._ModelEvaluationJob._template_ref = _TEST_TEMPLATE_PATH
 
         with pytest.raises(AttributeError):
-            model_evaluation_job.ModelEvaluationJob(
+            model_evaluation_job._ModelEvaluationJob(
                 evaluation_pipeline_run_name=_TEST_PIPELINE_JOB_NAME
             )
 
@@ -689,10 +688,10 @@ class TestModelEvaluationJob:
     ):
         aiplatform.init(project=_TEST_PROJECT)
 
-        model_evaluation_job.ModelEvaluationJob._template_ref = _TEST_TEMPLATE_REF
+        model_evaluation_job._ModelEvaluationJob._template_ref = _TEST_TEMPLATE_REF
 
         with pytest.raises(ValueError):
-            model_evaluation_job.ModelEvaluationJob(
+            model_evaluation_job._ModelEvaluationJob(
                 evaluation_pipeline_run_name=_TEST_PIPELINE_JOB_NAME
             )
 
@@ -707,7 +706,7 @@ class TestModelEvaluationJob:
         )
 
         with pytest.raises(ValueError):
-            model_evaluation.ModelEvaluationJob(
+            model_evaluation_job._ModelEvaluationJob(
                 evaluation_pipeline_run_name=_TEST_INVALID_PIPELINE_JOB_NAME,
             )
 
@@ -733,7 +732,7 @@ class TestModelEvaluationJob:
             staging_bucket=_TEST_GCS_BUCKET_NAME,
         )
 
-        test_model_eval_job = model_evaluation_job.ModelEvaluationJob.submit(
+        test_model_eval_job = model_evaluation_job._ModelEvaluationJob.submit(
             model_name=_TEST_MODEL_RESOURCE_NAME,
             prediction_type=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "prediction_type"
@@ -836,7 +835,7 @@ class TestModelEvaluationJob:
 
         test_experiment = aiplatform.Experiment(_TEST_EXPERIMENT)
 
-        test_model_eval_job = model_evaluation_job.ModelEvaluationJob.submit(
+        test_model_eval_job = model_evaluation_job._ModelEvaluationJob.submit(
             model_name=_TEST_MODEL_RESOURCE_NAME,
             prediction_type=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "prediction_type"
@@ -935,7 +934,7 @@ class TestModelEvaluationJob:
             staging_bucket=_TEST_GCS_BUCKET_NAME,
         )
 
-        test_model_eval_job = model_evaluation_job.ModelEvaluationJob.submit(
+        test_model_eval_job = model_evaluation_job._ModelEvaluationJob.submit(
             model_name=_TEST_MODEL_RESOURCE_NAME,
             prediction_type=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "prediction_type"
@@ -1010,7 +1009,7 @@ class TestModelEvaluationJob:
             staging_bucket=_TEST_GCS_BUCKET_NAME,
         )
 
-        test_model_eval_job = model_evaluation_job.ModelEvaluationJob.submit(
+        test_model_eval_job = model_evaluation_job._ModelEvaluationJob.submit(
             model_name=_TEST_MODEL_RESOURCE_NAME,
             prediction_type=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "prediction_type"
@@ -1058,7 +1057,7 @@ class TestModelEvaluationJob:
             staging_bucket=_TEST_GCS_BUCKET_NAME,
         )
 
-        test_model_eval_job = model_evaluation_job.ModelEvaluationJob.submit(
+        test_model_eval_job = model_evaluation_job._ModelEvaluationJob.submit(
             model_name=_TEST_MODEL_RESOURCE_NAME,
             prediction_type=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "prediction_type"

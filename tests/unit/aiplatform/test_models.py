@@ -2170,7 +2170,7 @@ class TestModel:
             instances_format="csv",
         )
 
-        assert isinstance(eval_job, model_evaluation_job.ModelEvaluationJob)
+        assert isinstance(eval_job, model_evaluation_job._ModelEvaluationJob)
 
         assert mock_pipeline_service_create.called_once
 
@@ -2205,7 +2205,7 @@ class TestModel:
             instances_format="csv",
         )
 
-        assert isinstance(eval_job, model_evaluation_job.ModelEvaluationJob)
+        assert isinstance(eval_job, model_evaluation_job._ModelEvaluationJob)
 
         assert mock_pipeline_service_create.called_once
 

@@ -45,10 +45,7 @@ from google.cloud.aiplatform.matching_engine import (
 from google.cloud.aiplatform import metadata
 from google.cloud.aiplatform.models import Endpoint
 from google.cloud.aiplatform.models import Model
-from google.cloud.aiplatform.model_evaluation import (
-    ModelEvaluation,
-    ModelEvaluationJob,
-)
+from google.cloud.aiplatform.model_evaluation import ModelEvaluation
 from google.cloud.aiplatform.jobs import (
     BatchPredictionJob,
     CustomJob,
@@ -138,7 +135,6 @@ __all__ = (
     "HyperparameterTuningJob",
     "Model",
     "ModelEvaluation",
-    "ModelEvaluationJob",
     "PipelineJob",
     "SequenceToSequencePlusForecastingTrainingJob",
     "TabularDataset",
