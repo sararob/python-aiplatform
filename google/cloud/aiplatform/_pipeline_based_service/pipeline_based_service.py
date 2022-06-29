@@ -95,6 +95,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
             return self.backing_pipeline_job.state
         return None
 
+    # TODO: expose _template_ref in error message when artifact registry support is added
     def _validate_pipeline_template_matches_service(
         self, pipeline_job: "pipeline_jobs.PipelineJob"
     ):

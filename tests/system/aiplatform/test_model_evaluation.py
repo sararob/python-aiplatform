@@ -24,6 +24,7 @@ import pytest
 from google.cloud import storage
 
 from google.cloud import aiplatform
+from google.cloud.aiplatform import base
 from google.cloud.aiplatform import initializer
 from tests.system.aiplatform import e2e_base
 
@@ -64,8 +65,16 @@ _EVAL_METRICS_KEYS_CLASSIFICATION = [
 # _TEST_AUTOML_EVAL_DATA_URI = "gs://ucaip-sample-resources/iris_1000.csv"
 _TEST_IRIS_MODEL_ID = "6091413165134839808"
 _TEST_AUTOML_EVAL_DATA_URI = "gs://sdk-model-eval/iris_training.csv"
+_EVAL_DATA_NO_LABEL_COLUMN = "gs://sdk-model-eval/feature_columns.csv"
+_TEST_CUSTOM_CLASSIFICATION_MODEL_ID = "2094468495843524608"
+_TEST_CUSTOM_REGRESSION_MODEL_ID = "6448604910580662272"
 
-_TEST_PERMANENT_CUSTOM_MODEL_RESOURCE_NAME = "TODO"
+_TEST_PERMANENT_CUSTOM_MODEL_CLASSIFICATION_RESOURCE_NAME = (
+    f"projects/{_TEST_PROJECT}/locations/us-central1/models/{_TEST_CUSTOM_CLASSIFICATION_MODEL_ID}"
+)
+_TEST_PERMANENT_CUSTOM_MODEL_REGRESSION_RESOURCE_NAME = (
+    f"projects/{_TEST_PROJECT}/locations/us-central1/models/{_TEST_CUSTOM_REGRESSION_MODEL_ID}"
+)
 _TEST_PERMANENT_AUTOML_MODEL_RESOURCE_NAME = (
     f"projects/{_TEST_PROJECT}/locations/us-central1/models/{_TEST_IRIS_MODEL_ID}"
 )
@@ -96,28 +105,29 @@ class TestModelEvaluationJob(e2e_base.TestEndToEnd):
 
         yield bucket
 
-        bucket.delete(force=True)
+        # bucket.delete(force=True)
 
-    # TODO: correct csv formatting for custom models (b/237443194)
-    # def test_model_evaluate_custom_model(self, staging_bucket):
+    # TODO: get this test passing with custom models
+    # def test_model_evaluate_custom_tabular_model(self, staging_bucket):
 
     #     custom_model = aiplatform.Model(
-    #         model_name=_TEST_PERMANENT_CUSTOM_MODEL_RESOURCE_NAME
+    #         model_name=_TEST_PERMANENT_CUSTOM_MODEL_CLASSIFICATION_RESOURCE_NAME
     #     )
 
     #     eval_job = custom_model.evaluate(
     #         data_type="tabular",
-    #         gcs_source_uris=[dataset_gcs_source],
-    #         prediction_type="regression",
-    #         target_column_name="median_house_value",
+    #         gcs_source_uris=[_EVAL_DATA_NO_LABEL_COLUMN],
+    #         prediction_type="classification",
+    #         target_column_name="species",
     #         evaluation_staging_path=f"gs://{staging_bucket.name}",
     #         instances_format="csv",
-    #         evaluation_job_display_name="test-pipeline-display-name",
     #     )
 
-    #     print(eval_job.backing_pipeline_job.state, "state before completion")
+    #     _LOGGER.info("%s, state before completion", eval_job.backing_pipeline_job.state)
 
     #     eval_job.wait()
+
+    #     _LOGGER.info("%s, state after completion", eval_job.backing_pipeline_job.state)
 
     #     assert eval_job.state == gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED
     #     assert eval_job.state == eval_job.backing_pipeline_job.state
