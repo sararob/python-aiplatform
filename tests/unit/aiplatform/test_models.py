@@ -657,7 +657,7 @@ def list_model_evaluations_mock():
 @pytest.fixture
 def mock_pipeline_service_create():
     with mock.patch.object(
-        pipeline_service_client_v1.PipelineServiceClient, "create_pipeline_job"
+        pipeline_service_client.PipelineServiceClient, "create_pipeline_job"
     ) as mock_create_pipeline_job:
         mock_create_pipeline_job.return_value = gca_pipeline_job.PipelineJob(
             name=_TEST_PIPELINE_JOB_NAME,
@@ -742,7 +742,7 @@ def mock_pipeline_service_get():
 @pytest.fixture
 def mock_successfully_completed_eval_job():
     with mock.patch.object(
-        pipeline_service_client_v1.PipelineServiceClient, "get_pipeline_job"
+        pipeline_service_client.PipelineServiceClient, "get_pipeline_job"
     ) as mock_get_model_eval_job:
         mock_get_model_eval_job.return_value = make_pipeline_job(
             gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED
