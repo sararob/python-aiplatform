@@ -18,7 +18,6 @@
 import importlib
 import os
 import uuid
-from urllib import request
 
 import pytest
 
@@ -27,6 +26,10 @@ from google.cloud import storage
 from google.cloud import aiplatform
 from google.cloud.aiplatform import initializer
 from tests.system.aiplatform import e2e_base
+
+from google.cloud.aiplatform.compat.types import (
+    pipeline_state as gca_pipeline_state,
+)
 
 _BLOB_PATH = "california-housing-data.csv"
 _DATASET_SRC = "https://dl.google.com/mlcc/mledu-datasets/california_housing_train.csv"
@@ -47,6 +50,27 @@ _INSTANCE = {
 
 _TEST_PROJECT = e2e_base._PROJECT
 _TEST_LOCATION = e2e_base._LOCATION
+_EVAL_METRICS_KEYS_CLASSIFICATION = [
+    "auPrc",
+    "auRoc",
+    "logLoss",
+    "confidenceMetrics",
+    "confusionMatrix",
+]
+
+
+# TODO: swap this when we run it on sample test project
+# _TEST_IRIS_MODEL_ID = "1603035176739274752"
+# _TEST_AUTOML_EVAL_DATA_URI = "gs://ucaip-sample-resources/iris_1000.csv"
+_TEST_IRIS_MODEL_ID = "6091413165134839808"
+_TEST_AUTOML_EVAL_DATA_URI = "gs://sdk-model-eval/iris_training.csv"
+
+_TEST_PERMANENT_CUSTOM_MODEL_RESOURCE_NAME = "TODO"
+_TEST_PERMANENT_AUTOML_MODEL_RESOURCE_NAME = (
+    f"projects/{_TEST_PROJECT}/locations/us-central1/models/{_TEST_IRIS_MODEL_ID}"
+)
+
+_LOGGER = base.Logger(__name__)
 
 
 class TestModelEvaluationJob(e2e_base.TestEndToEnd):
@@ -74,67 +98,80 @@ class TestModelEvaluationJob(e2e_base.TestEndToEnd):
 
         bucket.delete(force=True)
 
-    def test_model_evaluate_custom_model(self, staging_bucket):
-        # assert shared_state["bucket"]
-        # bucket = shared_state["bucket"]
+    # TODO: correct csv formatting for custom models (b/237443194)
+    # def test_model_evaluate_custom_model(self, staging_bucket):
 
-        blob = staging_bucket.blob(_BLOB_PATH)
+    #     custom_model = aiplatform.Model(
+    #         model_name=_TEST_PERMANENT_CUSTOM_MODEL_RESOURCE_NAME
+    #     )
 
-        # Download the CSV file into memory and save it directory to staging bucket
-        with request.urlopen(_DATASET_SRC) as response:
-            data = response.read()
-            blob.upload_from_string(data)
+    #     eval_job = custom_model.evaluate(
+    #         data_type="tabular",
+    #         gcs_source_uris=[dataset_gcs_source],
+    #         prediction_type="regression",
+    #         target_column_name="median_house_value",
+    #         evaluation_staging_path=f"gs://{staging_bucket.name}",
+    #         instances_format="csv",
+    #         evaluation_job_display_name="test-pipeline-display-name",
+    #     )
 
-        dataset_gcs_source = f"gs://{staging_bucket.name}/{_BLOB_PATH}"
+    #     print(eval_job.backing_pipeline_job.state, "state before completion")
 
-        ds = aiplatform.TabularDataset.create(
-            gcs_source=[dataset_gcs_source],
-            sync=False,
-            create_request_timeout=180.0,
+    #     eval_job.wait()
+
+    #     assert eval_job.state == gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED
+    #     assert eval_job.state == eval_job.backing_pipeline_job.state
+
+    #     assert eval_job.resource_name == eval_job.backing_pipeline_job.resource_name
+
+    #     eval_metrics_artifact = aiplatform.Artifact(artifact_name=eval_job._metadata_output_artifact)
+
+    #     assert(isinstance(eval_metrics_artifact, aiplatform.Artifact))
+
+    #     _LOGGER.info("%s metadata output artifact", eval_job._metadata_output_artifact)
+
+    #     model_eval = eval_job.get_model_evaluation()
+
+    #     eval_metrics_dict = model_eval.metrics
+
+    #     for metric_name in _EVAL_METRICS_KEYS_CLASSIFICATION:
+    #         assert metric_name in eval_metrics_dict
+
+    def test_model_evaluate_automl_tabular_model(self, staging_bucket):
+
+        automl_model = aiplatform.Model(
+            model_name=_TEST_PERMANENT_AUTOML_MODEL_RESOURCE_NAME
         )
 
-        custom_job = aiplatform.CustomTrainingJob(
-            display_name=self._make_display_name("train-housing-custom-model-eval"),
-            script_path=_LOCAL_TRAINING_SCRIPT_PATH,
-            container_uri="gcr.io/cloud-aiplatform/training/tf-cpu.2-2:latest",
-            requirements=["gcsfs==0.7.1"],
-            model_serving_container_image_uri="gcr.io/cloud-aiplatform/prediction/tf2-cpu.2-2:latest",
-            staging_bucket=staging_bucket.name,
-        )
-
-        # model to use for eval testsing: projects/462141068491/locations/us-central1/models/720026184565391360
-
-        custom_model = custom_job.run(
-            ds,
-            replica_count=1,
-            model_display_name=self._make_display_name("custom-housing-model"),
-            timeout=1234,
-            restart_job_on_worker_restart=True,
-            enable_web_access=True,
-            sync=False,
-            create_request_timeout=None,
-        )
-
-        custom_model.wait()
-
-        eval_job = custom_model.evaluate(
+        eval_job = automl_model.evaluate(
             data_type="tabular",
-            gcs_source_uris=[dataset_gcs_source],
-            prediction_type="regression",
-            target_column_name="median_house_value",
+            gcs_source_uris=[_TEST_AUTOML_EVAL_DATA_URI],
+            prediction_type="classification",
+            target_column_name="species",
             evaluation_staging_path=f"gs://{staging_bucket.name}",
             instances_format="csv",
-            evaluation_job_display_name="test-pipeline-display-name",
         )
-
-        print(eval_job.backing_pipeline_job.state, "state before completion")
 
         eval_job.wait()
 
-        print(eval_job.backing_pipeline_job, "pipeline job backing eval")
-        print(eval_job.backing_pipeline_job.resource_name, "pipeline resource name")
-        print(eval_job.backing_pipeline_job.state, "pipeline job completed state")
+        assert (
+            eval_job.state == gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED
+        )
+        assert eval_job.state == eval_job.backing_pipeline_job.state
+
+        assert eval_job.resource_name == eval_job.backing_pipeline_job.resource_name
+
+        eval_metrics_artifact = aiplatform.Artifact(
+            artifact_name=eval_job._metadata_output_artifact
+        )
+
+        assert isinstance(eval_metrics_artifact, aiplatform.Artifact)
+
+        _LOGGER.info("%s metadata output artifact", eval_job._metadata_output_artifact)
 
         model_eval = eval_job.get_model_evaluation()
-        print(model_eval.metrics, "eval metrics")
-        print(model_eval.metadata_output_artifact, "mlmd uri of eval")
+
+        eval_metrics_dict = model_eval.metrics
+
+        for metric_name in _EVAL_METRICS_KEYS_CLASSIFICATION:
+            assert metric_name in eval_metrics_dict
