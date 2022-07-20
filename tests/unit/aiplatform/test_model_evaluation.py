@@ -31,6 +31,7 @@ from google.cloud import storage
 from google.cloud import aiplatform
 from google.cloud.aiplatform import base
 from google.cloud.aiplatform import models
+from google.cloud.aiplatform.utils import gcs_utils
 
 from google.cloud.aiplatform.compat.services import (
     model_service_client,
@@ -341,6 +342,31 @@ def mock_pipeline_service_create():
             network=_TEST_NETWORK,
         )
         yield mock_create_pipeline_job
+
+
+@pytest.fixture
+def mock_pipeline_bucket_exists():
+    def mock_create_gcs_bucket_for_pipeline_artifacts_if_it_does_not_exist(
+        output_artifacts_gcs_dir=None,
+        service_account=None,
+        project=None,
+        location=None,
+        credentials=None,
+    ):
+        output_artifacts_gcs_dir = (
+            output_artifacts_gcs_dir
+            or gcs_utils.generate_gcs_directory_for_pipeline_artifacts(
+                project=project,
+                location=location,
+            )
+        )
+        return output_artifacts_gcs_dir
+
+    with mock.patch(
+        "google.cloud.aiplatform.utils.gcs_utils.create_gcs_bucket_for_pipeline_artifacts_if_it_does_not_exist",
+        new=mock_create_gcs_bucket_for_pipeline_artifacts_if_it_does_not_exist,
+    ) as mock_context:
+        yield mock_context
 
 
 def make_pipeline_job(state):
@@ -724,6 +750,7 @@ class TestModelEvaluationJob:
         mock_model_eval_job_get,
         mock_pipeline_service_get,
         mock_model_eval_job_create,
+        mock_pipeline_bucket_exists,
     ):
         aiplatform.init(
             project=_TEST_PROJECT,
@@ -825,6 +852,7 @@ class TestModelEvaluationJob:
         add_context_children_mock,
         get_metadata_store_mock,
         get_context_mock,
+        mock_pipeline_bucket_exists,
     ):
         aiplatform.init(
             project=_TEST_PROJECT,
@@ -926,6 +954,7 @@ class TestModelEvaluationJob:
         mock_pipeline_service_get,
         mock_model_eval_job_create,
         mock_successfully_completed_eval_job,
+        mock_pipeline_bucket_exists,
     ):
         aiplatform.init(
             project=_TEST_PROJECT,
@@ -1000,6 +1029,7 @@ class TestModelEvaluationJob:
         mock_pipeline_service_get,
         mock_model_eval_job_create,
         mock_failed_completed_eval_job,
+        mock_pipeline_bucket_exists,
     ):
 
         aiplatform.init(
@@ -1049,6 +1079,7 @@ class TestModelEvaluationJob:
         mock_pipeline_service_get,
         mock_model_eval_job_create,
         mock_pending_eval_job,
+        mock_pipeline_bucket_exists,
     ):
         aiplatform.init(
             project=_TEST_PROJECT,

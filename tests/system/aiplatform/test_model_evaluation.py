@@ -72,15 +72,11 @@ _TEST_XGB_REGRESSION_MODEL_ID = "6448604910580662272"
 _TEST_CUSTOM_TF_MODEL_ID = "5047141001538306048"
 _TEST_SCIKIT_MODEL_ID = "2372002822880231424"
 
-_TEST_PERMANENT_CUSTOM_MODEL_CLASSIFICATION_RESOURCE_NAME = (
-    f"projects/{_TEST_PROJECT}/locations/us-central1/models/{_TEST_XGB_CLASSIFICATION_MODEL_ID}"
-)
+_TEST_PERMANENT_CUSTOM_MODEL_CLASSIFICATION_RESOURCE_NAME = f"projects/{_TEST_PROJECT}/locations/us-central1/models/{_TEST_XGB_CLASSIFICATION_MODEL_ID}"
 _TEST_PERMANENT_TF_MODEL_CLASSIFICATION_RESOURCE_NAME = (
     f"projects/{_TEST_PROJECT}/locations/us-central1/models/{_TEST_CUSTOM_TF_MODEL_ID}"
 )
-_TEST_PERMANENT_CUSTOM_MODEL_REGRESSION_RESOURCE_NAME = (
-    f"projects/{_TEST_PROJECT}/locations/us-central1/models/{_TEST_XGB_REGRESSION_MODEL_ID}"
-)
+_TEST_PERMANENT_CUSTOM_MODEL_REGRESSION_RESOURCE_NAME = f"projects/{_TEST_PROJECT}/locations/us-central1/models/{_TEST_XGB_REGRESSION_MODEL_ID}"
 _TEST_PERMANENT_SCIKIT_RESOURCE_NAME = (
     f"projects/{_TEST_PROJECT}/locations/us-central1/models/{_TEST_SCIKIT_MODEL_ID}"
 )
@@ -119,9 +115,7 @@ class TestModelEvaluationJob(e2e_base.TestEndToEnd):
     # TODO: get this test passing with custom models
     def test_model_evaluate_custom_tabular_model(self, staging_bucket):
 
-        custom_model = aiplatform.Model(
-            model_name=_TEST_PERMANENT_SCIKIT_RESOURCE_NAME
-        )
+        custom_model = aiplatform.Model(model_name=_TEST_PERMANENT_SCIKIT_RESOURCE_NAME)
 
         eval_job = custom_model.evaluate(
             data_type="tabular",
@@ -138,14 +132,18 @@ class TestModelEvaluationJob(e2e_base.TestEndToEnd):
 
         _LOGGER.info("%s, state after completion", eval_job.backing_pipeline_job.state)
 
-        assert eval_job.state == gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED
+        assert (
+            eval_job.state == gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED
+        )
         assert eval_job.state == eval_job.backing_pipeline_job.state
 
         assert eval_job.resource_name == eval_job.backing_pipeline_job.resource_name
 
-        eval_metrics_artifact = aiplatform.Artifact(artifact_name=eval_job._metadata_output_artifact)
+        eval_metrics_artifact = aiplatform.Artifact(
+            artifact_name=eval_job._metadata_output_artifact
+        )
 
-        assert(isinstance(eval_metrics_artifact, aiplatform.Artifact))
+        assert isinstance(eval_metrics_artifact, aiplatform.Artifact)
 
         _LOGGER.info("%s metadata output artifact", eval_job._metadata_output_artifact)
 

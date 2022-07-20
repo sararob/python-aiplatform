@@ -32,6 +32,7 @@ from google.cloud.aiplatform import base, explain
 from google.cloud.aiplatform import initializer
 from google.cloud.aiplatform import models
 from google.cloud.aiplatform import utils
+from google.cloud.aiplatform.utils import gcs_utils
 
 from google.cloud.aiplatform.compat.services import (
     endpoint_service_client,
@@ -748,6 +749,33 @@ def mock_successfully_completed_eval_job():
             gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED
         )
         yield mock_get_model_eval_job
+
+@pytest.fixture
+def mock_pipeline_bucket_exists():
+    def mock_create_gcs_bucket_for_pipeline_artifacts_if_it_does_not_exist(
+        output_artifacts_gcs_dir=None,
+        service_account=None,
+        project=None,
+        location=None,
+        credentials=None,
+    ):
+        output_artifacts_gcs_dir = (
+            output_artifacts_gcs_dir
+            or gcs_utils.generate_gcs_directory_for_pipeline_artifacts(
+                project=project,
+                location=location,
+            )
+        )
+        return output_artifacts_gcs_dir
+
+    with mock.patch(
+        "google.cloud.aiplatform.utils.gcs_utils.create_gcs_bucket_for_pipeline_artifacts_if_it_does_not_exist",
+        new=mock_create_gcs_bucket_for_pipeline_artifacts_if_it_does_not_exist,
+    ) as mock_context:
+        yield mock_context
+
+
+
 @pytest.fixture
 def list_model_versions_mock():
     with mock.patch.object(
@@ -2424,6 +2452,7 @@ class TestModel:
         mock_pipeline_service_create,
         mock_pipeline_service_get,
         mock_successfully_completed_eval_job,
+        mock_pipeline_bucket_exists,
     ):
         aiplatform.init(project=_TEST_PROJECT)
 
@@ -2460,6 +2489,7 @@ class TestModel:
         mock_model_eval_get,
         mock_pipeline_service_create,
         mock_pipeline_service_get,
+        mock_pipeline_bucket_exists,
     ):
         aiplatform.init(project=_TEST_PROJECT, staging_bucket="gs://my-bucket")
 
@@ -2535,6 +2565,7 @@ class TestModel:
                 gcs_source_uris=["gs://test-bucket/test-file.csv"],
                 instances_format="csv",
             )
+
     def test_init_with_version_in_resource_name(self, get_model_with_version):
         model = models.Model(
             model_name=models.ModelRegistry._get_versioned_name(
