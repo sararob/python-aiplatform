@@ -62,6 +62,7 @@ from google.cloud.aiplatform.compat.types import (
 
 from google.protobuf import field_mask_pb2, struct_pb2, timestamp_pb2
 from google.cloud.aiplatform.model_evaluation import model_evaluation_job
+from google.cloud.aiplatform.prediction import LocalModel
 
 from test_endpoints import create_endpoint_mock  # noqa: F401
 
@@ -92,6 +93,7 @@ _TEST_SERVING_CONTAINER_ENVIRONMENT_VARIABLES = {
 _TEST_SERVING_CONTAINER_PORTS = [8888, 10000]
 _TEST_ID = "1028944691210842416"
 _TEST_LABEL = {"team": "experimentation", "trial_id": "x435"}
+_TEST_APPENDED_USER_AGENT = ["fake_user_agent", "another_fake_user_agent"]
 
 _TEST_MACHINE_TYPE = "n1-standard-4"
 _TEST_ACCELERATOR_TYPE = "NVIDIA_TESLA_P100"
@@ -252,6 +254,12 @@ _TEST_PIPELINE_JOB_ID = "sample-test-pipeline-202111111"
 _TEST_PIPELINE_JOB_NAME = f"projects/{_TEST_PROJECT}/locations/{_TEST_LOCATION}/pipelineJobs/{_TEST_PIPELINE_JOB_ID}"
 _TEST_PIPELINE_CREATE_TIME = datetime.now()
 _TEST_NETWORK = f"projects/{_TEST_PROJECT}/global/networks/{_TEST_PIPELINE_JOB_ID}"
+_TEST_LOCAL_MODEL = LocalModel(
+    serving_container_image_uri=_TEST_SERVING_CONTAINER_IMAGE,
+    serving_container_predict_route=_TEST_SERVING_CONTAINER_PREDICTION_ROUTE,
+    serving_container_health_route=_TEST_SERVING_CONTAINER_HEALTH_ROUTE,
+)
+
 _TEST_VERSION_ID = "2"
 _TEST_VERSION_ALIAS_1 = "myalias"
 _TEST_VERSION_ALIAS_2 = "youralias"
@@ -834,6 +842,7 @@ class TestModel:
             client_class=utils.ModelClientWithOverride,
             credentials=initializer.global_config.credentials,
             location_override=_TEST_LOCATION,
+            appended_user_agent=None,
         )
 
     def test_constructor_create_client_with_custom_location(self, create_client_mock):
@@ -847,6 +856,7 @@ class TestModel:
             client_class=utils.ModelClientWithOverride,
             credentials=initializer.global_config.credentials,
             location_override=_TEST_LOCATION_2,
+            appended_user_agent=None,
         )
 
     def test_constructor_creates_client_with_custom_credentials(
@@ -858,6 +868,7 @@ class TestModel:
             client_class=utils.ModelClientWithOverride,
             credentials=creds,
             location_override=_TEST_LOCATION,
+            appended_user_agent=None,
         )
 
     def test_constructor_gets_model(self, get_model_mock):
@@ -923,6 +934,84 @@ class TestModel:
 
         get_model_mock.assert_called_once_with(
             name=_TEST_MODEL_RESOURCE_NAME, retry=base._DEFAULT_RETRY
+        )
+
+    def test_upload_without_serving_container_image_uri_throw_error(
+        self, upload_model_mock, get_model_mock
+    ):
+        expected_message = (
+            "The parameter `serving_container_image_uri` is required "
+            "if no `local_model` is provided."
+        )
+
+        with pytest.raises(ValueError) as exception:
+            _ = models.Model.upload(
+                display_name=_TEST_MODEL_NAME,
+                serving_container_predict_route=_TEST_SERVING_CONTAINER_PREDICTION_ROUTE,
+                serving_container_health_route=_TEST_SERVING_CONTAINER_HEALTH_ROUTE,
+            )
+
+        assert str(exception.value) == expected_message
+
+    @pytest.mark.parametrize("sync", [True, False])
+    def test_upload_with_local_model(self, upload_model_mock, get_model_mock, sync):
+        managed_model = gca_model.Model(
+            display_name=_TEST_MODEL_NAME,
+            container_spec=_TEST_LOCAL_MODEL.get_serving_container_spec(),
+            version_aliases=["default"],
+        )
+
+        my_model = models.Model.upload(
+            local_model=_TEST_LOCAL_MODEL,
+            display_name=_TEST_MODEL_NAME,
+            sync=sync,
+        )
+
+        if not sync:
+            my_model.wait()
+
+        upload_model_mock.assert_called_once_with(
+            request=gca_model_service.UploadModelRequest(
+                parent=initializer.global_config.common_location_path(),
+                model=managed_model,
+            ),
+            timeout=None,
+        )
+
+    @pytest.mark.parametrize("sync", [True, False])
+    def test_upload_with_local_model_overwrite_all_serving_container_parameters(
+        self, upload_model_mock, get_model_mock, sync
+    ):
+        container_spec = gca_model.ModelContainerSpec(
+            image_uri="another-image-uri",
+            predict_route="another-predict-route",
+            health_route="another-health-route",
+        )
+        local_model = LocalModel(serving_container_spec=container_spec)
+        managed_model = gca_model.Model(
+            display_name=_TEST_MODEL_NAME,
+            container_spec=container_spec,
+            version_aliases=["default"],
+        )
+
+        my_model = models.Model.upload(
+            serving_container_image_uri=_TEST_SERVING_CONTAINER_IMAGE,
+            serving_container_predict_route=_TEST_SERVING_CONTAINER_PREDICTION_ROUTE,
+            serving_container_health_route=_TEST_SERVING_CONTAINER_HEALTH_ROUTE,
+            local_model=local_model,
+            display_name=_TEST_MODEL_NAME,
+            sync=sync,
+        )
+
+        if not sync:
+            my_model.wait()
+
+        upload_model_mock.assert_called_once_with(
+            request=gca_model_service.UploadModelRequest(
+                parent=initializer.global_config.common_location_path(),
+                model=managed_model,
+            ),
+            timeout=None,
         )
 
     @pytest.mark.parametrize("sync", [True, False])
