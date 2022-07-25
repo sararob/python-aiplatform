@@ -121,6 +121,7 @@ class TestModelEvaluationJob(e2e_base.TestEndToEnd):
             data_type="tabular",
             gcs_source_uris=[_TEST_AUTOML_EVAL_DATA_URI],
             prediction_type="classification",
+            key_columns=["petal_length","petal_width","sepal_length","sepal_width"],
             target_column_name="species",
             evaluation_staging_path=f"gs://{staging_bucket.name}",
             instances_format="jsonl",

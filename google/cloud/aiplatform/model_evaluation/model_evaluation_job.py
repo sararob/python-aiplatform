@@ -35,12 +35,12 @@ import json
 _LOGGER = base.Logger(__name__)
 
 # TODO: update this with the final gcs pipeline template urls and add templates for unstructured data when they are available
-
+# First 2 are for automl tabular, the others are for everything else
 _MODEL_EVAL_PIPELINE_TEMPLATES = {
-    "tabular_without_feature_attribution": "gs://vertex-evaluation-templates/20220616_2055/evaluation_tabular_pipeline.json",
-    "tabular_with_feature_attribution": "gs://vertex-evaluation-templates/20220616_2055/evaluation_tabular_feature_attribution_pipeline.json",
-    # "unstructured_without_feature_attribution": "TODO",
-    # "unstructured_with_feature_attribution": "TODO",
+    "automl_tabular_without_feature_attribution": "gs://vertex-evaluation-templates/20220722_0210/evaluation_automl_tabular_pipeline.json",
+    "automl_tabular_with_feature_attribution": "gs://vertex-evaluation-templates/20220722_0210/evaluation_automl_tabular_feature_attribution_pipeline.json",
+    "other_without_feature_attribution": "gs://vertex-evaluation-templates/20220722_0210/evaluation_pipeline.json",
+    "other_with_feature_attribution": "gs://vertex-evaluation-templates/20220722_0210/evaluation_feature_attribution_pipeline.json",
 }
 
 
@@ -98,7 +98,7 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
 
     @staticmethod
     def _get_template_url(
-        data_type: str,
+        model_type: str,
         feature_attributions: bool,
     ) -> str:
         """Gets the pipeline template URL for this model evaluation job given the type of data
@@ -113,7 +113,7 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         Returns:
             (str): The pipeline template URL to use for this model evaluation job.
         """
-        template_type = data_type
+        template_type = model_type
 
         if feature_attributions:
             template_type += "_with_feature_attribution"
@@ -128,9 +128,10 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         model_name: Union[str, "aiplatform.Model"],
         prediction_type: str,
         target_column_name: str,
-        gcs_source_uris: List[str],
+        data_source_uris: List[str],
         pipeline_root: str,
-        data_type: str,
+        model_type: str,
+        key_columns: Optional[List[str]] = None,
         generate_feature_attributions: Optional[bool] = False,
         instances_format: Optional[str] = "jsonl",
         display_name: Optional[str] = None,
@@ -172,9 +173,10 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
                 Required. The type of prediction performed by the Model. One of "classification" or "regression".
             target_column_name (str):
                 Required. The name of your prediction column.
-            gcs_source_uris (List[str]):
-                Required. A list of GCS URIs containing your input data for batch prediction. This is used to provide
-                ground truth for each prediction instance, and should include a label column with the ground truth value.
+            data_source_uris (List[str]):
+                Required. A list of data files containing the ground truth data to use for this evaluation job.
+                These files should contain your model's prediction column. Currently only GCS urls are supported,
+                for example: "gs://path/to/your/data.csv".
             pipeline_root (str):
                 Required. The GCS directory to store output from the model evaluation PipelineJob.
             instances_format (str):
@@ -217,8 +219,9 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
             display_name = cls._generate_display_name()
 
         template_params = {
-            "batch_predict_gcs_source_uris": gcs_source_uris,
+            "batch_predict_gcs_source_uris": data_source_uris,
             "batch_predict_instances_format": instances_format,
+            "ground_truth_key_columns": key_columns,
             "model_name": model_resource_name,
             "prediction_type": prediction_type,
             "project": project or initializer.global_config.project,
@@ -227,10 +230,12 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
             "target_column_name": target_column_name,
         }
 
+        print(cls._get_template_url( model_type, generate_feature_attributions))
+
         eval_pipeline_run = cls._create_and_submit_pipeline_job(
             template_params=template_params,
             template_path=cls._get_template_url(
-                data_type, generate_feature_attributions
+                model_type, generate_feature_attributions
             ),
             pipeline_root=pipeline_root,
             display_name=display_name,

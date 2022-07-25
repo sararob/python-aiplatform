@@ -89,7 +89,7 @@ _SUPPORTED_EVAL_PREDICTION_TYPES = [
 # TODO: update when unstructured pipeline templates are supported
 _SUPPORTED_MODEL_EVAL_DATA_TYPES = [
     "tabular",
-    # "unstructured",
+    "unstructured",
 ]
 
 
@@ -4657,10 +4657,10 @@ class Model(base.VertexAiResourceNounWithFutureManager):
         self,
         prediction_type: str,
         target_column_name: str,
-        gcs_source_uris: List[str],
-        instances_format: str,
+        data_source_uris: List[str],
+        instances_format: str, # sdk could infer this based on file extension, don't make this required 
+        key_columns: Optional[List[str]] = None,
         evaluation_staging_path: Optional[str] = None,
-        data_type: Optional[str] = "tabular",
         generate_feature_attributions: Optional[bool] = False,
         evaluation_job_display_name: Optional[str] = None,
         network: Optional[str] = None,
@@ -4677,7 +4677,7 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             my_evaluation_job = my_model.evaluate(
                 prediction_type="classification",
                 target_column_name="type",
-                gcs_source_uris=["gs://sdk-model-eval/my-prediction-data.csv"],
+                data_source_uris=["gs://sdk-model-eval/my-prediction-data.csv"],
                 evaluation_staging_path="gs://my-staging-bucket/eval_pipeline_root",
                 instances_format="csv"
             )
@@ -4694,17 +4694,17 @@ class Model(base.VertexAiResourceNounWithFutureManager):
                 are the currently supported problem types.
             target_column_name (str):
                 Required. The column name of the field containing the label for this prediction task.
-            gcs_source_uris (List[str]):
-                Required. A list of GCS filepaths containing the ground truth data to use for this evaluation job.
-                These files should contain your model's prediction column.
+            data_source_uris (List[str]):
+                Required. A list of data files containing the ground truth data to use for this evaluation job.
+                These files should contain your model's prediction column. Currently only GCS urls are supported,
+                for example: "gs://path/to/your/data.csv".
             instances_format (str):
                 Required. The format of your prediction data.
+            key_columns (str):
+                Optional. The column headers in the data files provided to gcs_source_uris.
             evaluation_staging_path (str):
                 Required. The GCS directory to use for staging files from this evaluation job. Defaults to the value set in
                 aiplatform.init(staging_bucket=...) if not provided.
-            data_type (str):
-                Required. The type of data used to train your model. Currently only tabular data is supported for evaluation.
-                Defaults to "tabular" if not provided.
             generate_feature_attributions (boolean):
                 Optional. Whether the model evaluation job should generate feature attributions. Defaults to False if not specified.
             evaluation_job_display_name (str):
@@ -4728,7 +4728,6 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             ValueError:
                 If staging_bucket was not set in aiplatform.init() and evaluation_staging_bucket was not provided.
                 If the provided `prediction_type` is not valid.
-                If the provided `data_type` is not valid.
         """
         if not evaluation_staging_path and initializer.global_config.staging_bucket:
             evaluation_staging_path = initializer.global_config.staging_bucket
@@ -4740,19 +4739,25 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             )
 
         if prediction_type not in _SUPPORTED_EVAL_PREDICTION_TYPES:
-            raise ValueError("Please provide a supported model prediction type.")
+            raise ValueError("Please provide a supported model prediction type.")        
+        
+        # TODO: see if this a reliable way to check if it's an automl tabular model
+        if self._gca_resource.metadata_schema_uri == "https://storage.googleapis.com/google-cloud-aiplatform/schema/model/metadata/automl_tabular_1.0.0.yaml":
+            model_type = "automl_tabular"
+        else:
+            model_type = "other"
 
-        if data_type not in _SUPPORTED_MODEL_EVAL_DATA_TYPES:
-            raise ValueError("Please provide a supported data type.")
+        # TODO: raise error if key_columns required but not provided.
 
         return model_evaluation._ModelEvaluationJob.submit(
             model_name=self.resource_name,
             prediction_type=prediction_type,
             target_column_name=target_column_name,
-            gcs_source_uris=gcs_source_uris,
+            data_source_uris=data_source_uris,
+            key_columns=key_columns,
             pipeline_root=evaluation_staging_path,
             instances_format=instances_format,
-            data_type=data_type,
+            model_type=model_type,
             generate_feature_attributions=generate_feature_attributions,
             display_name=evaluation_job_display_name,
             network=network,
