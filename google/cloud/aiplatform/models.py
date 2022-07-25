@@ -15,6 +15,7 @@
 # limitations under the License.
 #
 import json
+from multiprocessing.sharedctypes import Value
 import pathlib
 import proto
 import re
@@ -4658,7 +4659,6 @@ class Model(base.VertexAiResourceNounWithFutureManager):
         prediction_type: str,
         target_column_name: str,
         data_source_uris: List[str],
-        instances_format: str, # sdk could infer this based on file extension, don't make this required 
         key_columns: Optional[List[str]] = None,
         evaluation_staging_path: Optional[str] = None,
         generate_feature_attributions: Optional[bool] = False,
@@ -4679,7 +4679,6 @@ class Model(base.VertexAiResourceNounWithFutureManager):
                 target_column_name="type",
                 data_source_uris=["gs://sdk-model-eval/my-prediction-data.csv"],
                 evaluation_staging_path="gs://my-staging-bucket/eval_pipeline_root",
-                instances_format="csv"
             )
 
             my_evaluation_job.wait()
@@ -4696,12 +4695,12 @@ class Model(base.VertexAiResourceNounWithFutureManager):
                 Required. The column name of the field containing the label for this prediction task.
             data_source_uris (List[str]):
                 Required. A list of data files containing the ground truth data to use for this evaluation job.
-                These files should contain your model's prediction column. Currently only GCS urls are supported,
-                for example: "gs://path/to/your/data.csv".
-            instances_format (str):
-                Required. The format of your prediction data.
+                These files should contain your model's prediction column. Currently only Google Cloud Storage
+                urls are supported, for example: "gs://path/to/your/data.csv". The provided data files must be
+                either CSV or JSONL.
             key_columns (str):
-                Optional. The column headers in the data files provided to gcs_source_uris.
+                Optional. The column headers in the data files provided to gcs_source_uris, in the order the columns
+                appear in the file. This argument is required for custom models and AutoML Vision, Text, and Video models.
             evaluation_staging_path (str):
                 Required. The GCS directory to use for staging files from this evaluation job. Defaults to the value set in
                 aiplatform.init(staging_bucket=...) if not provided.
@@ -4728,7 +4727,17 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             ValueError:
                 If staging_bucket was not set in aiplatform.init() and evaluation_staging_bucket was not provided.
                 If the provided `prediction_type` is not valid.
+                If the provided `data_source_uris` don't start with 'gs://'.
         """
+
+        SUPPORTED_INSTANCES_FORMAT_FILE_EXTENSIONS = [
+            ".jsonl",
+            ".csv"
+        ]
+
+        if isinstance(data_source_uris, str):
+            data_source_uris = [data_source_uris]
+
         if not evaluation_staging_path and initializer.global_config.staging_bucket:
             evaluation_staging_path = initializer.global_config.staging_bucket
         elif (
@@ -4739,15 +4748,34 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             )
 
         if prediction_type not in _SUPPORTED_EVAL_PREDICTION_TYPES:
-            raise ValueError("Please provide a supported model prediction type.")        
+            raise ValueError("Please provide a supported model prediction type.")      
+
+        if not (
+            data_source_uris[0].startswith("gs://")
+        ):
+            raise ValueError(
+                "The `data_source_uris` values must start with 'gs://'."
+            )
         
         # TODO: see if this a reliable way to check if it's an automl tabular model
         if self._gca_resource.metadata_schema_uri == "https://storage.googleapis.com/google-cloud-aiplatform/schema/model/metadata/automl_tabular_1.0.0.yaml":
             model_type = "automl_tabular"
         else:
             model_type = "other"
+            if not key_columns:
+                raise ValueError(
+                    "Please provide `key_columns` when running evaluation on this model type."
+                )
 
-        # TODO: raise error if key_columns required but not provided.
+        data_file_path_obj = pathlib.Path(data_source_uris[0])
+
+        data_file_extension = data_file_path_obj.suffix
+        if data_file_extension not in SUPPORTED_INSTANCES_FORMAT_FILE_EXTENSIONS:
+            _LOGGER.warning(
+                f"Only the following data file extensions are currently supported: '{SUPPORTED_INSTANCES_FORMAT_FILE_EXTENSIONS}'"
+            )
+        else:
+            instances_format = data_file_extension[1:]
 
         return model_evaluation._ModelEvaluationJob.submit(
             model_name=self.resource_name,

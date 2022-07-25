@@ -113,64 +113,23 @@ class TestModelEvaluationJob(e2e_base.TestEndToEnd):
         # bucket.delete(force=True)
 
     # TODO: get this test passing with custom models
-    def test_model_evaluate_custom_tabular_model(self, staging_bucket):
+    # def test_model_evaluate_custom_tabular_model(self, staging_bucket):
 
-        custom_model = aiplatform.Model(model_name=_TEST_PERMANENT_SCIKIT_RESOURCE_NAME)
+    #     custom_model = aiplatform.Model(model_name=_TEST_PERMANENT_SCIKIT_RESOURCE_NAME)
 
-        eval_job = custom_model.evaluate(
-            data_type="tabular",
-            gcs_source_uris=[_TEST_AUTOML_EVAL_DATA_URI],
-            prediction_type="classification",
-            key_columns=["petal_length","petal_width","sepal_length","sepal_width"],
-            target_column_name="species",
-            evaluation_staging_path=f"gs://{staging_bucket.name}",
-            instances_format="jsonl",
-        )
-
-        _LOGGER.info("%s, state before completion", eval_job.backing_pipeline_job.state)
-
-        eval_job.wait()
-
-        _LOGGER.info("%s, state after completion", eval_job.backing_pipeline_job.state)
-
-        assert (
-            eval_job.state == gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED
-        )
-        assert eval_job.state == eval_job.backing_pipeline_job.state
-
-        assert eval_job.resource_name == eval_job.backing_pipeline_job.resource_name
-
-        eval_metrics_artifact = aiplatform.Artifact(
-            artifact_name=eval_job._metadata_output_artifact
-        )
-
-        assert isinstance(eval_metrics_artifact, aiplatform.Artifact)
-
-        _LOGGER.info("%s metadata output artifact", eval_job._metadata_output_artifact)
-
-        model_eval = eval_job.get_model_evaluation()
-
-        eval_metrics_dict = model_eval.metrics
-
-        for metric_name in _EVAL_METRICS_KEYS_CLASSIFICATION:
-            assert metric_name in eval_metrics_dict
-
-    # def test_model_evaluate_automl_tabular_model(self, staging_bucket):
-
-    #     automl_model = aiplatform.Model(
-    #         model_name=_TEST_PERMANENT_AUTOML_MODEL_RESOURCE_NAME
-    #     )
-
-    #     eval_job = automl_model.evaluate(
-    #         data_type="tabular",
-    #         gcs_source_uris=[_TEST_AUTOML_EVAL_DATA_URI],
+    #     eval_job = custom_model.evaluate(
+    #         data_source_uris=[_TEST_AUTOML_EVAL_DATA_URI],
     #         prediction_type="classification",
+    #         key_columns=["petal_length","petal_width","sepal_length","sepal_width"],
     #         target_column_name="species",
     #         evaluation_staging_path=f"gs://{staging_bucket.name}",
-    #         instances_format="csv",
     #     )
 
+    #     _LOGGER.info("%s, state before completion", eval_job.backing_pipeline_job.state)
+
     #     eval_job.wait()
+
+    #     _LOGGER.info("%s, state after completion", eval_job.backing_pipeline_job.state)
 
     #     assert (
     #         eval_job.state == gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED
@@ -193,3 +152,40 @@ class TestModelEvaluationJob(e2e_base.TestEndToEnd):
 
     #     for metric_name in _EVAL_METRICS_KEYS_CLASSIFICATION:
     #         assert metric_name in eval_metrics_dict
+
+    def test_model_evaluate_automl_tabular_model(self, staging_bucket):
+
+        automl_model = aiplatform.Model(
+            model_name=_TEST_PERMANENT_AUTOML_MODEL_RESOURCE_NAME
+        )
+
+        eval_job = automl_model.evaluate(
+            data_source_uris=[_TEST_AUTOML_EVAL_DATA_URI],
+            prediction_type="classification",
+            target_column_name="species",
+            evaluation_staging_path=f"gs://{staging_bucket.name}",
+        )
+
+        eval_job.wait()
+
+        assert (
+            eval_job.state == gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED
+        )
+        assert eval_job.state == eval_job.backing_pipeline_job.state
+
+        assert eval_job.resource_name == eval_job.backing_pipeline_job.resource_name
+
+        eval_metrics_artifact = aiplatform.Artifact(
+            artifact_name=eval_job._metadata_output_artifact
+        )
+
+        assert isinstance(eval_metrics_artifact, aiplatform.Artifact)
+
+        _LOGGER.info("%s metadata output artifact", eval_job._metadata_output_artifact)
+
+        model_eval = eval_job.get_model_evaluation()
+
+        eval_metrics_dict = model_eval.metrics
+
+        for metric_name in _EVAL_METRICS_KEYS_CLASSIFICATION:
+            assert metric_name in eval_metrics_dict

@@ -37,10 +37,10 @@ _LOGGER = base.Logger(__name__)
 # TODO: update this with the final gcs pipeline template urls and add templates for unstructured data when they are available
 # First 2 are for automl tabular, the others are for everything else
 _MODEL_EVAL_PIPELINE_TEMPLATES = {
-    "automl_tabular_without_feature_attribution": "gs://vertex-evaluation-templates/20220722_0210/evaluation_automl_tabular_pipeline.json",
-    "automl_tabular_with_feature_attribution": "gs://vertex-evaluation-templates/20220722_0210/evaluation_automl_tabular_feature_attribution_pipeline.json",
-    "other_without_feature_attribution": "gs://vertex-evaluation-templates/20220722_0210/evaluation_pipeline.json",
-    "other_with_feature_attribution": "gs://vertex-evaluation-templates/20220722_0210/evaluation_feature_attribution_pipeline.json",
+    "automl_tabular_without_feature_attribution": "gs://vertex-evaluation-templates/20220725_1756/evaluation_automl_tabular_pipeline.json",
+    "automl_tabular_with_feature_attribution": "gs://vertex-evaluation-templates/20220725_1756/evaluation_automl_tabular_feature_attribution_pipeline.json",
+    "other_without_feature_attribution": "gs://vertex-evaluation-templates/20220725_1756/evaluation_pipeline.json",
+    "other_with_feature_attribution": "gs://vertex-evaluation-templates/20220725_1756/evaluation_feature_attribution_pipeline.json",
 }
 
 
@@ -229,8 +229,6 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
             "root_dir": pipeline_root,
             "target_column_name": target_column_name,
         }
-
-        print(cls._get_template_url( model_type, generate_feature_attributions))
 
         eval_pipeline_run = cls._create_and_submit_pipeline_job(
             template_params=template_params,

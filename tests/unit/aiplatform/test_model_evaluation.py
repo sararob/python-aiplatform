@@ -122,8 +122,8 @@ _TEST_PIPELINE_CREATE_TIME = datetime.now()
 _TEST_TEMPLATE_PATH = f"gs://{_TEST_GCS_BUCKET_NAME}/evaluation_default_pipeline.json"
 
 _TEST_TEMPLATE_REF = {
-    "tabular_without_feature_attribution": _TEST_TEMPLATE_PATH,
-    "tabular_with_feature_attribution": f"gs://{_TEST_GCS_BUCKET_NAME}/evaluation_feature_attribution_pipeline.json",
+    "automl_tabular_without_feature_attribution": _TEST_TEMPLATE_PATH,
+    "automl_tabular_with_feature_attribution": f"gs://{_TEST_GCS_BUCKET_NAME}/evaluation_feature_attribution_pipeline.json",
 }
 _TEST_PARENT = f"projects/{_TEST_PROJECT}/locations/{_TEST_LOCATION}"
 _TEST_NETWORK = f"projects/{_TEST_PROJECT}/global/networks/{_TEST_PIPELINE_JOB_ID}"
@@ -764,17 +764,15 @@ class TestModelEvaluationJob:
             prediction_type=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "prediction_type"
             ],
+            instances_format=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES["batch_predict_instances_format"],
+            model_type="automl_tabular",
             pipeline_root=_TEST_GCS_BUCKET_NAME,
             target_column_name=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "target_column_name"
             ],
-            data_type="tabular",
             display_name=_TEST_MODEL_EVAL_JOB_DISPLAY_NAME,
-            gcs_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+            data_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "batch_predict_gcs_source_uris"
-            ],
-            instances_format=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
-                "batch_predict_instances_format"
             ],
             service_account=_TEST_SERVICE_ACCOUNT,
             network=_TEST_NETWORK,
@@ -872,9 +870,9 @@ class TestModelEvaluationJob:
             target_column_name=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "target_column_name"
             ],
-            data_type="tabular",
+            model_type="automl_tabular",
             display_name=_TEST_MODEL_EVAL_JOB_DISPLAY_NAME,
-            gcs_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+            data_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "batch_predict_gcs_source_uris"
             ],
             instances_format=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
@@ -972,9 +970,9 @@ class TestModelEvaluationJob:
             target_column_name=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "target_column_name"
             ],
-            data_type="tabular",
+            model_type="automl_tabular",
             display_name=_TEST_MODEL_EVAL_JOB_DISPLAY_NAME,
-            gcs_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+            data_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "batch_predict_gcs_source_uris"
             ],
             instances_format=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
@@ -1048,9 +1046,9 @@ class TestModelEvaluationJob:
             target_column_name=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "target_column_name"
             ],
-            data_type="tabular",
+            model_type="automl_tabular",
             display_name=_TEST_MODEL_EVAL_JOB_DISPLAY_NAME,
-            gcs_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+            data_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "batch_predict_gcs_source_uris"
             ],
             instances_format=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
@@ -1097,9 +1095,9 @@ class TestModelEvaluationJob:
             target_column_name=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "target_column_name"
             ],
-            data_type="tabular",
+            model_type="automl_tabular",
             display_name=_TEST_MODEL_EVAL_JOB_DISPLAY_NAME,
-            gcs_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+            data_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "batch_predict_gcs_source_uris"
             ],
             instances_format=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
