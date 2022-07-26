@@ -259,6 +259,7 @@ _TEST_LOCAL_MODEL = LocalModel(
     serving_container_predict_route=_TEST_SERVING_CONTAINER_PREDICTION_ROUTE,
     serving_container_health_route=_TEST_SERVING_CONTAINER_HEALTH_ROUTE,
 )
+_TEST_MODEL_EVAL_KEY_COLUMNS = ["a", "b", "c"]
 
 _TEST_VERSION_ID = "2"
 _TEST_VERSION_ALIAS_1 = "myalias"
@@ -2548,12 +2549,11 @@ class TestModel:
         test_model = models.Model(model_name=_TEST_MODEL_RESOURCE_NAME)
 
         eval_job = test_model.evaluate(
-            data_type="tabular",
             prediction_type="classification",
             target_column_name="class",
+            key_columns=_TEST_MODEL_EVAL_KEY_COLUMNS,
             evaluation_staging_path="gs://my-eval-staging-path",
-            gcs_source_uris=["gs://test-bucket/test-file.csv"],
-            instances_format="csv",
+            data_source_uris=["gs://test-bucket/test-file.csv"],
         )
 
         assert isinstance(eval_job, model_evaluation_job._ModelEvaluationJob)
@@ -2572,6 +2572,8 @@ class TestModel:
 
         # TODO: add test for eval.backing_pipeline_job when available
 
+    # TODO: add evaluation test with mock for automl tabular model
+
     def test_model_evaluate_using_initialized_staging_bucket(
         self,
         get_model_mock,
@@ -2585,11 +2587,10 @@ class TestModel:
         test_model = models.Model(model_name=_TEST_MODEL_RESOURCE_NAME)
 
         eval_job = test_model.evaluate(
-            data_type="tabular",
             prediction_type="classification",
             target_column_name="class",
-            gcs_source_uris=["gs://test-bucket/test-file.csv"],
-            instances_format="csv",
+            key_columns=_TEST_MODEL_EVAL_KEY_COLUMNS,
+            data_source_uris=["gs://test-bucket/test-file.csv"],
         )
 
         assert isinstance(eval_job, model_evaluation_job._ModelEvaluationJob)
@@ -2610,11 +2611,10 @@ class TestModel:
 
         with pytest.raises(ValueError):
             test_model.evaluate(
-                data_type="tabular",
                 prediction_type="classification",
                 target_column_name="class",
-                gcs_source_uris=["gs://test-bucket/test-file.csv"],
-                instances_format="csv",
+                key_columns=_TEST_MODEL_EVAL_KEY_COLUMNS,
+                data_source_uris=["gs://test-bucket/test-file.csv"],
             )
 
     def test_model_evaluate_with_invalid_prediction_type_raises(
@@ -2629,30 +2629,10 @@ class TestModel:
 
         with pytest.raises(ValueError):
             test_model.evaluate(
-                data_type="tabular",
                 prediction_type="invalid_prediction_type",
                 target_column_name="class",
-                gcs_source_uris=["gs://test-bucket/test-file.csv"],
-                instances_format="csv",
-            )
-
-    def test_model_evaluate_with_invalid_data_type_raises(
-        self,
-        get_model_mock,
-        mock_model_eval_get,
-    ):
-
-        aiplatform.init(project=_TEST_PROJECT)
-
-        test_model = models.Model(model_name=_TEST_MODEL_RESOURCE_NAME)
-
-        with pytest.raises(ValueError):
-            test_model.evaluate(
-                data_type="video",
-                prediction_type="invalid_prediction_type",
-                target_column_name="class",
-                gcs_source_uris=["gs://test-bucket/test-file.csv"],
-                instances_format="csv",
+                key_columns=_TEST_MODEL_EVAL_KEY_COLUMNS,
+                data_source_uris=["gs://test-bucket/test-file.csv"],
             )
 
     def test_init_with_version_in_resource_name(self, get_model_with_version):
