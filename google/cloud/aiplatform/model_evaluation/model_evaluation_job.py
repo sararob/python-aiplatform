@@ -37,10 +37,10 @@ _LOGGER = base.Logger(__name__)
 # TODO: update this with the final gcs pipeline template urls
 # First 2 are for automl tabular models, the others are for everything else
 _MODEL_EVAL_PIPELINE_TEMPLATES = {
-    "automl_tabular_without_feature_attribution": "gs://vertex-evaluation-templates/20220725_1756/evaluation_automl_tabular_pipeline.json",
-    "automl_tabular_with_feature_attribution": "gs://vertex-evaluation-templates/20220725_1756/evaluation_automl_tabular_feature_attribution_pipeline.json",
-    "other_without_feature_attribution": "gs://vertex-evaluation-templates/20220725_1756/evaluation_pipeline.json",
-    "other_with_feature_attribution": "gs://vertex-evaluation-templates/20220725_1756/evaluation_feature_attribution_pipeline.json",
+    "automl_tabular_without_feature_attribution": "gs://vertex-evaluation-templates/20220727_0123/evaluation_automl_tabular_pipeline.json",
+    "automl_tabular_with_feature_attribution": "gs://vertex-evaluation-templates/20220727_0123/evaluation_automl_tabular_feature_attribution_pipeline.json",
+    "other_without_feature_attribution": "gs://vertex-evaluation-templates/20220727_0123/evaluation_pipeline.json",
+    "other_with_feature_attribution": "gs://vertex-evaluation-templates/20220727_0123/evaluation_feature_attribution_pipeline.json",
 }
 
 
@@ -120,6 +120,8 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         else:
             template_type += "_without_feature_attribution"
 
+        print(_ModelEvaluationJob._template_ref[template_type])
+
         return _ModelEvaluationJob._template_ref[template_type]
 
     @classmethod
@@ -131,6 +133,7 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         data_source_uris: List[str],
         pipeline_root: str,
         model_type: str,
+        class_names: Optional[List[str]] = None,
         key_columns: Optional[List[str]] = None,
         generate_feature_attributions: Optional[bool] = False,
         instances_format: Optional[str] = "jsonl",
@@ -229,6 +232,9 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
             "root_dir": pipeline_root,
             "target_column_name": target_column_name,
         }
+
+        if prediction_type == "classification" and model_type == "other" and class_names is not None:
+            template_params["evaluation_class_names"] = class_names
 
         eval_pipeline_run = cls._create_and_submit_pipeline_job(
             template_params=template_params,
