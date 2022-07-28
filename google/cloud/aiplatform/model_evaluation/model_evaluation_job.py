@@ -120,8 +120,6 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         else:
             template_type += "_without_feature_attribution"
 
-        print(_ModelEvaluationJob._template_ref[template_type])
-
         return _ModelEvaluationJob._template_ref[template_type]
 
     @classmethod
