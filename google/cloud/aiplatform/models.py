@@ -4662,10 +4662,12 @@ class Model(base.VertexAiResourceNounWithFutureManager):
         class_names: Optional[List[str]] = None,
         key_columns: Optional[List[str]] = None,
         evaluation_staging_path: Optional[str] = None,
+        service_account: Optional[str] = None,
         generate_feature_attributions: Optional[bool] = False,
         evaluation_job_display_name: Optional[str] = None,
         network: Optional[str] = None,
         experiment: Optional[Union[str, "aiplatform.Experiment"]] = None,
+        use_experimental_templates: Optional[bool] = False,
     ) -> "model_evaluation.ModelEvaluationJob":
         """Creates a model evaluation job running on Vertex Pipelines and returns the resulting
         ModelEvaluationJob resource.
@@ -4705,6 +4707,9 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             evaluation_staging_path (str):
                 Required. The GCS directory to use for staging files from this evaluation job. Defaults to the value set in
                 aiplatform.init(staging_bucket=...) if not provided.
+            service_account (str):
+                Specifies the service account for workload run-as account for this Model Evaluation PipelineJob.
+                Users submitting jobs must have act-as permission on this run-as account.
             generate_feature_attributions (boolean):
                 Optional. Whether the model evaluation job should generate feature attributions. Defaults to False if not specified.
             evaluation_job_display_name (str):
@@ -4785,6 +4790,7 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             data_source_uris=data_source_uris,
             key_columns=key_columns,
             class_names=class_names,
+            service_account=service_account,
             pipeline_root=evaluation_staging_path,
             instances_format=instances_format,
             model_type=model_type,
@@ -4793,6 +4799,7 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             network=network,
             credentials=self.credentials,
             experiment=experiment,
+            use_experimental_templates=use_experimental_templates,
         )
 
 # TODO (b/232546878): Async support

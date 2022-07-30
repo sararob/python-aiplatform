@@ -15,6 +15,7 @@
 # limitations under the License.
 #
 
+from re import template
 from typing import Optional, List, Union
 
 from google.auth import credentials as auth_credentials
@@ -43,6 +44,12 @@ _MODEL_EVAL_PIPELINE_TEMPLATES = {
     "other_with_feature_attribution": "gs://vertex-evaluation-templates/20220727_2122/evaluation_feature_attribution_pipeline.json",
 }
 
+_EXPERIMENTAL_EVAL_PIPELINE_TEMPLATES = {
+    "automl_tabular_without_feature_attribution": "gs://vertex-evaluation-templates/experimental/evaluation_automl_tabular_pipeline.json",
+    "automl_tabular_with_feature_attribution": "gs://vertex-evaluation-templates/experimental/evaluation_automl_tabular_feature_attribution_pipeline.json",
+    "other_without_feature_attribution": "gs://vertex-evaluation-templates/experimental/evaluation_pipeline.json",
+    "other_with_feature_attribution": "gs://vertex-evaluation-templates/experimental/evaluation_feature_attribution_pipeline.json",
+}
 
 class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
 
@@ -100,6 +107,7 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
     def _get_template_url(
         model_type: str,
         feature_attributions: bool,
+        use_experimental_templates: bool,
     ) -> str:
         """Gets the pipeline template URL for this model evaluation job given the type of data
         used to train the model and whether feature attributions should be generated.
@@ -120,7 +128,10 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         else:
             template_type += "_without_feature_attribution"
 
-        return _ModelEvaluationJob._template_ref[template_type]
+        if use_experimental_templates:
+            return _EXPERIMENTAL_EVAL_PIPELINE_TEMPLATES[template_type]
+        else:
+            return _ModelEvaluationJob._template_ref[template_type]
 
     @classmethod
     def submit(
@@ -143,6 +154,7 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         location: Optional[str] = None,
         credentials: Optional[auth_credentials.Credentials] = None,
         experiment: Optional[Union[str, "aiplatform.Experiment"]] = None,
+        use_experimental_templates: Optional[bool] = False,
     ) -> "_ModelEvaluationJob":
         """Submits a Model Evaluation Job using aiplatform.PipelineJob and returns
         the ModelEvaluationJob resource.
@@ -233,12 +245,20 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
 
         if prediction_type == "classification" and model_type == "other" and class_names is not None:
             template_params["evaluation_class_names"] = class_names
+        
+        if service_account is not None:
+            template_params["service_account"] = service_account
+
+        template_url = cls._get_template_url(
+                model_type, generate_feature_attributions, use_experimental_templates
+        )
+
+        if use_experimental_templates:
+            _LOGGER.info(f"Using experimental pipeline template: {template_url}")
 
         eval_pipeline_run = cls._create_and_submit_pipeline_job(
             template_params=template_params,
-            template_path=cls._get_template_url(
-                model_type, generate_feature_attributions
-            ),
+            template_path=template_url,
             pipeline_root=pipeline_root,
             display_name=display_name,
             job_id=job_id,
@@ -273,10 +293,6 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
                 f"Your evaluation job is still in progress. For more details see the logs {self.pipeline_console_uri}"
             )
         else:
-            _LOGGER.info(
-                "Your evaluation job ran successfully. Creating Model Evaluation resource..."
-            )
-
             for component in self.backing_pipeline_job.task_details:
                 for metadata_key in component.execution.metadata:
                     if (
