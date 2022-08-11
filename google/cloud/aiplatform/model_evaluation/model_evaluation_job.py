@@ -38,10 +38,10 @@ _LOGGER = base.Logger(__name__)
 # TODO: update this with the final gcs pipeline template urls
 # First 2 are for automl tabular models, the others are for everything else
 _MODEL_EVAL_PIPELINE_TEMPLATES = {
-    "automl_tabular_without_feature_attribution": "gs://vertex-evaluation-templates/20220727_2122/evaluation_automl_tabular_pipeline.json",
-    "automl_tabular_with_feature_attribution": "gs://vertex-evaluation-templates/20220727_2122/evaluation_automl_tabular_feature_attribution_pipeline.json",
-    "other_without_feature_attribution": "gs://vertex-evaluation-templates/20220727_2122/evaluation_pipeline.json",
-    "other_with_feature_attribution": "gs://vertex-evaluation-templates/20220727_2122/evaluation_feature_attribution_pipeline.json",
+    "automl_tabular_without_feature_attribution": "gs://vertex-evaluation-templates/20220810_2032/evaluation_automl_tabular_pipeline.json",
+    "automl_tabular_with_feature_attribution": "gs://vertex-evaluation-templates/20220810_2032/evaluation_automl_tabular_feature_attribution_pipeline.json",
+    "other_without_feature_attribution": "gs://vertex-evaluation-templates/20220810_2032/evaluation_pipeline.json",
+    "other_with_feature_attribution": "gs://vertex-evaluation-templates/20220810_2032/evaluation_feature_attribution_pipeline.json",
 }
 
 _EXPERIMENTAL_EVAL_PIPELINE_TEMPLATES = {
@@ -150,6 +150,7 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         job_id: Optional[str] = None,
         service_account: Optional[str] = None,
         network: Optional[str] = None,
+        encryption_spec_key_name: Optional[str] = None,
         project: Optional[str] = None,
         location: Optional[str] = None,
         credentials: Optional[auth_credentials.Credentials] = None,
@@ -241,13 +242,14 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
             "location": location or initializer.global_config.location,
             "root_dir": pipeline_root,
             "target_column_name": target_column_name,
+            "encryption_spec_key_name": encryption_spec_key_name,
         }
 
         if prediction_type == "classification" and model_type == "other" and class_names is not None:
             template_params["evaluation_class_names"] = class_names
         
         if service_account is not None:
-            template_params["service_account"] = service_account
+            template_params["dataflow_service_account"] = service_account
 
         template_url = cls._get_template_url(
                 model_type, generate_feature_attributions, use_experimental_templates

@@ -4666,6 +4666,7 @@ class Model(base.VertexAiResourceNounWithFutureManager):
         generate_feature_attributions: Optional[bool] = False,
         evaluation_job_display_name: Optional[str] = None,
         network: Optional[str] = None,
+        encryption_spec_key_name: Optional[str] = None,
         experiment: Optional[Union[str, "aiplatform.Experiment"]] = None,
         use_experimental_templates: Optional[bool] = False,
     ) -> "model_evaluation.ModelEvaluationJob":
@@ -4797,6 +4798,7 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             generate_feature_attributions=generate_feature_attributions,
             display_name=evaluation_job_display_name,
             network=network,
+            encryption_spec_key_name=encryption_spec_key_name,
             credentials=self.credentials,
             experiment=experiment,
             use_experimental_templates=use_experimental_templates,
