@@ -4702,15 +4702,19 @@ class Model(base.VertexAiResourceNounWithFutureManager):
                 These files should contain your model's prediction column. Currently only Google Cloud Storage
                 urls are supported, for example: "gs://path/to/your/data.csv". The provided data files must be
                 either CSV or JSONL.
+            class_names (List[str]):
+                Optional. For classification models, a list of possible class names. This argument is required
+                when prediction_type is 'classification'.
             key_columns (str):
                 Optional. The column headers in the data files provided to gcs_source_uris, in the order the columns
                 appear in the file. This argument is required for custom models and AutoML Vision, Text, and Video models.
             evaluation_staging_path (str):
-                Required. The GCS directory to use for staging files from this evaluation job. Defaults to the value set in
-                aiplatform.init(staging_bucket=...) if not provided.
+                Optional. The GCS directory to use for staging files from this evaluation job. Defaults to the value set in
+                aiplatform.init(staging_bucket=...) if not provided. Required if staging_bucket is not set in aiplatform.init().
             service_account (str):
                 Specifies the service account for workload run-as account for this Model Evaluation PipelineJob.
-                Users submitting jobs must have act-as permission on this run-as account.
+                Users submitting jobs must have act-as permission on this run-as account. The service account running
+                this Model Evaluation job needs the following permissions: Dataflow Worker, Storage Admin, Vertex AI User.
             generate_feature_attributions (boolean):
                 Optional. Whether the model evaluation job should generate feature attributions. Defaults to False if not specified.
             evaluation_job_display_name (str):
@@ -4721,6 +4725,12 @@ class Model(base.VertexAiResourceNounWithFutureManager):
                 should be peered. For example, projects/12345/global/networks/myVPC.
                 Private services access must already be configured for the network.
                 If left unspecified, the job is not peered with any network.
+            encryption_spec_key_name (str):
+                Optional. The Cloud KMS resource identifier of the customer managed encryption key used to protect the job. Has the
+                form: ``projects/my-project/locations/my-region/keyRings/my-kr/cryptoKeys/my-key``. The key needs to be in the same
+                region as where the compute resource is created. If this is set, then all
+                resources created by the PipelineJob for this Model Evaluation will be encrypted with the provided encryption key.
+                If not specified, encryption_spec of original PipelineJob will be used.
             experiment (Union[str, experiments_resource.Experiment]):
                 Optional. The Vertex AI experiment name or instance to associate to the PipelineJob executing
                 this model evaluation job. Metrics produced by the PipelineJob as system.Metric Artifacts

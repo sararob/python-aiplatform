@@ -35,6 +35,8 @@ from google.cloud.aiplatform.compat.types import (
     pipeline_state as gca_pipeline_state,
 )
 
+import logging
+
 _PIPELINE_COMPLETE_STATES = set(
     [
         gca_pipeline_state.PipelineState.PIPELINE_STATE_SUCCEEDED,
@@ -66,6 +68,18 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         an identifier for that template and the value is the url of that pipeline template.
 
         For example: {"tabular_classification": "gs://path/to/tabular/pipeline/template.json"}
+
+        """
+        pass
+
+    @property
+    @classmethod
+    @abc.abstractmethod
+    def _creation_log_message(self) -> str:
+        """A log message to use when the Pipeline-based Service is created, since this class
+        supresses logs from PipelineJob creation to avoid duplication.
+
+        For example: 'Created PipelineJob for your Model Evaluation.'
 
         """
         pass
@@ -246,11 +260,17 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
             credentials=credentials,
         )
 
+        # Suppresses logs from PipelineJob
+        # The class implementing _VertexAiPipelineBasedService should define a custom log message
+        logging.getLogger('google.cloud.aiplatform.pipeline_jobs').setLevel(logging.WARNING)
+
         service_pipeline_job.submit(
             service_account=service_account,
             network=network,
             experiment=experiment,
         )
+
+        logging.getLogger('google.cloud.aiplatform.pipeline_jobs').setLevel(logging.INFO)
 
         self._gca_resource = service_pipeline_job.gca_resource
 

@@ -55,6 +55,8 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
 
     _template_ref = _MODEL_EVAL_PIPELINE_TEMPLATES
 
+    _creation_log_message = "Created PipelineJob for your Model Evaluation."
+
     @property
     def _metadata_output_artifact(self) -> Optional[str]:
         """The resource uri for the ML Metadata output artifact from the evaluation component of the Model Evaluation pipeline"""
@@ -193,6 +195,16 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
                 for example: "gs://path/to/your/data.csv".
             pipeline_root (str):
                 Required. The GCS directory to store output from the model evaluation PipelineJob.
+            model_type (str):
+                Required. One of "automl_tabular" or "other". This determines the Model Evaluation template used by this PipelineJob.
+            class_names (List[str]):
+                Optional. For classification models, a list of possible class names. This argument is required
+                when prediction_type is 'classification'.
+            key_columns (str):
+                Optional. The column headers in the data files provided to gcs_source_uris, in the order the columns
+                appear in the file. This argument is required for custom models and AutoML Vision, Text, and Video models.
+            generate_feature_attributions (boolean):
+                Optional. Whether the model evaluation job should generate feature attributions. Defaults to False if not specified.
             instances_format (str):
                 The format in which instances are given, must be one of the Model's supportedInputStorageFormats. If not set, defaults to "jsonl".
             display_name (str)
@@ -201,13 +213,20 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
                 Optional. The unique ID of the job run.
                 If not specified, pipeline name + timestamp will be used.
             service_account (str):
-                Specifies the service account for workload run-as account.
-                Users submitting jobs must have act-as permission on this run-as account.
+                Specifies the service account for workload run-as account for this Model Evaluation PipelineJob.
+                Users submitting jobs must have act-as permission on this run-as account. The service account running
+                this Model Evaluation job needs the following permissions: Dataflow Worker, Storage Admin, Vertex AI User.
             network (str):
                 The full name of the Compute Engine network to which the job
                 should be peered. For example, projects/12345/global/networks/myVPC.
                 Private services access must already be configured for the network.
                 If left unspecified, the job is not peered with any network.
+            encryption_spec_key_name (str):
+                Optional. The Cloud KMS resource identifier of the customer managed encryption key used to protect the job. Has the
+                form: ``projects/my-project/locations/my-region/keyRings/my-kr/cryptoKeys/my-key``. The key needs to be in the same
+                region as where the compute resource is created. If this is set, then all
+                resources created by the PipelineJob for this Model Evaluation will be encrypted with the provided encryption key.
+                If not specified, encryption_spec of original PipelineJob will be used.
             project (str):
                 Optional. The project to run this PipelineJob in. If not set,
                 the project set in aiplatform.init will be used.
@@ -270,6 +289,10 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
             location=location,
             credentials=credentials,
             experiment=experiment,
+        )
+
+        _LOGGER.info(
+            f"{_ModelEvaluationJob._creation_log_message} View it in the console: {eval_pipeline_run.pipeline_console_uri}"
         )
 
         return eval_pipeline_run
