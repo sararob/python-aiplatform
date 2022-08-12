@@ -4703,8 +4703,11 @@ class Model(base.VertexAiResourceNounWithFutureManager):
                 urls are supported, for example: "gs://path/to/your/data.csv". The provided data files must be
                 either CSV or JSONL.
             class_names (List[str]):
-                Optional. For classification models, a list of possible class names. This argument is required
-                when prediction_type is 'classification'.
+                Optional. For custom (non-AutoML) classification models, a list of possible class names, in the
+                same order that predictions are generated. This argument is required when prediction_type is 'classification'.
+                For example, in a classification model with 3 possible classes that are outputted in the format: [0.97, 0.02, 0.01]
+                with the class names "cat", "dog", and "fish", the value of `class_names` should be `["cat", "dog", "fish"]` where
+                the class "cat" corresponds with 0.97 in the example above.
             key_columns (str):
                 Optional. The column headers in the data files provided to gcs_source_uris, in the order the columns
                 appear in the file. This argument is required for custom models and AutoML Vision, Text, and Video models.
