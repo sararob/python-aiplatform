@@ -4717,7 +4717,8 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             service_account (str):
                 Specifies the service account for workload run-as account for this Model Evaluation PipelineJob.
                 Users submitting jobs must have act-as permission on this run-as account. The service account running
-                this Model Evaluation job needs the following permissions: Dataflow Worker, Storage Admin, Vertex AI User.
+                this Model Evaluation job needs the following permissions: Dataflow Worker, Storage Admin,
+                Vertex AI Administrator, and Vertex AI Service Agent.
             generate_feature_attributions (boolean):
                 Optional. Whether the model evaluation job should generate feature attributions. Defaults to False if not specified.
             evaluation_job_display_name (str):
