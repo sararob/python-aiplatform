@@ -207,7 +207,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         Args:
             template_params (Dict[str, Any]):
                 Required. The parameters to pass to the given pipeline template.
-            template_params (Dict[str, Any]):
+            template_path (Dict[str, Any]):
                 Required. The path of the pipeline template to use for this pipeline run.
             pipeline_root (str)
                 Required. The GCS directory to store the pipeline run output.
