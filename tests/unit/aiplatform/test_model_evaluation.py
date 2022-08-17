@@ -136,6 +136,7 @@ _TEST_MODEL_EVAL_JOB_DISPLAY_NAME = "test-eval-job"
 
 _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES = {
     "batch_predict_gcs_source_uris": ["gs://my-bucket/my-prediction-data.csv"],
+    "dataflow_service_account": _TEST_SERVICE_ACCOUNT,
     "batch_predict_instances_format": "csv",
     "model_name": _TEST_MODEL_RESOURCE_NAME,
     "prediction_type": "classification",
@@ -147,6 +148,7 @@ _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES = {
 
 _TEST_JSON_FORMATTED_MODEL_EVAL_PIPELINE_PARAMETER_VALUES = {
     "batch_predict_gcs_source_uris": '["gs://sdk-model-eval/batch-pred-heart.csv"]',
+    "dataflow_service_account": _TEST_SERVICE_ACCOUNT,
     "batch_predict_instances_format": "csv",
     "model_name": _TEST_MODEL_RESOURCE_NAME,
     "prediction_type": "classification",
@@ -163,6 +165,7 @@ _TEST_MODEL_EVAL_PIPELINE_SPEC = {
         "inputDefinitions": {
             "parameters": {
                 "batch_predict_gcs_source_uris": {"type": "STRING"},
+                "dataflow_service_account": _TEST_SERVICE_ACCOUNT,
                 "batch_predict_instances_format": {"type": "STRING"},
                 "batch_predict_machine_type": {"type": "STRING"},
                 "location": {"type": "STRING"},
@@ -179,14 +182,63 @@ _TEST_MODEL_EVAL_PIPELINE_SPEC = {
     "components": {},
 }
 
-_TEST_MODEL_EVAL_PIPELINE_SPEC_JSON = json.dumps(
-    {
+_TEST_MODEL_EVAL_PIPELINE_SPEC_JSON = json.dumps({
         "pipelineInfo": {"name": "evaluation-default-pipeline"},
         "root": {
             "dag": {"tasks": {}},
             "inputDefinitions": {
                 "parameters": {
                     "batch_predict_gcs_source_uris": {"type": "STRING"},
+                    "dataflow_service_account": {"type": "STRING"},
+                    "batch_predict_instances_format": {"type": "STRING"},
+                    "batch_predict_machine_type": {"type": "STRING"},
+                    "location": {"type": "STRING"},
+                    "model_name": {"type": "STRING"},
+                    "prediction_type": {"type": "STRING"},
+                    "project": {"type": "STRING"},
+                    "root_dir": {"type": "STRING"},
+                    "target_column_name": {"type": "STRING"},
+                }
+            },
+        },
+        "schemaVersion": "2.0.0",
+        "sdkVersion": "kfp-1.8.12",
+        "components": {},
+    })
+
+_TEST_INVALID_MODEL_EVAL_PIPELINE_SPEC = json.dumps({
+    "pipelineInfo": {"name": "my-pipeline"},
+    "root": {
+        "dag": {"tasks": {}},
+        "inputDefinitions": {
+            "parameters": {
+                "batch_predict_gcs_source_uris": {"type": "STRING"},
+                "dataflow_service_account": {"type": "STRING"},
+                "batch_predict_instances_format": {"type": "STRING"},
+                "model_name": {"type": "STRING"},
+                "prediction_type": {"type": "STRING"},
+                "project": {"type": "STRING"},
+                "location": {"type": "STRING"},
+                "root_dir": {"type": "STRING"},
+                "target_column_name": {"type": "STRING"},
+            }
+        },
+    },
+    "schemaVersion": "2.0.0",
+    "sdkVersion": "kfp-1.8.12",
+    "components": {"test_component": {}},
+})
+
+_TEST_MODEL_EVAL_PIPELINE_JOB = json.dumps(
+    {
+        "runtimeConfig": {"parameters": _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES},
+        "pipelineInfo": {"name": "evaluation-default-pipeline"},
+        "root": {
+            "dag": {"tasks": {}},
+            "inputDefinitions": {
+                "parameters": {
+                    "batch_predict_gcs_source_uris": {"type": "STRING"},
+                    "dataflow_service_account": {"type": "STRING"},
                     "batch_predict_instances_format": {"type": "STRING"},
                     "batch_predict_machine_type": {"type": "STRING"},
                     "location": {"type": "STRING"},
@@ -204,37 +256,35 @@ _TEST_MODEL_EVAL_PIPELINE_SPEC_JSON = json.dumps(
     }
 )
 
-_TEST_INVALID_MODEL_EVAL_PIPELINE_SPEC = {
-    "pipelineInfo": {"name": "my-pipeline"},
-    "root": {
-        "dag": {"tasks": {}},
-        "inputDefinitions": {
-            "parameters": {
-                "batch_predict_gcs_source_uris": {"type": "STRING"},
-                "batch_predict_instances_format": {"type": "STRING"},
-                "model_name": {"type": "STRING"},
-                "prediction_type": {"type": "STRING"},
-                "project": {"type": "STRING"},
-                "location": {"type": "STRING"},
-                "root_dir": {"type": "STRING"},
-                "target_column_name": {"type": "STRING"},
-            }
+# _TEST_INVALID_MODEL_EVAL_PIPELINE_SPEC_JSON = json.dumps(
+#     {
+#         "pipelineInfo": {"name": "my-pipeline"},
+#         "root": {
+#             "dag": {"tasks": {}},
+#             "inputDefinitions": {
+#                 "parameters": {
+#                     "batch_predict_gcs_source_uris": {"type": "STRING"},
+#                     "batch_predict_instances_format": {"type": "STRING"},
+#                     "model_name": {"type": "STRING"},
+#                     "prediction_type": {"type": "STRING"},
+#                     "project": {"type": "STRING"},
+#                     "location": {"type": "STRING"},
+#                     "root_dir": {"type": "STRING"},
+#                     "target_column_name": {"type": "STRING"},
+#                 }
+#             },
+#         },
+#         "schemaVersion": "2.0.0",
+#         "sdkVersion": "kfp-1.8.12",
+#         "components": {"test_component": {}},
+#     }
+# )
+
+_TEST_INVALID_MODEL_EVAL_PIPELINE_JOB = json.dumps(
+    {
+        "runtimeConfig": {
+            "parameterValues": _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES
         },
-    },
-    "schemaVersion": "2.0.0",
-    "sdkVersion": "kfp-1.8.12",
-    "components": {"test_component": {}},
-}
-
-_TEST_MODEL_EVAL_PIPELINE_JOB = json.dumps(
-    {
-        "runtimeConfig": {"parameters": _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES},
-        "pipelineSpec": json.loads(_TEST_MODEL_EVAL_PIPELINE_SPEC_JSON),
-    }
-)
-
-_TEST_INVALID_MODEL_EVAL_PIPELINE_SPEC_JSON = json.dumps(
-    {
         "pipelineInfo": {"name": "my-pipeline"},
         "root": {
             "dag": {"tasks": {}},
@@ -254,15 +304,6 @@ _TEST_INVALID_MODEL_EVAL_PIPELINE_SPEC_JSON = json.dumps(
         "schemaVersion": "2.0.0",
         "sdkVersion": "kfp-1.8.12",
         "components": {"test_component": {}},
-    }
-)
-
-_TEST_INVALID_MODEL_EVAL_PIPELINE_JOB = json.dumps(
-    {
-        "runtimeConfig": {
-            "parameterValues": _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES
-        },
-        "pipelineSpec": json.loads(_TEST_INVALID_MODEL_EVAL_PIPELINE_SPEC_JSON),
     }
 )
 
@@ -786,6 +827,9 @@ class TestModelEvaluationJob:
                 "batch_predict_gcs_source_uris": {
                     "stringValue": '["gs://my-bucket/my-prediction-data.csv"]'
                 },
+                "dataflow_service_account": {
+                    "stringValue": _TEST_SERVICE_ACCOUNT
+                },
                 "batch_predict_instances_format": {"stringValue": "csv"},
                 "model_name": {"stringValue": _TEST_MODEL_RESOURCE_NAME},
                 "prediction_type": {"stringValue": "classification"},
@@ -890,6 +934,9 @@ class TestModelEvaluationJob:
             "parameters": {
                 "batch_predict_gcs_source_uris": {
                     "stringValue": '["gs://my-bucket/my-prediction-data.csv"]'
+                },
+                "dataflow_service_account": {
+                    "stringValue": _TEST_SERVICE_ACCOUNT
                 },
                 "batch_predict_instances_format": {"stringValue": "csv"},
                 "model_name": {"stringValue": _TEST_MODEL_RESOURCE_NAME},
