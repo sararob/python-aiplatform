@@ -38,10 +38,10 @@ _LOGGER = base.Logger(__name__)
 # TODO: update this with the final gcs pipeline template urls
 # First 2 are for automl tabular models, the others are for everything else
 _MODEL_EVAL_PIPELINE_TEMPLATES = {
-    "automl_tabular_without_feature_attribution": "gs://vertex-evaluation-templates/20220810_2032/evaluation_automl_tabular_pipeline.json",
-    "automl_tabular_with_feature_attribution": "gs://vertex-evaluation-templates/20220810_2032/evaluation_automl_tabular_feature_attribution_pipeline.json",
-    "other_without_feature_attribution": "gs://vertex-evaluation-templates/20220810_2032/evaluation_pipeline.json",
-    "other_with_feature_attribution": "gs://vertex-evaluation-templates/20220810_2032/evaluation_feature_attribution_pipeline.json",
+    "automl_tabular_without_feature_attribution": "gs://vertex-evaluation-templates/20220816_2346/evaluation_automl_tabular_pipeline.json",
+    "automl_tabular_with_feature_attribution": "gs://vertex-evaluation-templates/20220816_2346/evaluation_automl_tabular_feature_attribution_pipeline.json",
+    "other_without_feature_attribution": "gs://vertex-evaluation-templates/20220816_2346/evaluation_pipeline.json",
+    "other_with_feature_attribution": "gs://vertex-evaluation-templates/20220816_2346/evaluation_feature_attribution_pipeline.json",
 }
 
 _EXPERIMENTAL_EVAL_PIPELINE_TEMPLATES = {
@@ -257,7 +257,7 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         template_params = {
             "batch_predict_gcs_source_uris": data_source_uris,
             "batch_predict_instances_format": instances_format,
-            "ground_truth_key_columns": key_columns,
+            "evaluation_feature_columns": key_columns,
             "model_name": model_resource_name,
             "prediction_type": prediction_type,
             "project": project or initializer.global_config.project,
@@ -270,6 +270,7 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         if prediction_type == "classification" and model_type == "other" and class_names is not None:
             template_params["evaluation_class_names"] = class_names
         
+        # If the user provides a SA, use it for the Dataflow job as well
         if service_account is not None:
             template_params["dataflow_service_account"] = service_account
 

@@ -51,10 +51,8 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
         Returns:
             The pipeline job ID if this evaluation ran from a managed pipeline or None.
         """
-        # TODO: implement this when metadata is available in the gca_resource
-        # if self._gca_resource.metadata["pipeline_job_id"]:
-        #     return self._gca_resource.metadata["pipeline_job_id"]
-        raise NotImplementedError
+        if self._gca_resource.metadata["pipeline_job_id"]:
+            return self._gca_resource.metadata["pipeline_job_id"]
 
     @property
     def _batch_prediction_job(self) -> Optional[jobs.BatchPredictionJob]:

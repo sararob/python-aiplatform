@@ -127,10 +127,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         pipeline_match = False
 
         for pipeline_template in self._template_ref.values():
-            # TODO: should this validate the whole pipelineSpec or just the components level?
-            service_pipeline_json = yaml_utils.load_yaml(pipeline_template)[
-                "pipelineSpec"
-            ]["components"]
+            service_pipeline_json = yaml_utils.load_yaml(pipeline_template)["components"]
             current_pipeline_json = pipeline_job.to_dict()["pipelineSpec"]["components"]
 
             if service_pipeline_json == current_pipeline_json:
