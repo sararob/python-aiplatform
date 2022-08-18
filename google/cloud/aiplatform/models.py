@@ -4778,7 +4778,7 @@ class Model(base.VertexAiResourceNounWithFutureManager):
                 "The `data_source_uris` values must start with 'gs://'."
             )
         
-        # TODO: see if this a reliable way to check if it's an automl tabular model
+        # TODO: add a comment where this file is defined so we're notified if it changes
         if self._gca_resource.metadata_schema_uri == "https://storage.googleapis.com/google-cloud-aiplatform/schema/model/metadata/automl_tabular_1.0.0.yaml":
             model_type = "automl_tabular"
         else:
@@ -4787,6 +4787,11 @@ class Model(base.VertexAiResourceNounWithFutureManager):
                 raise ValueError(
                     "Please provide `key_columns` when running evaluation on this model type."
                 )
+
+        if model_type == "other" and prediction_type == "classification" and class_names is None:
+            raise ValueError(
+                "Please provide `class_names` when running evaluation on a custom classification model."
+            )
 
         data_file_path_obj = pathlib.Path(data_source_uris[0])
 
