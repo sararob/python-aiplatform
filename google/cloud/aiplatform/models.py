@@ -4664,7 +4664,8 @@ class Model(base.VertexAiResourceNounWithFutureManager):
         evaluation_staging_path: Optional[str] = None,
         service_account: Optional[str] = None,
         generate_feature_attributions: Optional[bool] = False,
-        evaluation_job_display_name: Optional[str] = None,
+        evaluation_pipeline_display_name: Optional[str] = None,
+        evaluation_metrics_display_name: Optional[str] = None,
         network: Optional[str] = None,
         encryption_spec_key_name: Optional[str] = None,
         experiment: Optional[Union[str, "aiplatform.Experiment"]] = None,
@@ -4721,9 +4722,11 @@ class Model(base.VertexAiResourceNounWithFutureManager):
                 Vertex AI Administrator, and Vertex AI Service Agent.
             generate_feature_attributions (boolean):
                 Optional. Whether the model evaluation job should generate feature attributions. Defaults to False if not specified.
-            evaluation_job_display_name (str):
-                Optional. The display name of your model evaluation job. This is what will be displayed in the Vertex Pipelines
-                console for this evaluation job. If not set, a display name will be generated automatically.
+            evaluation_pipeline_display_name (str):
+                Optional. The display name of your model evaluation job. This is the display name that will be applied to the
+                Vertex Pipeline run for your evaluation job. If not set, a display name will be generated automatically.
+            evaluation_metrics_display_name (str):
+                Optional. The display name of the model evaluation resource uploaded to Vertex from your Model Evaluation pipeline.
             network (str):
                 The full name of the Compute Engine network to which the job
                 should be peered. For example, projects/12345/global/networks/myVPC.
@@ -4815,7 +4818,8 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             instances_format=instances_format,
             model_type=model_type,
             generate_feature_attributions=generate_feature_attributions,
-            display_name=evaluation_job_display_name,
+            pipeline_display_name=evaluation_pipeline_display_name,
+            evaluation_metrics_display_name=evaluation_metrics_display_name,
             network=network,
             encryption_spec_key_name=encryption_spec_key_name,
             credentials=self.credentials,

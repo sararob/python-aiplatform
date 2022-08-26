@@ -148,7 +148,8 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         key_columns: Optional[List[str]] = None,
         generate_feature_attributions: Optional[bool] = False,
         instances_format: Optional[str] = "jsonl",
-        display_name: Optional[str] = None,
+        pipeline_display_name: Optional[str] = None,
+        evaluation_metrics_display_name: Optional[str] = None,
         job_id: Optional[str] = None,
         service_account: Optional[str] = None,
         network: Optional[str] = None,
@@ -210,8 +211,10 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
                 Optional. Whether the model evaluation job should generate feature attributions. Defaults to False if not specified.
             instances_format (str):
                 The format in which instances are given, must be one of the Model's supportedInputStorageFormats. If not set, defaults to "jsonl".
-            display_name (str)
+            pipeline_display_name (str)
                 Optional. The user-defined name of the PipelineJob created by this Pipeline Based Service.
+            evaluation_metrics_display_name (str)
+                Optional. The user-defined name of the evaluation metrics resource uploaded to Vertex in the evaluation pipeline job.
             job_id (str):
                 Optional. The unique ID of the job run.
                 If not specified, pipeline name + timestamp will be used.
@@ -251,8 +254,8 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         else:
             model_resource_name = model_name
 
-        if not display_name:
-            display_name = cls._generate_display_name()
+        if not pipeline_display_name:
+            pipeline_display_name = cls._generate_display_name()
 
         template_params = {
             "batch_predict_gcs_source_uris": data_source_uris,
@@ -260,7 +263,7 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
             "evaluation_join_keys": key_columns,
             "model_name": model_resource_name,
             "prediction_type": prediction_type,
-            "evaluation_display_name": display_name,
+            "evaluation_display_name": evaluation_metrics_display_name,
             "project": project or initializer.global_config.project,
             "location": location or initializer.global_config.location,
             "root_dir": pipeline_root,
@@ -286,7 +289,7 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
             template_params=template_params,
             template_path=template_url,
             pipeline_root=pipeline_root,
-            display_name=display_name,
+            display_name=pipeline_display_name,
             job_id=job_id,
             service_account=service_account,
             network=network,
