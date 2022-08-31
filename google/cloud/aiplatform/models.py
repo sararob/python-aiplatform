@@ -4773,14 +4773,26 @@ class Model(base.VertexAiResourceNounWithFutureManager):
 
         if prediction_type not in _SUPPORTED_EVAL_PREDICTION_TYPES:
             raise ValueError("Please provide a supported model prediction type.")      
-
-        if not (
-            data_source_uris[0].startswith("gs://")
-        ):
-            raise ValueError(
-                "The `data_source_uris` values must start with 'gs://'."
-            )
         
+        if data_source_uris[0].startswith("gs://"):
+
+            data_file_path_obj = pathlib.Path(data_source_uris[0])
+
+            data_file_extension = data_file_path_obj.suffix
+            if data_file_extension not in SUPPORTED_INSTANCES_FORMAT_FILE_EXTENSIONS:
+                _LOGGER.warning(
+                    f"Only the following data file extensions are currently supported: '{SUPPORTED_INSTANCES_FORMAT_FILE_EXTENSIONS}'"
+                )
+            else:
+                instances_format = data_file_extension[1:]
+    
+        elif data_source_uris[0].startswith("bq://"):
+            instances_format = "bigquery"
+        else:
+            raise ValueError(
+                "The `data_source_uris` values must start with 'gs://' or 'bq://'."
+            )
+
         # TODO: add a comment where this file is defined so we're notified if it changes
         if self._gca_resource.metadata_schema_uri == "https://storage.googleapis.com/google-cloud-aiplatform/schema/model/metadata/automl_tabular_1.0.0.yaml":
             model_type = "automl_tabular"
@@ -4796,15 +4808,7 @@ class Model(base.VertexAiResourceNounWithFutureManager):
                 "Please provide `class_names` when running evaluation on a custom classification model."
             )
 
-        data_file_path_obj = pathlib.Path(data_source_uris[0])
 
-        data_file_extension = data_file_path_obj.suffix
-        if data_file_extension not in SUPPORTED_INSTANCES_FORMAT_FILE_EXTENSIONS:
-            _LOGGER.warning(
-                f"Only the following data file extensions are currently supported: '{SUPPORTED_INSTANCES_FORMAT_FILE_EXTENSIONS}'"
-            )
-        else:
-            instances_format = data_file_extension[1:]
 
         return model_evaluation._ModelEvaluationJob.submit(
             model_name=self.resource_name,

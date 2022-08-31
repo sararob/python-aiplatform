@@ -258,7 +258,7 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
             pipeline_display_name = cls._generate_display_name()
 
         template_params = {
-            "batch_predict_gcs_source_uris": data_source_uris,
+            # "batch_predict_gcs_source_uris": data_source_uris,
             "batch_predict_instances_format": instances_format,
             "evaluation_join_keys": key_columns,
             "model_name": model_resource_name,
@@ -270,6 +270,12 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
             "target_column_name": target_column_name,
             "encryption_spec_key_name": encryption_spec_key_name,
         }
+
+        if instances_format == "bigquery":
+            template_params["batch_predict_predictions_format"] = "bigquery"
+            # template_params["batch_predict_bigquery_source_uri"]
+        else: # it's gcs
+            template_params["batch_predict_gcs_source_uris"] = data_source_uris
 
         if prediction_type == "classification" and model_type == "other" and class_names is not None:
             template_params["evaluation_class_names"] = class_names
