@@ -2910,7 +2910,7 @@ class Model(base.VertexAiResourceNounWithFutureManager):
         if labels:
             utils.validate_labels(labels)
 
-        if bool(explanation_metadata) == True and bool(explanation_parameters) == False:
+        if bool(explanation_metadata) is True and bool(explanation_parameters) is False:
             raise ValueError(
                 "To get model explanation, `explanation_parameters` must be specified."
             )
