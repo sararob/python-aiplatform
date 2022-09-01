@@ -4658,7 +4658,8 @@ class Model(base.VertexAiResourceNounWithFutureManager):
         self,
         prediction_type: str,
         target_column_name: str,
-        data_source_uris: List[str],
+        gcs_source_uris: Optional[List[str]] = None,
+        bigquery_source_uri: Optional[str] = None,
         class_names: Optional[List[str]] = None,
         key_columns: Optional[List[str]] = None,
         evaluation_staging_path: Optional[str] = None,
@@ -4698,11 +4699,15 @@ class Model(base.VertexAiResourceNounWithFutureManager):
                 are the currently supported problem types.
             target_column_name (str):
                 Required. The column name of the field containing the label for this prediction task.
-            data_source_uris (List[str]):
-                Required. A list of data files containing the ground truth data to use for this evaluation job.
-                These files should contain your model's prediction column. Currently only Google Cloud Storage
+            gcs_source_uris (List[str]):
+                Optional. A list of Cloud Storage data files containing the ground truth data to use for this
+                evaluation job. These files should contain your model's prediction column. Currently only Google Cloud Storage
                 urls are supported, for example: "gs://path/to/your/data.csv". The provided data files must be
-                either CSV or JSONL.
+                either CSV or JSONL. One of `gcs_source_uris` or `bigquery_source_uri` is required.
+            bigquery_source_uri (str):
+                Optional. A bigquery table URI containing the ground truth data to use for this evaluation job. This uri should
+                be in the format 'bq://my-project-id.dataset.table'. One of `gcs_source_uris` or `bigquery_source_uri` is
+                required.
             class_names (List[str]):
                 Optional. For custom (non-AutoML) classification models, a list of possible class names, in the
                 same order that predictions are generated. This argument is required when prediction_type is 'classification'.
@@ -4754,13 +4759,38 @@ class Model(base.VertexAiResourceNounWithFutureManager):
                 If the provided `data_source_uris` don't start with 'gs://'.
         """
 
+        if not gcs_source_uris and not bigquery_source_uri:
+            raise ValueError(
+                "One of `gcs_source_uris` or `bigquery_source_uri` must be provided."
+            )
+
+        if gcs_source_uris and bigquery_source_uri:
+            raise ValueError(
+                "Exactly one of `gcs_source_uris` or `bigquery_source_uri` must be provided, but not both"
+            )
+
+        if isinstance(gcs_source_uris, str):
+            gcs_source_uris = [gcs_source_uris]
+
+        if bigquery_source_uri and not isinstance(bigquery_source_uri, str):
+            raise ValueError(
+                "The provided `bigquery_source_uri` must be a string."
+            )
+
+        if gcs_source_uris and not gcs_source_uris[0].startswith("gs://"):
+            raise ValueError(
+                "`gcs_source_uris` must start with 'gs://'."
+            )
+        
+        if bigquery_source_uri and not bigquery_source_uri.startswith("bq://"):
+            raise ValueError(
+                "`bigquery_source_uri` must start with 'bq://'"
+            )
+
         SUPPORTED_INSTANCES_FORMAT_FILE_EXTENSIONS = [
             ".jsonl",
             ".csv"
         ]
-
-        if isinstance(data_source_uris, str):
-            data_source_uris = [data_source_uris]
 
         if not evaluation_staging_path and initializer.global_config.staging_bucket:
             evaluation_staging_path = initializer.global_config.staging_bucket
@@ -4774,9 +4804,9 @@ class Model(base.VertexAiResourceNounWithFutureManager):
         if prediction_type not in _SUPPORTED_EVAL_PREDICTION_TYPES:
             raise ValueError("Please provide a supported model prediction type.")      
         
-        if data_source_uris[0].startswith("gs://"):
+        if gcs_source_uris:
 
-            data_file_path_obj = pathlib.Path(data_source_uris[0])
+            data_file_path_obj = pathlib.Path(gcs_source_uris[0])
 
             data_file_extension = data_file_path_obj.suffix
             if data_file_extension not in SUPPORTED_INSTANCES_FORMAT_FILE_EXTENSIONS:
@@ -4786,12 +4816,8 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             else:
                 instances_format = data_file_extension[1:]
     
-        elif data_source_uris[0].startswith("bq://"):
+        elif bigquery_source_uri:
             instances_format = "bigquery"
-        else:
-            raise ValueError(
-                "The `data_source_uris` values must start with 'gs://' or 'bq://'."
-            )
 
         # TODO: add a comment where this file is defined so we're notified if it changes
         if self._gca_resource.metadata_schema_uri == "https://storage.googleapis.com/google-cloud-aiplatform/schema/model/metadata/automl_tabular_1.0.0.yaml":
@@ -4809,12 +4835,12 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             )
 
 
-
         return model_evaluation._ModelEvaluationJob.submit(
             model_name=self.resource_name,
             prediction_type=prediction_type,
             target_column_name=target_column_name,
-            data_source_uris=data_source_uris,
+            gcs_source_uris=gcs_source_uris,
+            bigquery_source_uri=bigquery_source_uri,
             key_columns=key_columns,
             class_names=class_names,
             service_account=service_account,

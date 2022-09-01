@@ -38,10 +38,10 @@ _LOGGER = base.Logger(__name__)
 # TODO: update this with the final gcs pipeline template urls
 # First 2 are for automl tabular models, the others are for everything else
 _MODEL_EVAL_PIPELINE_TEMPLATES = {
-    "automl_tabular_without_feature_attribution": "gs://vertex-evaluation-templates/20220824_2243/evaluation_automl_tabular_pipeline.json",
-    "automl_tabular_with_feature_attribution": "gs://vertex-evaluation-templates/20220824_2243/evaluation_automl_tabular_feature_attribution_pipeline.json",
-    "other_without_feature_attribution": "gs://vertex-evaluation-templates/20220824_2243/evaluation_pipeline.json",
-    "other_with_feature_attribution": "gs://vertex-evaluation-templates/20220824_2243/evaluation_feature_attribution_pipeline.json",
+    "automl_tabular_without_feature_attribution": "gs://vertex-evaluation-templates/20220831_1916_test/evaluation_automl_tabular_pipeline.json",
+    "automl_tabular_with_feature_attribution": "gs://vertex-evaluation-templates/20220831_1916_test/evaluation_automl_tabular_feature_attribution_pipeline.json",
+    "other_without_feature_attribution": "gs://vertex-evaluation-templates/20220831_1916_test/evaluation_pipeline.json",
+    "other_with_feature_attribution": "gs://vertex-evaluation-templates/20220831_1916_test/evaluation_feature_attribution_pipeline.json",
 }
 
 _EXPERIMENTAL_EVAL_PIPELINE_TEMPLATES = {
@@ -141,9 +141,10 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         model_name: Union[str, "aiplatform.Model"],
         prediction_type: str,
         target_column_name: str,
-        data_source_uris: List[str],
         pipeline_root: str,
         model_type: str,
+        gcs_source_uris: Optional[List[str]] = None,
+        bigquery_source_uri: Optional[str] = None,
         class_names: Optional[List[str]] = None,
         key_columns: Optional[List[str]] = None,
         generate_feature_attributions: Optional[bool] = False,
@@ -198,6 +199,15 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
                 Required. The GCS directory to store output from the model evaluation PipelineJob.
             model_type (str):
                 Required. One of "automl_tabular" or "other". This determines the Model Evaluation template used by this PipelineJob.
+            gcs_source_uris (List[str]):
+                Optional. A list of Cloud Storage data files containing the ground truth data to use for this
+                evaluation job. These files should contain your model's prediction column. Currently only Google Cloud Storage
+                urls are supported, for example: "gs://path/to/your/data.csv". The provided data files must be
+                either CSV or JSONL. One of `gcs_source_uris` or `bigquery_source_uri` is required.
+            bigquery_source_uri (str):
+                Optional. A bigquery table URI containing the ground truth data to use for this evaluation job. This uri should
+                be in the format 'bq://my-project-id.dataset.table'. One of `gcs_source_uris` or `bigquery_source_uri` is
+                required.
             class_names (List[str]):
                 Optional. For custom (non-AutoML) classification models, a list of possible class names, in the
                 same order that predictions are generated. This argument is required when prediction_type is 'classification'.
@@ -258,7 +268,6 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
             pipeline_display_name = cls._generate_display_name()
 
         template_params = {
-            # "batch_predict_gcs_source_uris": data_source_uris,
             "batch_predict_instances_format": instances_format,
             "evaluation_join_keys": key_columns,
             "model_name": model_resource_name,
@@ -271,11 +280,11 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
             "encryption_spec_key_name": encryption_spec_key_name,
         }
 
-        if instances_format == "bigquery":
+        if bigquery_source_uri:
             template_params["batch_predict_predictions_format"] = "bigquery"
-            # template_params["batch_predict_bigquery_source_uri"]
-        else: # it's gcs
-            template_params["batch_predict_gcs_source_uris"] = data_source_uris
+            template_params["batch_predict_bigquery_source_uri"] = bigquery_source_uri
+        elif gcs_source_uris:
+            template_params["batch_predict_gcs_source_uris"] = gcs_source_uris
 
         if prediction_type == "classification" and model_type == "other" and class_names is not None:
             template_params["evaluation_class_names"] = class_names
