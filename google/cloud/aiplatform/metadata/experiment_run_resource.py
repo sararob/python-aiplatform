@@ -167,7 +167,7 @@ class ExperimentRun(
             # initially set to None. Will initially update from resource then track locally.
             self._largest_step: Optional[int] = None
 
-        self._mlflow_run_id = None
+        self._mlflow_run_id = Optional[str] = None
 
     def _v1_resolve_experiment_run(self, metadata_args: Dict[str, Any]):
         """Resolves preview Experiment.
@@ -620,11 +620,11 @@ class ExperimentRun(
     def create(
         cls,
         run_name: str,
+        mlflow_run_id: Optional[str] = None,
         *,
         experiment: Optional[Union[experiment_resources.Experiment, str]] = None,
         tensorboard: Optional[Union[tensorboard_resource.Tensorboard, str]] = None,
         state: gca_execution.Execution.State = gca_execution.Execution.State.RUNNING,
-        mlflow_run_id: Optional[str] = None,
         project: Optional[str] = None,
         location: Optional[str] = None,
         credentials: Optional[auth_credentials.Credentials] = None,
