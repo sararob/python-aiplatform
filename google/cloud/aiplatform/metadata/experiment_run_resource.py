@@ -167,6 +167,8 @@ class ExperimentRun(
             # initially set to None. Will initially update from resource then track locally.
             self._largest_step: Optional[int] = None
 
+        self._mlflow_run_id = None
+
     def _v1_resolve_experiment_run(self, metadata_args: Dict[str, Any]):
         """Resolves preview Experiment.
 
@@ -440,6 +442,7 @@ class ExperimentRun(
             this_experiment_run._experiment = experiment
             this_experiment_run._run_name = context.display_name
             this_experiment_run._metadata_node = context
+            this_experiment_run._mlflow_run_id = None
 
             with experiment_resources._SetLoggerLevel(resource):
                 tb_run = this_experiment_run._lookup_tensorboard_run_artifact()
@@ -621,6 +624,7 @@ class ExperimentRun(
         experiment: Optional[Union[experiment_resources.Experiment, str]] = None,
         tensorboard: Optional[Union[tensorboard_resource.Tensorboard, str]] = None,
         state: gca_execution.Execution.State = gca_execution.Execution.State.RUNNING,
+        mlflow_run_id: Optional[str] = None,
         project: Optional[str] = None,
         location: Optional[str] = None,
         credentials: Optional[auth_credentials.Credentials] = None,
@@ -696,6 +700,7 @@ class ExperimentRun(
         experiment_run._metadata_node = metadata_context
         experiment_run._backing_tensorboard_run = None
         experiment_run._largest_step = None
+        experiment_run._mlflow_run_id = mlflow_run_id
 
         if tensorboard:
             cls._assign_backing_tensorboard(
@@ -1061,6 +1066,22 @@ class ExperimentRun(
         else:
             self.end_run(state)
 
+    def _get_mlflow_params_and_metrics(run_id) -> Optional[Dict[str, Any]]:
+        import mlflow
+
+        mlflow_client = mlflow.MlflowClient()
+        mlflow_run = mlflow_client.get_run(run_id)
+
+        mlflow_params = mlflow_run.data.params
+        mlflow_metrics = mlflow_run.data.metrics
+
+        mlflow.end_run()
+
+        return {
+            "mlflow_params": mlflow_params,
+            "mlflow_metrics": mlflow_metrics,
+        }
+
     def end_run(
         self,
         *,
@@ -1072,6 +1093,18 @@ class ExperimentRun(
             state (aiplatform.gapic.Execution.State):
                 Optional. Override the state at the end of run. Defaults to COMPLETE.
         """
+
+        if self._mlflow_run_id:
+
+            # log mlflow params and metrics to the experimentrun
+            params_and_metrics = ExperimentRun._get_mlflow_params_and_metrics(
+                self._mlflow_run_id
+            )
+            if params_and_metrics["mlflow_params"] is not None:
+                self.log_params(params_and_metrics["mlflow_params"])
+            if params_and_metrics["mlflow_metrics"] is not None:
+                self.log_metrics(params_and_metrics["mlflow_metrics"])
+
         self.update_state(state)
 
     def delete(self, *, delete_backing_tensorboard_run: bool = False):

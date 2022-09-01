@@ -240,9 +240,18 @@ class _ExperimentTracker:
 
         self._experiment = experiment
 
+    def _initialize_mlflow_and_start_run() -> str:
+        import mlflow
+
+        mlflow_run = mlflow.start_run()
+        mlflow.sklearn.autolog()
+        return mlflow_run.info.run_id
+
     def start_run(
         self,
         run: str,
+        autolog: Optional[bool] = False,
+        framework: Optional[str] = None,
         *,
         tensorboard: Union[tensorboard_resource.Tensorboard, str, None] = None,
         resume=False,
@@ -287,6 +296,11 @@ class _ExperimentTracker:
                 but with a different schema.
         """
 
+        if autolog and framework != "sklearn":
+            raise ValueError(
+                "`sklearn` is currently the only supported framework for autologging."
+            )
+
         if not self._experiment:
             raise ValueError(
                 "No experiment set for this run. Make sure to call aiplatform.init(experiment='my-experiment') "
@@ -306,8 +320,20 @@ class _ExperimentTracker:
             self._experiment_run.update_state(state=gapic.Execution.State.RUNNING)
 
         else:
+            if autolog:
+                try:
+                    import mlflow as mlflow
+                except ImportError:
+                    raise ImportError(
+                        f"MLFlow is not installed. Please install MLFlow to use autologging in Vertex Experiments."
+                    )
+                mlflow_run_id = _ExperimentTracker._initialize_mlflow_and_start_run()
+
             self._experiment_run = experiment_run_resource.ExperimentRun.create(
-                run_name=run, experiment=self._experiment, tensorboard=tensorboard
+                run_name=run,
+                experiment=self._experiment,
+                tensorboard=tensorboard,
+                mlflow_run_id=mlflow_run_id,
             )
 
         return self._experiment_run
