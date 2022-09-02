@@ -132,13 +132,15 @@ _TEST_PIPELINE_JOB_NAME = f"projects/{_TEST_PROJECT}/locations/{_TEST_LOCATION}/
 _TEST_INVALID_PIPELINE_JOB_NAME = (
     f"prj/{_TEST_PROJECT}/locations/{_TEST_LOCATION}/{_TEST_PIPELINE_JOB_ID}"
 )
-_TEST_MODEL_EVAL_JOB_DISPLAY_NAME = "test-eval-job"
+_TEST_MODEL_EVAL_PIPELINE_JOB_DISPLAY_NAME = "test-eval-job"
+_TEST_EVAL_RESOURCE_DISPLAY_NAME = "my-eval-resource-display-name"
 
 _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES = {
     "batch_predict_gcs_source_uris": ["gs://my-bucket/my-prediction-data.csv"],
     "dataflow_service_account": _TEST_SERVICE_ACCOUNT,
     "batch_predict_instances_format": "csv",
     "model_name": _TEST_MODEL_RESOURCE_NAME,
+    "evaluation_display_name": _TEST_EVAL_RESOURCE_DISPLAY_NAME,
     "prediction_type": "classification",
     "project": _TEST_PROJECT,
     "location": _TEST_LOCATION,
@@ -811,8 +813,8 @@ class TestModelEvaluationJob:
             target_column_name=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "target_column_name"
             ],
-            display_name=_TEST_MODEL_EVAL_JOB_DISPLAY_NAME,
-            data_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+            evaluation_pipeline_display_name=_TEST_MODEL_EVAL_PIPELINE_JOB_DISPLAY_NAME,
+            gcs_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "batch_predict_gcs_source_uris"
             ],
             service_account=_TEST_SERVICE_ACCOUNT,
@@ -848,7 +850,7 @@ class TestModelEvaluationJob:
 
         # Construct expected request
         expected_gapic_pipeline_job = gca_pipeline_job.PipelineJob(
-            display_name=_TEST_MODEL_EVAL_JOB_DISPLAY_NAME,
+            display_name=_TEST_MODEL_EVAL_PIPELINE_JOB_DISPLAY_NAME,
             pipeline_spec={
                 "components": {},
                 "pipelineInfo": pipeline_spec["pipelineInfo"],
@@ -915,8 +917,8 @@ class TestModelEvaluationJob:
                 "target_column_name"
             ],
             model_type="automl_tabular",
-            display_name=_TEST_MODEL_EVAL_JOB_DISPLAY_NAME,
-            data_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+            evaluation_pipeline_display_name=_TEST_MODEL_EVAL_PIPELINE_JOB_DISPLAY_NAME,
+            gcs_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "batch_predict_gcs_source_uris"
             ],
             instances_format=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
@@ -956,7 +958,7 @@ class TestModelEvaluationJob:
 
         # # Construct expected request
         expected_gapic_pipeline_job = gca_pipeline_job.PipelineJob(
-            display_name=_TEST_MODEL_EVAL_JOB_DISPLAY_NAME,
+            display_name=_TEST_MODEL_EVAL_PIPELINE_JOB_DISPLAY_NAME,
             pipeline_spec={
                 "components": {},
                 "pipelineInfo": pipeline_spec["pipelineInfo"],
@@ -1018,8 +1020,8 @@ class TestModelEvaluationJob:
                 "target_column_name"
             ],
             model_type="automl_tabular",
-            display_name=_TEST_MODEL_EVAL_JOB_DISPLAY_NAME,
-            data_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+            evaluation_pipeline_display_name=_TEST_MODEL_EVAL_PIPELINE_JOB_DISPLAY_NAME,
+            gcs_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "batch_predict_gcs_source_uris"
             ],
             instances_format=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
@@ -1094,8 +1096,8 @@ class TestModelEvaluationJob:
                 "target_column_name"
             ],
             model_type="automl_tabular",
-            display_name=_TEST_MODEL_EVAL_JOB_DISPLAY_NAME,
-            data_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+            evaluation_pipeline_display_name=_TEST_MODEL_EVAL_PIPELINE_JOB_DISPLAY_NAME,
+            gcs_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "batch_predict_gcs_source_uris"
             ],
             instances_format=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
@@ -1143,8 +1145,8 @@ class TestModelEvaluationJob:
                 "target_column_name"
             ],
             model_type="automl_tabular",
-            display_name=_TEST_MODEL_EVAL_JOB_DISPLAY_NAME,
-            data_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+            evaluation_pipeline_display_name=_TEST_MODEL_EVAL_PIPELINE_JOB_DISPLAY_NAME,
+            gcs_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "batch_predict_gcs_source_uris"
             ],
             instances_format=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[

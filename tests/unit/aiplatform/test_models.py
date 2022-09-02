@@ -260,6 +260,9 @@ _TEST_LOCAL_MODEL = LocalModel(
     serving_container_health_route=_TEST_SERVING_CONTAINER_HEALTH_ROUTE,
 )
 _TEST_MODEL_EVAL_KEY_COLUMNS = ["a", "b", "c"]
+_TEST_MODEL_EVAL_CLASS_NAMES = ["dog", "cat", "rabbit"]
+_TEST_BIGQUERY_EVAL_INPUT_URI = "bq://my-project.my-dataset.my-table"
+_TEST_BIGQUERY_EVAL_DESTINATION_URI = "bq://my-project.my-dataset"
 
 _TEST_VERSION_ID = "2"
 _TEST_VERSION_ALIAS_1 = "myalias"
@@ -2535,7 +2538,7 @@ class TestModel:
 
         assert len(eval_list) == len(_TEST_MODEL_EVAL_LIST)
 
-    def test_model_evaluate(
+    def test_model_evaluate_with_gcs_input_uris(
         self,
         get_model_mock,
         mock_model_eval_get,
@@ -2552,8 +2555,9 @@ class TestModel:
             prediction_type="classification",
             target_column_name="class",
             key_columns=_TEST_MODEL_EVAL_KEY_COLUMNS,
+            class_names=_TEST_MODEL_EVAL_CLASS_NAMES,
             evaluation_staging_path="gs://my-eval-staging-path",
-            data_source_uris=["gs://test-bucket/test-file.csv"],
+            gcs_source_uris=["gs://test-bucket/test-file.csv"],
         )
 
         assert isinstance(eval_job, model_evaluation_job._ModelEvaluationJob)
@@ -2574,6 +2578,33 @@ class TestModel:
 
     # TODO: add evaluation test with mock for automl tabular model
 
+    def test_model_evaluate_with_bigquery_input(
+        self,
+        get_model_mock,
+        mock_model_eval_get,
+        mock_pipeline_service_create,
+        mock_pipeline_service_get,
+        mock_pipeline_bucket_exists,
+    ):
+        aiplatform.init(project=_TEST_PROJECT, staging_bucket="gs://my-bucket")
+
+        test_model = models.Model(model_name=_TEST_MODEL_RESOURCE_NAME)
+
+        eval_job = test_model.evaluate(
+            prediction_type="classification",
+            target_column_name="class",
+            key_columns=_TEST_MODEL_EVAL_KEY_COLUMNS,
+            class_names=_TEST_MODEL_EVAL_CLASS_NAMES,
+            bigquery_source_uri=_TEST_BIGQUERY_EVAL_INPUT_URI,
+            bigquery_destination_output_uri=_TEST_BIGQUERY_EVAL_DESTINATION_URI,
+        )
+
+        assert isinstance(eval_job, model_evaluation_job._ModelEvaluationJob)
+
+        assert mock_pipeline_service_create.called_once
+
+        assert mock_pipeline_service_get.called_once
+
     def test_model_evaluate_using_initialized_staging_bucket(
         self,
         get_model_mock,
@@ -2590,7 +2621,8 @@ class TestModel:
             prediction_type="classification",
             target_column_name="class",
             key_columns=_TEST_MODEL_EVAL_KEY_COLUMNS,
-            data_source_uris=["gs://test-bucket/test-file.csv"],
+            class_names=_TEST_MODEL_EVAL_CLASS_NAMES,
+            gcs_source_uris=["gs://test-bucket/test-file.csv"],
         )
 
         assert isinstance(eval_job, model_evaluation_job._ModelEvaluationJob)
@@ -2614,7 +2646,8 @@ class TestModel:
                 prediction_type="classification",
                 target_column_name="class",
                 key_columns=_TEST_MODEL_EVAL_KEY_COLUMNS,
-                data_source_uris=["gs://test-bucket/test-file.csv"],
+                class_names=_TEST_MODEL_EVAL_CLASS_NAMES,
+                gcs_source_uris=["gs://test-bucket/test-file.csv"],
             )
 
     def test_model_evaluate_with_invalid_prediction_type_raises(
@@ -2632,7 +2665,44 @@ class TestModel:
                 prediction_type="invalid_prediction_type",
                 target_column_name="class",
                 key_columns=_TEST_MODEL_EVAL_KEY_COLUMNS,
-                data_source_uris=["gs://test-bucket/test-file.csv"],
+                gcs_source_uris=["gs://test-bucket/test-file.csv"],
+            )
+
+    def test_model_evaluate_with_invalid_gcs_uri_raises(
+        self,
+        get_model_mock,
+        mock_model_eval_get,
+    ):
+
+        aiplatform.init(project=_TEST_PROJECT)
+
+        test_model = models.Model(model_name=_TEST_MODEL_RESOURCE_NAME)
+
+        with pytest.raises(ValueError):
+            test_model.evaluate(
+                prediction_type="classification",
+                target_column_name="class",
+                key_columns=_TEST_MODEL_EVAL_KEY_COLUMNS,
+                gcs_source_uris=["storage.googleapis.com/test-bucket/test-file.csv"],
+            )
+
+    def test_model_evaluate_with_invalid_bq_uri_raises(
+        self,
+        get_model_mock,
+        mock_model_eval_get,
+    ):
+
+        aiplatform.init(project=_TEST_PROJECT)
+
+        test_model = models.Model(model_name=_TEST_MODEL_RESOURCE_NAME)
+
+        with pytest.raises(ValueError):
+            test_model.evaluate(
+                prediction_type="classification",
+                target_column_name="class",
+                key_columns=_TEST_MODEL_EVAL_KEY_COLUMNS,
+                bigquery_source_uri="my-project.my-dataset.my-table",
+                bigquery_destination_output_uri="bq://my-project.my-dataset.my-table",
             )
 
     def test_init_with_version_in_resource_name(self, get_model_with_version):

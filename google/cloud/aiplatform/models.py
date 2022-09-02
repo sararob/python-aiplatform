@@ -4660,8 +4660,11 @@ class Model(base.VertexAiResourceNounWithFutureManager):
         target_column_name: str,
         gcs_source_uris: Optional[List[str]] = None,
         bigquery_source_uri: Optional[str] = None,
+        bigquery_destination_output_uri: Optional[str] = None,
         class_names: Optional[List[str]] = None,
         key_columns: Optional[List[str]] = None,
+        prediction_label_column: Optional[str] = None, # TODO: add docstrings for both of these
+        prediction_score_column: Optional[str] = None,
         evaluation_staging_path: Optional[str] = None,
         service_account: Optional[str] = None,
         generate_feature_attributions: Optional[bool] = False,
@@ -4708,6 +4711,11 @@ class Model(base.VertexAiResourceNounWithFutureManager):
                 Optional. A bigquery table URI containing the ground truth data to use for this evaluation job. This uri should
                 be in the format 'bq://my-project-id.dataset.table'. One of `gcs_source_uris` or `bigquery_source_uri` is
                 required.
+            bigquery_destination_output_uri (str):
+                Optional. A bigquery table URI where the Batch Prediction job associated with your Model Evaluation will write
+                prediction output. This can be a BigQuery URI to a project ('bq://my-project'), a dataset
+                ('bq://my-project.my-dataset'), or a table ('bq://my-project.my-dataset.my-table'). Required if `bigquery_source_uri`
+                is provided.
             class_names (List[str]):
                 Optional. For custom (non-AutoML) classification models, a list of possible class names, in the
                 same order that predictions are generated. This argument is required when prediction_type is 'classification'.
@@ -4717,6 +4725,10 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             key_columns (str):
                 Optional. The column headers in the data files provided to gcs_source_uris, in the order the columns
                 appear in the file. This argument is required for custom models and AutoML Vision, Text, and Video models.
+            prediction_label_column (str):
+                Optional.
+            prediction_score_column (str):
+                Optional.
             evaluation_staging_path (str):
                 Optional. The GCS directory to use for staging files from this evaluation job. Defaults to the value set in
                 aiplatform.init(staging_bucket=...) if not provided. Required if staging_bucket is not set in aiplatform.init().
@@ -4766,7 +4778,7 @@ class Model(base.VertexAiResourceNounWithFutureManager):
 
         if gcs_source_uris and bigquery_source_uri:
             raise ValueError(
-                "Exactly one of `gcs_source_uris` or `bigquery_source_uri` must be provided, but not both"
+                "Exactly one of `gcs_source_uris` or `bigquery_source_uri` must be provided, but not both."
             )
 
         if isinstance(gcs_source_uris, str):
@@ -4777,14 +4789,19 @@ class Model(base.VertexAiResourceNounWithFutureManager):
                 "The provided `bigquery_source_uri` must be a string."
             )
 
+        if bigquery_source_uri and not bigquery_destination_output_uri:
+            raise ValueError(
+                "`bigquery_destination_output_uri` must be provided if `bigquery_source_uri` is used as the data source."
+            )
+
         if gcs_source_uris and not gcs_source_uris[0].startswith("gs://"):
             raise ValueError(
                 "`gcs_source_uris` must start with 'gs://'."
             )
         
-        if bigquery_source_uri and not bigquery_source_uri.startswith("bq://"):
+        if bigquery_source_uri and not bigquery_source_uri.startswith("bq://") or not bigquery_destination_output_uri.startswith("bq://"):
             raise ValueError(
-                "`bigquery_source_uri` must start with 'bq://'"
+                "`bigquery_source_uri` and `bigquery_destination_output_uri` must start with 'bq://'"
             )
 
         SUPPORTED_INSTANCES_FORMAT_FILE_EXTENSIONS = [
@@ -4841,14 +4858,17 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             target_column_name=target_column_name,
             gcs_source_uris=gcs_source_uris,
             bigquery_source_uri=bigquery_source_uri,
+            batch_predict_bigquery_destination_output_uri=bigquery_destination_output_uri,
             key_columns=key_columns,
             class_names=class_names,
+            prediction_label_column=prediction_label_column,
+            prediction_score_column=prediction_score_column,
             service_account=service_account,
             pipeline_root=evaluation_staging_path,
             instances_format=instances_format,
             model_type=model_type,
             generate_feature_attributions=generate_feature_attributions,
-            pipeline_display_name=evaluation_pipeline_display_name,
+            evaluation_pipeline_display_name=evaluation_pipeline_display_name,
             evaluation_metrics_display_name=evaluation_metrics_display_name,
             network=network,
             encryption_spec_key_name=encryption_spec_key_name,

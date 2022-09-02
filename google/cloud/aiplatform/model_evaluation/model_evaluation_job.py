@@ -38,10 +38,10 @@ _LOGGER = base.Logger(__name__)
 # TODO: update this with the final gcs pipeline template urls
 # First 2 are for automl tabular models, the others are for everything else
 _MODEL_EVAL_PIPELINE_TEMPLATES = {
-    "automl_tabular_without_feature_attribution": "gs://vertex-evaluation-templates/20220831_1916_test/evaluation_automl_tabular_pipeline.json",
-    "automl_tabular_with_feature_attribution": "gs://vertex-evaluation-templates/20220831_1916_test/evaluation_automl_tabular_feature_attribution_pipeline.json",
-    "other_without_feature_attribution": "gs://vertex-evaluation-templates/20220831_1916_test/evaluation_pipeline.json",
-    "other_with_feature_attribution": "gs://vertex-evaluation-templates/20220831_1916_test/evaluation_feature_attribution_pipeline.json",
+    "automl_tabular_without_feature_attribution": "gs://vertex-evaluation-templates/20220902_0357/evaluation_automl_tabular_pipeline.json",
+    "automl_tabular_with_feature_attribution": "gs://vertex-evaluation-templates/20220902_0357/evaluation_automl_tabular_feature_attribution_pipeline.json",
+    "other_without_feature_attribution": "gs://vertex-evaluation-templates/20220902_0357/evaluation_pipeline.json",
+    "other_with_feature_attribution": "gs://vertex-evaluation-templates/20220902_0357/evaluation_feature_attribution_pipeline.json",
 }
 
 _EXPERIMENTAL_EVAL_PIPELINE_TEMPLATES = {
@@ -145,11 +145,14 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         model_type: str,
         gcs_source_uris: Optional[List[str]] = None,
         bigquery_source_uri: Optional[str] = None,
+        batch_predict_bigquery_destination_output_uri: Optional[str] = None, # TODO: docstring
         class_names: Optional[List[str]] = None,
         key_columns: Optional[List[str]] = None,
+        prediction_label_column: Optional[str] = None, # TODO: add docstrings for both of these
+        prediction_score_column: Optional[str] = None,
         generate_feature_attributions: Optional[bool] = False,
         instances_format: Optional[str] = "jsonl",
-        pipeline_display_name: Optional[str] = None,
+        evaluation_pipeline_display_name: Optional[str] = None,
         evaluation_metrics_display_name: Optional[str] = None,
         job_id: Optional[str] = None,
         service_account: Optional[str] = None,
@@ -191,10 +194,15 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
                 Required. The type of prediction performed by the Model. One of "classification" or "regression".
             target_column_name (str):
                 Required. The name of your prediction column.
-            data_source_uris (List[str]):
-                Required. A list of data files containing the ground truth data to use for this evaluation job.
-                These files should contain your model's prediction column. Currently only GCS urls are supported,
-                for example: "gs://path/to/your/data.csv".
+            gcs_source_uris (List[str]):
+                Optional. A list of Cloud Storage data files containing the ground truth data to use for this
+                evaluation job. These files should contain your model's prediction column. Currently only Google Cloud Storage
+                urls are supported, for example: "gs://path/to/your/data.csv". The provided data files must be
+                either CSV or JSONL. One of `gcs_source_uris` or `bigquery_source_uri` is required.
+            bigquery_source_uri (str):
+                Optional. A bigquery table URI containing the ground truth data to use for this evaluation job. This uri should
+                be in the format 'bq://my-project-id.dataset.table'. One of `gcs_source_uris` or `bigquery_source_uri` is
+                required.
             pipeline_root (str):
                 Required. The GCS directory to store output from the model evaluation PipelineJob.
             model_type (str):
@@ -208,6 +216,11 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
                 Optional. A bigquery table URI containing the ground truth data to use for this evaluation job. This uri should
                 be in the format 'bq://my-project-id.dataset.table'. One of `gcs_source_uris` or `bigquery_source_uri` is
                 required.
+            bigquery_destination_output_uri (str):
+                Optional. A bigquery table URI where the Batch Prediction job associated with your Model Evaluation will write
+                prediction output. This can be a BigQuery URI to a project ('bq://my-project'), a dataset
+                ('bq://my-project.my-dataset'), or a table ('bq://my-project.my-dataset.my-table'). Required if `bigquery_source_uri`
+                is provided.
             class_names (List[str]):
                 Optional. For custom (non-AutoML) classification models, a list of possible class names, in the
                 same order that predictions are generated. This argument is required when prediction_type is 'classification'.
@@ -217,11 +230,15 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
             key_columns (str):
                 Optional. The column headers in the data files provided to gcs_source_uris, in the order the columns
                 appear in the file. This argument is required for custom models and AutoML Vision, Text, and Video models.
+            prediction_label_column (str):
+                Optional.
+            prediction_score_column (str):
+                Optional.
             generate_feature_attributions (boolean):
                 Optional. Whether the model evaluation job should generate feature attributions. Defaults to False if not specified.
             instances_format (str):
                 The format in which instances are given, must be one of the Model's supportedInputStorageFormats. If not set, defaults to "jsonl".
-            pipeline_display_name (str)
+            evaluation_pipeline_display_name (str)
                 Optional. The user-defined name of the PipelineJob created by this Pipeline Based Service.
             evaluation_metrics_display_name (str)
                 Optional. The user-defined name of the evaluation metrics resource uploaded to Vertex in the evaluation pipeline job.
@@ -264,8 +281,8 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         else:
             model_resource_name = model_name
 
-        if not pipeline_display_name:
-            pipeline_display_name = cls._generate_display_name()
+        if not evaluation_pipeline_display_name:
+            evaluation_pipeline_display_name = cls._generate_display_name()
 
         template_params = {
             "batch_predict_instances_format": instances_format,
@@ -283,11 +300,18 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         if bigquery_source_uri:
             template_params["batch_predict_predictions_format"] = "bigquery"
             template_params["batch_predict_bigquery_source_uri"] = bigquery_source_uri
+            template_params["batch_predict_bigquery_destination_output_uri"] = batch_predict_bigquery_destination_output_uri
         elif gcs_source_uris:
             template_params["batch_predict_gcs_source_uris"] = gcs_source_uris
 
         if prediction_type == "classification" and model_type == "other" and class_names is not None:
             template_params["evaluation_class_names"] = class_names
+
+        if prediction_label_column:
+            template_params["evaluation_prediction_label_column"] = prediction_label_column
+
+        if prediction_score_column:
+            template_params["evaluation_prediction_score_column"] = prediction_score_column
         
         # If the user provides a SA, use it for the Dataflow job as well
         if service_account is not None:
@@ -304,7 +328,7 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
             template_params=template_params,
             template_path=template_url,
             pipeline_root=pipeline_root,
-            display_name=pipeline_display_name,
+            display_name=evaluation_pipeline_display_name,
             job_id=job_id,
             service_account=service_account,
             network=network,
