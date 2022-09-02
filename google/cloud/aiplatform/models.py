@@ -4784,22 +4784,27 @@ class Model(base.VertexAiResourceNounWithFutureManager):
         if isinstance(gcs_source_uris, str):
             gcs_source_uris = [gcs_source_uris]
 
-        if bigquery_source_uri and not isinstance(bigquery_source_uri, str):
+        if bigquery_source_uri is not None and not isinstance(bigquery_source_uri, str):
             raise ValueError(
                 "The provided `bigquery_source_uri` must be a string."
             )
 
-        if bigquery_source_uri and not bigquery_destination_output_uri:
+        if bigquery_source_uri is not None and not bigquery_destination_output_uri:
             raise ValueError(
                 "`bigquery_destination_output_uri` must be provided if `bigquery_source_uri` is used as the data source."
             )
 
-        if gcs_source_uris and not gcs_source_uris[0].startswith("gs://"):
+        if gcs_source_uris is not None and not gcs_source_uris[0].startswith("gs://"):
             raise ValueError(
                 "`gcs_source_uris` must start with 'gs://'."
             )
         
-        if bigquery_source_uri and not bigquery_source_uri.startswith("bq://") or not bigquery_destination_output_uri.startswith("bq://"):
+        if bigquery_source_uri is not None and not bigquery_source_uri.startswith("bq://"):
+            raise ValueError(
+                "`bigquery_source_uri` and `bigquery_destination_output_uri` must start with 'bq://'"
+            )
+
+        if bigquery_destination_output_uri is not None and not bigquery_destination_output_uri.startswith("bq://"):
             raise ValueError(
                 "`bigquery_source_uri` and `bigquery_destination_output_uri` must start with 'bq://'"
             )
