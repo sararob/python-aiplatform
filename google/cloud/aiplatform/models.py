@@ -85,12 +85,7 @@ _SUPPORTED_MODEL_FILE_NAMES = [
 _SUPPORTED_EVAL_PREDICTION_TYPES = [
     "classification",
     "regression",
-]
-
-# TODO: update when unstructured pipeline templates are supported
-_SUPPORTED_MODEL_EVAL_DATA_TYPES = [
-    "tabular",
-    "unstructured",
+    "forecasting",
 ]
 
 
@@ -4705,8 +4700,8 @@ class Model(base.VertexAiResourceNounWithFutureManager):
 
         Args:
             prediction_type (str):
-                Required. The problem type being addressed by this evaluation run. `classification` and `regression`
-                are the currently supported problem types.
+                Required. The problem type being addressed by this evaluation run. 'classification', 'regression',
+                and 'forecasting' are the currently supported problem types.
             target_column_name (str):
                 Required. The column name of the field containing the label for this prediction task.
             gcs_source_uris (List[str]):
