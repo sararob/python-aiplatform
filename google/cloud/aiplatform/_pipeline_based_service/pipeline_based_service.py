@@ -127,7 +127,9 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         pipeline_match = False
 
         for pipeline_template in self._template_ref.values():
-            service_pipeline_json = yaml_utils.load_yaml(pipeline_template)["components"]
+            service_pipeline_json = yaml_utils.load_yaml(pipeline_template)[
+                "components"
+            ]
             current_pipeline_json = pipeline_job.to_dict()["pipelineSpec"]["components"]
 
             if service_pipeline_json == current_pipeline_json:
@@ -194,7 +196,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         job_id: Optional[str] = None,
         service_account: Optional[str] = None,
         network: Optional[str] = None,
-        encryption_spec_key_name: Optional [str] = None,
+        encryption_spec_key_name: Optional[str] = None,
         project: Optional[str] = None,
         location: Optional[str] = None,
         credentials: Optional[auth_credentials.Credentials] = None,
@@ -261,7 +263,9 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
 
         # Suppresses logs from PipelineJob
         # The class implementing _VertexAiPipelineBasedService should define a custom log message
-        logging.getLogger('google.cloud.aiplatform.pipeline_jobs').setLevel(logging.WARNING)
+        logging.getLogger("google.cloud.aiplatform.pipeline_jobs").setLevel(
+            logging.WARNING
+        )
 
         service_pipeline_job.submit(
             service_account=service_account,
@@ -269,7 +273,9 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
             experiment=experiment,
         )
 
-        logging.getLogger('google.cloud.aiplatform.pipeline_jobs').setLevel(logging.INFO)
+        logging.getLogger("google.cloud.aiplatform.pipeline_jobs").setLevel(
+            logging.INFO
+        )
 
         self._gca_resource = service_pipeline_job.gca_resource
 

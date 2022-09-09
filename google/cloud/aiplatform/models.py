@@ -4756,7 +4756,9 @@ class Model(base.VertexAiResourceNounWithFutureManager):
         bigquery_destination_output_uri: Optional[str] = None,
         class_names: Optional[List[str]] = None,
         key_columns: Optional[List[str]] = None,
-        prediction_label_column: Optional[str] = None, # TODO: add docstrings for both of these
+        prediction_label_column: Optional[
+            str
+        ] = None,  # TODO: add docstrings for both of these
         prediction_score_column: Optional[str] = None,
         evaluation_staging_path: Optional[str] = None,
         service_account: Optional[str] = None,
@@ -4819,9 +4821,12 @@ class Model(base.VertexAiResourceNounWithFutureManager):
                 Optional. The column headers in the data files provided to gcs_source_uris, in the order the columns
                 appear in the file. This argument is required for custom models and AutoML Vision, Text, and Video models.
             prediction_label_column (str):
-                Optional.
+                Optional. The column name of the field containing classes the model is scoring. Formatted to be able to find nested
+                columns, delimeted by `.`. If not set, defaulted to `prediction.classes` for classification.
             prediction_score_column (str):
-                Optional.
+                Optional. The column name of the field containing batch prediction scores. Formatted to be able to find nested columns,
+                delimeted by `.`. If not set, defaulted to `prediction.scores` for a `classification` problem_type, `prediction.value`
+                for a `regression` problem_type.
             evaluation_staging_path (str):
                 Optional. The GCS directory to use for staging files from this evaluation job. Defaults to the value set in
                 aiplatform.init(staging_bucket=...) if not provided. Required if staging_bucket is not set in aiplatform.init().
@@ -4878,9 +4883,7 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             gcs_source_uris = [gcs_source_uris]
 
         if bigquery_source_uri is not None and not isinstance(bigquery_source_uri, str):
-            raise ValueError(
-                "The provided `bigquery_source_uri` must be a string."
-            )
+            raise ValueError("The provided `bigquery_source_uri` must be a string.")
 
         if bigquery_source_uri is not None and not bigquery_destination_output_uri:
             raise ValueError(
@@ -4888,24 +4891,24 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             )
 
         if gcs_source_uris is not None and not gcs_source_uris[0].startswith("gs://"):
-            raise ValueError(
-                "`gcs_source_uris` must start with 'gs://'."
-            )
-        
-        if bigquery_source_uri is not None and not bigquery_source_uri.startswith("bq://"):
+            raise ValueError("`gcs_source_uris` must start with 'gs://'.")
+
+        if bigquery_source_uri is not None and not bigquery_source_uri.startswith(
+            "bq://"
+        ):
             raise ValueError(
                 "`bigquery_source_uri` and `bigquery_destination_output_uri` must start with 'bq://'"
             )
 
-        if bigquery_destination_output_uri is not None and not bigquery_destination_output_uri.startswith("bq://"):
+        if (
+            bigquery_destination_output_uri is not None
+            and not bigquery_destination_output_uri.startswith("bq://")
+        ):
             raise ValueError(
                 "`bigquery_source_uri` and `bigquery_destination_output_uri` must start with 'bq://'"
             )
 
-        SUPPORTED_INSTANCES_FORMAT_FILE_EXTENSIONS = [
-            ".jsonl",
-            ".csv"
-        ]
+        SUPPORTED_INSTANCES_FORMAT_FILE_EXTENSIONS = [".jsonl", ".csv"]
 
         if not evaluation_staging_path and initializer.global_config.staging_bucket:
             evaluation_staging_path = initializer.global_config.staging_bucket
@@ -4917,8 +4920,8 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             )
 
         if prediction_type not in _SUPPORTED_EVAL_PREDICTION_TYPES:
-            raise ValueError("Please provide a supported model prediction type.")      
-        
+            raise ValueError("Please provide a supported model prediction type.")
+
         if gcs_source_uris:
 
             data_file_path_obj = pathlib.Path(gcs_source_uris[0])
@@ -4930,12 +4933,15 @@ class Model(base.VertexAiResourceNounWithFutureManager):
                 )
             else:
                 instances_format = data_file_extension[1:]
-    
+
         elif bigquery_source_uri:
             instances_format = "bigquery"
 
         # TODO: add a comment where this file is defined so we're notified if it changes
-        if self._gca_resource.metadata_schema_uri == "https://storage.googleapis.com/google-cloud-aiplatform/schema/model/metadata/automl_tabular_1.0.0.yaml":
+        if (
+            self._gca_resource.metadata_schema_uri
+            == "https://storage.googleapis.com/google-cloud-aiplatform/schema/model/metadata/automl_tabular_1.0.0.yaml"
+        ):
             model_type = "automl_tabular"
         else:
             model_type = "other"
@@ -4944,11 +4950,14 @@ class Model(base.VertexAiResourceNounWithFutureManager):
                     "Please provide `key_columns` when running evaluation on this model type."
                 )
 
-        if model_type == "other" and prediction_type == "classification" and class_names is None:
+        if (
+            model_type == "other"
+            and prediction_type == "classification"
+            and class_names is None
+        ):
             raise ValueError(
                 "Please provide `class_names` when running evaluation on a custom classification model."
             )
-
 
         return model_evaluation._ModelEvaluationJob.submit(
             model_name=self.resource_name,
@@ -4974,6 +4983,7 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             experiment=experiment,
             use_experimental_templates=use_experimental_templates,
         )
+
 
 # TODO (b/232546878): Async support
 class ModelRegistry:

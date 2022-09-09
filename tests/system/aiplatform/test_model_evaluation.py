@@ -104,12 +104,14 @@ class TestModelEvaluationJob(e2e_base.TestEndToEnd):
     # TODO: get this test passing with custom models
     def test_model_evaluate_custom_tabular_model(self, staging_bucket):
 
-        custom_model = aiplatform.Model(model_name=_TEST_PERMANENT_CUSTOM_MODEL_CLASSIFICATION_RESOURCE_NAME)
+        custom_model = aiplatform.Model(
+            model_name=_TEST_PERMANENT_CUSTOM_MODEL_CLASSIFICATION_RESOURCE_NAME
+        )
 
         eval_job = custom_model.evaluate(
             gcs_source_uris=[_TEST_AUTOML_EVAL_DATA_URI],
             prediction_type="classification",
-            key_columns=["petal_length","petal_width","sepal_length","sepal_width"],
+            key_columns=["petal_length", "petal_width", "sepal_length", "sepal_width"],
             class_names=["0", "1", "2"],
             target_column_name="species",
             evaluation_staging_path=f"gs://{staging_bucket.name}",

@@ -784,6 +784,7 @@ def mock_successfully_completed_eval_job():
         )
         yield mock_get_model_eval_job
 
+
 @pytest.fixture
 def mock_pipeline_bucket_exists():
     def mock_create_gcs_bucket_for_pipeline_artifacts_if_it_does_not_exist(
@@ -807,7 +808,6 @@ def mock_pipeline_bucket_exists():
         new=mock_create_gcs_bucket_for_pipeline_artifacts_if_it_does_not_exist,
     ) as mock_context:
         yield mock_context
-
 
 
 @pytest.fixture
