@@ -242,7 +242,7 @@ class _ExperimentTracker:
 
     def _initialize_mlflow_and_start_run() -> str:
         import mlflow
-
+        mlflow.set_tracking_uri("file-plugin://test-file")
         mlflow_run = mlflow.start_run()
         mlflow.sklearn.autolog()
         return mlflow_run.info.run_id

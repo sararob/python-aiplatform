@@ -1075,6 +1075,8 @@ class ExperimentRun(
         mlflow_params = mlflow_run.data.params
         mlflow_metrics = mlflow_run.data.metrics
 
+        # mlflow.log_metric(mlflow_metrics)
+
         mlflow.end_run()
 
         return {
