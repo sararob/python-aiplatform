@@ -330,7 +330,7 @@ class _ExperimentTracker:
                 _ExperimentTracker._initialize_mlflow_and_start_run(vertex_run_name=run, experiment_name=self._experiment.name)
         return self._experiment_run
 
-    def autolog(self):
+    def autolog(self) -> experiment_run_resource.ExperimentRun:
         try:
             import mlflow as mlflow
         except ImportError:
@@ -344,6 +344,8 @@ class _ExperimentTracker:
             f"Vertex Autologging run created with ID: {vertex_run_id}"
         )
         _ExperimentTracker._initialize_mlflow_and_start_run(vertex_run_name=vertex_run_id, experiment_name=self._experiment.name)
+
+        return aiplatform.ExperimentRun(vertex_run_id, experiment=self._experiment)
 
     def end_run(self, state: gapic.Execution.State = gapic.Execution.State.COMPLETE):
         """Ends the the current experiment run.
