@@ -167,8 +167,6 @@ class ExperimentRun(
             # initially set to None. Will initially update from resource then track locally.
             self._largest_step: Optional[int] = None
 
-        self._mlflow_run_id = Optional[str] = None
-
     def _v1_resolve_experiment_run(self, metadata_args: Dict[str, Any]):
         """Resolves preview Experiment.
 
@@ -1095,17 +1093,6 @@ class ExperimentRun(
             state (aiplatform.gapic.Execution.State):
                 Optional. Override the state at the end of run. Defaults to COMPLETE.
         """
-
-        if self._mlflow_run_id:
-
-            # log mlflow params and metrics to the experimentrun
-            params_and_metrics = ExperimentRun._get_mlflow_params_and_metrics(
-                self._mlflow_run_id
-            )
-            if params_and_metrics["mlflow_params"] is not None:
-                self.log_params(params_and_metrics["mlflow_params"])
-            if params_and_metrics["mlflow_metrics"] is not None:
-                self.log_metrics(params_and_metrics["mlflow_metrics"])
 
         self.update_state(state)
 
