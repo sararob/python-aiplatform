@@ -243,9 +243,9 @@ class _ExperimentTracker:
 
         self._experiment = experiment
 
-    def _initialize_mlflow_and_start_run(vertex_run_name: str, experiment_name: str):
+    def _initialize_mlflow_and_start_run(experiment_name: str):
         import mlflow
-        mlflow.set_tracking_uri(f"file-plugin://{vertex_run_name}/{experiment_name}")
+        mlflow.set_tracking_uri(f"file-plugin://{experiment_name}")
         mlflow.autolog()
 
     def start_run(
@@ -330,7 +330,7 @@ class _ExperimentTracker:
                 _ExperimentTracker._initialize_mlflow_and_start_run(vertex_run_name=run, experiment_name=self._experiment.name)
         return self._experiment_run
 
-    def autolog(self) -> experiment_run_resource.ExperimentRun:
+    def autolog(self):
         try:
             import mlflow as mlflow
         except ImportError:
@@ -338,14 +338,9 @@ class _ExperimentTracker:
                 f"MLFlow is not installed. Please install MLFlow to use autologging in Vertex Experiments."
             )
     
-        vertex_run_id = f"{uuid.uuid4()}"
-        aiplatform.start_run(run=vertex_run_id)
-        _LOGGER.info(
-            f"Vertex Autologging run created with ID: {vertex_run_id}"
-        )
-        _ExperimentTracker._initialize_mlflow_and_start_run(vertex_run_name=vertex_run_id, experiment_name=self._experiment.name)
+        _ExperimentTracker._initialize_mlflow_and_start_run(experiment_name=self._experiment.name)
 
-        return aiplatform.ExperimentRun(vertex_run_id, experiment=self._experiment)
+        # return aiplatform.ExperimentRun(vertex_run_id, experiment=self._experiment)
 
     def end_run(self, state: gapic.Execution.State = gapic.Execution.State.COMPLETE):
         """Ends the the current experiment run.
