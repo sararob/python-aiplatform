@@ -15,11 +15,7 @@
 # limitations under the License.
 #
 
-import uuid
-
 from typing import Dict, Union, Optional, Any
-
-from google.cloud import aiplatform
 
 from google.api_core import exceptions
 from google.auth import credentials as auth_credentials
@@ -320,6 +316,7 @@ class _ExperimentTracker:
                 experiment=self._experiment,
                 tensorboard=tensorboard,
             )
+            # TODO: the prototype currently only works with the high-level aiplatform.autolog() method
             if autolog:
                 try:
                     import mlflow as mlflow
@@ -327,7 +324,7 @@ class _ExperimentTracker:
                     raise ImportError(
                         f"MLFlow is not installed. Please install MLFlow to use autologging in Vertex Experiments."
                     )
-                _ExperimentTracker._initialize_mlflow_and_start_run(vertex_run_name=run, experiment_name=self._experiment.name)
+                _ExperimentTracker._initialize_mlflow_and_start_run(experiment_name=self._experiment.name)
         return self._experiment_run
 
     def autolog(self):
@@ -339,8 +336,6 @@ class _ExperimentTracker:
             )
     
         _ExperimentTracker._initialize_mlflow_and_start_run(experiment_name=self._experiment.name)
-
-        # return aiplatform.ExperimentRun(vertex_run_id, experiment=self._experiment)
 
     def end_run(self, state: gapic.Execution.State = gapic.Execution.State.COMPLETE):
         """Ends the the current experiment run.
