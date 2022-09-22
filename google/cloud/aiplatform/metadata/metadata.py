@@ -15,6 +15,8 @@
 # limitations under the License.
 #
 
+import logging
+
 from typing import Dict, Union, Optional, Any
 
 from google.api_core import exceptions
@@ -239,9 +241,14 @@ class _ExperimentTracker:
 
         self._experiment = experiment
 
-    def _initialize_mlflow_and_start_run(experiment_name: str):
+    def _initialize_mlflow_and_start_run(setting: str):
         import mlflow
-        mlflow.set_tracking_uri(f"file-plugin://{experiment_name}")
+
+        # supress mlflow logs
+        mlflow_logger = logging.getLogger('mlflow')
+        mlflow_logger.setLevel(logging.ERROR)
+
+        mlflow.set_tracking_uri(f"file-plugin://{setting}")
         mlflow.autolog()
 
     def start_run(
@@ -316,26 +323,32 @@ class _ExperimentTracker:
                 experiment=self._experiment,
                 tensorboard=tensorboard,
             )
-            # TODO: the prototype currently only works with the high-level aiplatform.autolog() method
             if autolog:
                 try:
-                    import mlflow as mlflow
+                    import sys
+                    if 'mlflow' in sys.modules:
+                        raise RuntimeError("Vertex Autologging cannot be used if mlflow is imported in the same session.")
+                    import mlflow
                 except ImportError:
                     raise ImportError(
                         f"MLFlow is not installed. Please install MLFlow to use autologging in Vertex Experiments."
                     )
-                _ExperimentTracker._initialize_mlflow_and_start_run(experiment_name=self._experiment.name)
+                _ExperimentTracker._initialize_mlflow_and_start_run(setting="run_scoped_autolog")
         return self._experiment_run
 
     def autolog(self):
         try:
+            import sys
+            if 'mlflow' in sys.modules:
+                raise RuntimeError("Vertex Autologging cannot be used if mlflow is imported in the same session.")
+
             import mlflow as mlflow
         except ImportError:
             raise ImportError(
                 f"MLFlow is not installed. Please install MLFlow to use autologging in Vertex Experiments."
             )
     
-        _ExperimentTracker._initialize_mlflow_and_start_run(experiment_name=self._experiment.name)
+        _ExperimentTracker._initialize_mlflow_and_start_run(setting="global_autolog")
 
     def end_run(self, state: gapic.Execution.State = gapic.Execution.State.COMPLETE):
         """Ends the the current experiment run.
