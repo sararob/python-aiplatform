@@ -397,12 +397,3 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
                         )
 
                         return eval_resource
-
-    def wait(self):
-        """Wait for thie PipelineJob to complete."""
-        pipeline_run = super().backing_pipeline_job
-
-        if pipeline_run._latest_future is None:
-            pipeline_run._block_until_complete()
-        else:
-            pipeline_run.wait()

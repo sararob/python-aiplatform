@@ -318,3 +318,12 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
                 continue
 
         return service_pipeline_jobs
+
+    def wait(self):
+        """Wait for the PipelineJob to complete."""
+        pipeline_run = self.backing_pipeline_job
+
+        if pipeline_run._latest_future is None:
+            pipeline_run._block_until_complete()
+        else:
+            pipeline_run.wait()
