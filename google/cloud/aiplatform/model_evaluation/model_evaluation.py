@@ -15,7 +15,10 @@
 # limitations under the License.
 #
 
+import json
+
 from google.auth import credentials as auth_credentials
+from google.cloud import aiplatform
 from google.cloud.aiplatform import jobs
 from google.cloud.aiplatform import base
 from google.cloud.aiplatform import utils
@@ -45,34 +48,59 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
             return self.to_dict()["metrics"]
 
     @property
-    def _backing_pipeline_job(self) -> Optional[str]:
-        """The id of the managed pipeline for this model evaluation job.
+    def backing_pipeline_job(self) -> Optional["pipeline_jobs.PipelineJob"]:
+        """The managed pipeline for this model evaluation job.
 
         Returns:
-            The pipeline job ID if this evaluation ran from a managed pipeline or None.
+            The PipelineJob resource if this evaluation ran from a managed pipeline or None.
         """
-        if self._gca_resource.metadata["pipeline_job_id"]:
-            return self._gca_resource.metadata["pipeline_job_id"]
+        if "metadata" in self._gca_resource and "pipeline_job_resource_name" in self._gca_resource.metadata:
+            return aiplatform.PipelineJob.get(resource_name=self._gca_resource.metadata["pipeline_job_resource_name"])
 
     @property
-    def _batch_prediction_job(self) -> Optional[jobs.BatchPredictionJob]:
+    def batch_prediction_job(self) -> Optional[jobs.BatchPredictionJob]:
         """The batch prediction job used for this evaluation if this ran as a
         Model Evaluation pipeline.
         Returns:
             An instantiated representation of the Batch Prediction Job if it exists.
         """
-        # TODO: implement when self.backing_pipeline_job is available
-        raise NotImplementedError
+        if self.backing_pipeline_job is not None:
+            for component in self.backing_pipeline_job.task_details:
+                for metadata_key in component.execution.metadata:
+                    if (
+                        metadata_key == "output:gcp_resources"
+                        and json.loads(component.execution.metadata[metadata_key])[
+                            "resources"
+                        ][0]["resourceType"]
+                        == "BatchPredictionJob"
+                    ):
+                        bp_job_resource_uri = json.loads(
+                            component.execution.metadata[metadata_key]
+                        )["resources"][0]["resourceUri"]
+                        bp_job_resource_name = bp_job_resource_uri.split("v1/")[1]
+
+                        bp_resource = aiplatform.BatchPredictionJob(batch_prediction_job_name=bp_job_resource_name)
+
+                        bp_resource._gca_resource = bp_resource._get_gca_resource(
+                            resource_name=bp_job_resource_name
+                        )
+
+                        return bp_resource
 
     @property
-    def _metadata_output_artifact(self) -> Optional[str]:
-        """The MLMD metadata artifact uri created by the Model Evaluation pipeline.
+    def metadata_output_artifact(self) -> Optional["aiplatform.Artifact"]:
+        """The MLMD Artifact created by the Model Evaluation pipeline.
 
         Returns:
-            The MLMD uri string if this Model Evaluation was created from a pipeline run.
+            The MLMD Artifact resource if this Model Evaluation was created from a pipeline run.
         """
-        # TODO: implement when self.backing_pipeline_job is available
-        raise NotImplementedError
+        if self.backing_pipeline_job is not None:
+            for component in self.backing_pipeline_job.task_details:
+                for output_name in component.outputs:
+                    if output_name == "evaluation_metrics":
+                        for artifact in component.outputs[output_name].artifacts:
+                            if artifact.display_name == "evaluation_metrics":
+                                return aiplatform.Artifact.get(resource_id=artifact.name)
 
     def __init__(
         self,

@@ -21,7 +21,7 @@ import json
 from google.protobuf import json_format, struct_pb2
 
 from unittest import mock
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from datetime import datetime
 from google.auth import credentials as auth_credentials
 
@@ -35,6 +35,8 @@ from google.cloud.aiplatform.utils import gcs_utils
 
 from google.cloud.aiplatform.compat.services import (
     model_service_client,
+    metadata_service_client_v1 as metadata_service_client,
+    job_service_client_v1 as job_service_client,
 )
 from google.cloud.aiplatform.model_evaluation import model_evaluation_job
 
@@ -50,6 +52,7 @@ from google.cloud.aiplatform.compat.types import (
     model_evaluation as gca_model_evaluation,
     context as gca_context,
     artifact as gca_artifact,
+    batch_prediction_job as gca_batch_prediction_job,
 )
 
 _TEST_PROJECT = "test-project"
@@ -58,6 +61,7 @@ _TEST_MODEL_NAME = "test-model"
 _TEST_MODEL_ID = "1028944691210842416"
 _TEST_EVAL_ID = "1028944691210842622"
 _TEST_EXPERIMENT = "test-experiment"
+_TEST_BATCH_PREDICTION_JOB_ID = "614161631630327111"
 
 _TEST_MODEL_RESOURCE_NAME = model_service_client.ModelServiceClient.model_path(
     _TEST_PROJECT, _TEST_LOCATION, _TEST_MODEL_ID
@@ -69,6 +73,14 @@ _TEST_MODEL_EVAL_RESOURCE_NAME = (
         _TEST_LOCATION,
         _TEST_MODEL_ID,
         _TEST_EVAL_ID,
+    )
+)
+
+_TEST_BATCH_PREDICTION_RESOURCE_NAME = (
+    job_service_client.JobServiceClient.batch_prediction_job_path(
+        _TEST_PROJECT,
+        _TEST_LOCATION,
+        _TEST_BATCH_PREDICTION_JOB_ID
     )
 )
 
@@ -134,6 +146,10 @@ _TEST_INVALID_PIPELINE_JOB_NAME = (
 )
 _TEST_MODEL_EVAL_PIPELINE_JOB_DISPLAY_NAME = "test-eval-job"
 _TEST_EVAL_RESOURCE_DISPLAY_NAME = "my-eval-resource-display-name"
+
+_TEST_MODEL_EVAL_METADATA = {
+    "pipeline_job_resource_name": _TEST_PIPELINE_JOB_NAME
+}
 
 _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES = {
     "batch_predict_gcs_source_uris": ["gs://my-bucket/my-prediction-data.csv"],
@@ -313,13 +329,26 @@ _TEST_INVALID_MODEL_EVAL_PIPELINE_JOB = json.dumps(
     }
 )
 
-_GCP_RESOURCES_STR = (
+_EVAL_GCP_RESOURCES_STR = (
     '{\n  "resources": [\n    {\n      "resourceType": "ModelEvaluation",\n      "resourceUri": "https://us-central1-aiplatform.googleapis.com/v1/'
     + _TEST_MODEL_EVAL_RESOURCE_NAME
     + '"\n    }\n  ]\n}'
 )
 
-_TEST_PIPELINE_JOB_DETAIL = {"output:gcp_resources": _GCP_RESOURCES_STR}
+_BP_JOB_GCP_RESOURCES_STR = (
+    '{\n  "resources": [\n    {\n      "resourceType": "BatchPredictionJob",\n      "resourceUri": "https://us-central1-aiplatform.googleapis.com/v1/'
+    + _TEST_BATCH_PREDICTION_RESOURCE_NAME
+    + '"\n    }\n  ]\n}'
+)
+
+_TEST_PIPELINE_JOB_DETAIL_EVAL = {
+    "output:gcp_resources": _EVAL_GCP_RESOURCES_STR,
+}
+
+_TEST_PIPELINE_JOB_DETAIL_BP = {
+    "output:gcp_resources": _BP_JOB_GCP_RESOURCES_STR,
+}
+
 _TEST_EVAL_METRICS_ARTIFACT_NAME = (
     "projects/123/locations/us-central1/metadataStores/default/artifacts/456"
 )
@@ -365,18 +394,6 @@ def mock_model():
 
 
 @pytest.fixture
-def mock_model_eval_get():
-    with mock.patch.object(
-        model_service_client.ModelServiceClient, "get_model_evaluation"
-    ) as mock_get_model_eval:
-        mock_get_model_eval.return_value = gca_model_evaluation.ModelEvaluation(
-            name=_TEST_MODEL_EVAL_RESOURCE_NAME,
-            metrics=_TEST_MODEL_EVAL_METRICS,
-        )
-        yield mock_get_model_eval
-
-
-@pytest.fixture
 def mock_pipeline_service_create():
     with mock.patch.object(
         pipeline_service_client_v1.PipelineServiceClient, "create_pipeline_job"
@@ -390,6 +407,18 @@ def mock_pipeline_service_create():
         )
         yield mock_create_pipeline_job
 
+
+@pytest.fixture
+def mock_model_eval_get():
+    with mock.patch.object(
+        model_service_client.ModelServiceClient, "get_model_evaluation"
+    ) as mock_get_model_eval:
+        mock_get_model_eval.return_value = gca_model_evaluation.ModelEvaluation(
+            name=_TEST_MODEL_EVAL_RESOURCE_NAME,
+            metrics=_TEST_MODEL_EVAL_METRICS,
+            metadata=_TEST_MODEL_EVAL_METADATA
+        )
+        yield mock_get_model_eval
 
 @pytest.fixture
 def mock_pipeline_bucket_exists():
@@ -416,6 +445,39 @@ def mock_pipeline_bucket_exists():
         yield mock_context
 
 
+@pytest.fixture
+def mock_artifact():
+    artifact = mock.MagicMock(aiplatform.Artifact)
+    artifact._gca_resource = gca_artifact.Artifact(
+        display_name="evaluation_metrics",
+        name=_TEST_EVAL_METRICS_ARTIFACT_NAME,
+        uri=_TEST_EVAL_METRICS_ARTIFACT_URI,
+    )
+    yield artifact
+
+@pytest.fixture
+def get_artifact_mock():
+    with mock.patch.object(
+        metadata_service_client.MetadataServiceClient, "get_artifact"
+    ) as get_artifact_mock:
+        get_artifact_mock.return_value = gca_artifact.Artifact(
+            display_name="evaluation_metrics",
+            name=_TEST_EVAL_METRICS_ARTIFACT_NAME,
+            uri=_TEST_EVAL_METRICS_ARTIFACT_URI,
+        )
+
+        yield get_artifact_mock
+
+@pytest.fixture
+def get_batch_prediction_job_mock():
+    with mock.patch.object(
+        job_service_client.JobServiceClient, "get_batch_prediction_job"
+    ) as get_bp_job_mock:
+        get_bp_job_mock.return_value = gca_batch_prediction_job.BatchPredictionJob(
+            name=_TEST_BATCH_PREDICTION_RESOURCE_NAME,
+        )
+        yield get_bp_job_mock
+
 def make_pipeline_job(state):
     return gca_pipeline_job.PipelineJob(
         name=_TEST_PIPELINE_JOB_NAME,
@@ -434,18 +496,30 @@ def make_pipeline_job(state):
                         "metadata": struct_pb2.Struct(
                             fields={
                                 key: struct_pb2.Value(string_value=value)
-                                for key, value in _TEST_PIPELINE_JOB_DETAIL.items()
+                                for key, value in _TEST_PIPELINE_JOB_DETAIL_EVAL.items()
                             }
                         ),
                     },
                 ),
                 gca_pipeline_job.PipelineTaskDetail(
                     task_id=456,
+                    execution={
+                        "metadata": struct_pb2.Struct(
+                            fields={
+                                key: struct_pb2.Value(string_value=value)
+                                for key, value in _TEST_PIPELINE_JOB_DETAIL_BP.items()
+                            }
+                        ),
+                    },
+                ),
+                gca_pipeline_job.PipelineTaskDetail(
+                    task_id=789,
                     task_name="model-evaluation",
                     outputs={
                         "evaluation_metrics": gca_pipeline_job.PipelineTaskDetail.ArtifactList(
                             artifacts=[
                                 gca_artifact.Artifact(
+                                    display_name="evaluation_metrics",
                                     name=_TEST_EVAL_METRICS_ARTIFACT_NAME,
                                     uri=_TEST_EVAL_METRICS_ARTIFACT_URI,
                                 ),
@@ -693,6 +767,130 @@ class TestModelEvaluation:
 
         with pytest.raises(NotImplementedError):
             my_eval.delete()
+
+    def test_get_model_evaluation_pipeline_job(self, mock_model_eval_get, mock_pipeline_service_get):
+        aiplatform.init(project=_TEST_PROJECT)
+
+        eval_pipeline_job = aiplatform.ModelEvaluation(
+            evaluation_name=_TEST_MODEL_EVAL_RESOURCE_NAME,
+            project=_TEST_PROJECT,
+            location=_TEST_LOCATION,
+        ).backing_pipeline_job
+
+        assert eval_pipeline_job.resource_name == _TEST_PIPELINE_JOB_NAME
+
+    @pytest.mark.parametrize(
+        "job_spec",
+        [_TEST_MODEL_EVAL_PIPELINE_SPEC_JSON],
+    )
+    def test_get_model_evaluation_bp_job(
+        self,
+        mock_pipeline_service_create,
+        job_spec,
+        mock_load_yaml_and_json,
+        mock_model,
+        mock_artifact,
+        get_model_mock,
+        mock_model_eval_get,
+        mock_model_eval_job_get,
+        mock_pipeline_service_get,
+        mock_model_eval_job_create,
+        mock_successfully_completed_eval_job,
+        mock_pipeline_bucket_exists,
+        get_artifact_mock,
+        get_batch_prediction_job_mock,
+    ):
+        aiplatform.init(
+            project=_TEST_PROJECT,
+            location=_TEST_LOCATION,
+            credentials=_TEST_CREDENTIALS,
+            staging_bucket=_TEST_GCS_BUCKET_NAME,
+        )
+
+        test_model_eval_job = model_evaluation_job._ModelEvaluationJob.submit(
+            model_name=_TEST_MODEL_RESOURCE_NAME,
+            prediction_type=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+                "prediction_type"
+            ],
+            instances_format=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+                "batch_predict_instances_format"
+            ],
+            model_type="automl_tabular",
+            pipeline_root=_TEST_GCS_BUCKET_NAME,
+            target_column_name=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+                "target_column_name"
+            ],
+            evaluation_pipeline_display_name=_TEST_MODEL_EVAL_PIPELINE_JOB_DISPLAY_NAME,
+            gcs_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+                "batch_predict_gcs_source_uris"
+            ],
+            service_account=_TEST_SERVICE_ACCOUNT,
+            network=_TEST_NETWORK,
+        )
+
+        test_model_eval_job.wait()
+
+        eval_resource = test_model_eval_job.get_model_evaluation()
+
+        assert eval_resource.batch_prediction_job.resource_name == _TEST_BATCH_PREDICTION_RESOURCE_NAME
+
+        assert isinstance(eval_resource.batch_prediction_job, aiplatform.BatchPredictionJob)
+
+    @pytest.mark.parametrize(
+        "job_spec",
+        [_TEST_MODEL_EVAL_PIPELINE_SPEC_JSON],
+    )
+    def test_get_model_evaluation_mlmd_resource(
+        self,
+        mock_pipeline_service_create,
+        job_spec,
+        mock_load_yaml_and_json,
+        mock_model,
+        mock_artifact,
+        get_model_mock,
+        mock_model_eval_get,
+        mock_model_eval_job_get,
+        mock_pipeline_service_get,
+        mock_model_eval_job_create,
+        mock_successfully_completed_eval_job,
+        mock_pipeline_bucket_exists,
+        get_artifact_mock,
+    ):
+        aiplatform.init(
+            project=_TEST_PROJECT,
+            location=_TEST_LOCATION,
+            credentials=_TEST_CREDENTIALS,
+            staging_bucket=_TEST_GCS_BUCKET_NAME,
+        )
+
+        test_model_eval_job = model_evaluation_job._ModelEvaluationJob.submit(
+            model_name=_TEST_MODEL_RESOURCE_NAME,
+            prediction_type=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+                "prediction_type"
+            ],
+            instances_format=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+                "batch_predict_instances_format"
+            ],
+            model_type="automl_tabular",
+            pipeline_root=_TEST_GCS_BUCKET_NAME,
+            target_column_name=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+                "target_column_name"
+            ],
+            evaluation_pipeline_display_name=_TEST_MODEL_EVAL_PIPELINE_JOB_DISPLAY_NAME,
+            gcs_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+                "batch_predict_gcs_source_uris"
+            ],
+            service_account=_TEST_SERVICE_ACCOUNT,
+            network=_TEST_NETWORK,
+        )
+
+        test_model_eval_job.wait()
+
+        eval_resource = test_model_eval_job.get_model_evaluation()
+
+        assert eval_resource.metadata_output_artifact.resource_name == _TEST_EVAL_METRICS_ARTIFACT_NAME
+
+        assert isinstance(eval_resource.metadata_output_artifact, aiplatform.Artifact)
 
 
 @pytest.mark.usefixtures("google_auth_mock")
@@ -1059,8 +1257,7 @@ class TestModelEvaluationJob:
             name=_TEST_MODEL_EVAL_RESOURCE_NAME, retry=base._DEFAULT_RETRY
         )
 
-        # TODO: add this test case after backing_pipeline_job is implemented for ModelEvaluation class
-        # assert isinstance(test_eval.backing_pipeline_job, aiplatform.PipelineJob)
+        assert isinstance(test_eval.backing_pipeline_job, aiplatform.PipelineJob)
 
     @pytest.mark.parametrize(
         "job_spec",
