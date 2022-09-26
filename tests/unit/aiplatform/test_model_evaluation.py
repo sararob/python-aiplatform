@@ -78,9 +78,7 @@ _TEST_MODEL_EVAL_RESOURCE_NAME = (
 
 _TEST_BATCH_PREDICTION_RESOURCE_NAME = (
     job_service_client.JobServiceClient.batch_prediction_job_path(
-        _TEST_PROJECT,
-        _TEST_LOCATION,
-        _TEST_BATCH_PREDICTION_JOB_ID
+        _TEST_PROJECT, _TEST_LOCATION, _TEST_BATCH_PREDICTION_JOB_ID
     )
 )
 
@@ -147,9 +145,7 @@ _TEST_INVALID_PIPELINE_JOB_NAME = (
 _TEST_MODEL_EVAL_PIPELINE_JOB_DISPLAY_NAME = "test-eval-job"
 _TEST_EVAL_RESOURCE_DISPLAY_NAME = "my-eval-resource-display-name"
 
-_TEST_MODEL_EVAL_METADATA = {
-    "pipeline_job_resource_name": _TEST_PIPELINE_JOB_NAME
-}
+_TEST_MODEL_EVAL_METADATA = {"pipeline_job_resource_name": _TEST_PIPELINE_JOB_NAME}
 
 _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES = {
     "batch_predict_gcs_source_uris": ["gs://my-bucket/my-prediction-data.csv"],
@@ -416,9 +412,10 @@ def mock_model_eval_get():
         mock_get_model_eval.return_value = gca_model_evaluation.ModelEvaluation(
             name=_TEST_MODEL_EVAL_RESOURCE_NAME,
             metrics=_TEST_MODEL_EVAL_METRICS,
-            metadata=_TEST_MODEL_EVAL_METADATA
+            metadata=_TEST_MODEL_EVAL_METADATA,
         )
         yield mock_get_model_eval
+
 
 @pytest.fixture
 def mock_pipeline_bucket_exists():
@@ -455,6 +452,7 @@ def mock_artifact():
     )
     yield artifact
 
+
 @pytest.fixture
 def get_artifact_mock():
     with mock.patch.object(
@@ -468,6 +466,7 @@ def get_artifact_mock():
 
         yield get_artifact_mock
 
+
 @pytest.fixture
 def get_batch_prediction_job_mock():
     with mock.patch.object(
@@ -477,6 +476,7 @@ def get_batch_prediction_job_mock():
             name=_TEST_BATCH_PREDICTION_RESOURCE_NAME,
         )
         yield get_bp_job_mock
+
 
 def make_pipeline_job(state):
     return gca_pipeline_job.PipelineJob(
@@ -768,7 +768,9 @@ class TestModelEvaluation:
         with pytest.raises(NotImplementedError):
             my_eval.delete()
 
-    def test_get_model_evaluation_pipeline_job(self, mock_model_eval_get, mock_pipeline_service_get):
+    def test_get_model_evaluation_pipeline_job(
+        self, mock_model_eval_get, mock_pipeline_service_get
+    ):
         aiplatform.init(project=_TEST_PROJECT)
 
         eval_pipeline_job = aiplatform.ModelEvaluation(
@@ -832,9 +834,14 @@ class TestModelEvaluation:
 
         eval_resource = test_model_eval_job.get_model_evaluation()
 
-        assert eval_resource.batch_prediction_job.resource_name == _TEST_BATCH_PREDICTION_RESOURCE_NAME
+        assert (
+            eval_resource.batch_prediction_job.resource_name
+            == _TEST_BATCH_PREDICTION_RESOURCE_NAME
+        )
 
-        assert isinstance(eval_resource.batch_prediction_job, aiplatform.BatchPredictionJob)
+        assert isinstance(
+            eval_resource.batch_prediction_job, aiplatform.BatchPredictionJob
+        )
 
     @pytest.mark.parametrize(
         "job_spec",
@@ -888,7 +895,10 @@ class TestModelEvaluation:
 
         eval_resource = test_model_eval_job.get_model_evaluation()
 
-        assert eval_resource.metadata_output_artifact.resource_name == _TEST_EVAL_METRICS_ARTIFACT_NAME
+        assert (
+            eval_resource.metadata_output_artifact.resource_name
+            == _TEST_EVAL_METRICS_ARTIFACT_NAME
+        )
 
         assert isinstance(eval_resource.metadata_output_artifact, aiplatform.Artifact)
 

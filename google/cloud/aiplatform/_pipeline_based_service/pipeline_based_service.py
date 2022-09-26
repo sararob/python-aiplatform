@@ -82,9 +82,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
     @classmethod
     @abc.abstractmethod
     def submit(self) -> "_VertexAiPipelineBasedService":
-        """Subclasses should implement this method to submit the underlying PipelineJob.
-
-        """
+        """Subclasses should implement this method to submit the underlying PipelineJob."""
         pass
 
     # TODO (b/248582133): Consider updating this to return a list in the future to support multiple outputs
@@ -133,10 +131,12 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
             service_pipeline_json = yaml_utils.load_yaml(pipeline_template)[
                 "components"
             ]
-            if service_pipeline_json != current_pipeline_json:
-                raise ValueError(
-                    f"The provided pipeline template is not compatible with {self.__class__.__name__}"
-                )
+            if service_pipeline_json == current_pipeline_json:
+                return True
+
+        raise ValueError(
+            f"The provided pipeline template is not compatible with {self.__class__.__name__}"
+        )
 
     def __init__(
         self,
@@ -284,12 +284,16 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
     @classmethod
     def list(
         cls,
+        filter: Optional[str] = None,
         project: Optional[str] = None,
         location: Optional[str] = None,
         credentials: Optional[str] = None,
     ) -> List["pipeline_jobs.PipelineJob"]:
         """Lists all PipelineJob resources associated with this Pipeline Based service.
         Args:
+            filter (str):
+                Optional. An expression for filtering the results of the request.
+                For field names both snake_case and camelCase are supported.
             project (str):
                 Optional. The project to retrieve the Pipeline Based Services from. If not set,
                 the project set in aiplatform.init will be used.
@@ -310,6 +314,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         )
 
         all_pipeline_jobs = pipeline_jobs.PipelineJob.list(
+            filter=filter,
             project=project,
             location=location,
             credentials=credentials,
@@ -321,7 +326,6 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
             try:
                 self._validate_pipeline_template_matches_service(job)
                 service_pipeline_jobs.append(job)
-
             except ValueError:
                 continue
 

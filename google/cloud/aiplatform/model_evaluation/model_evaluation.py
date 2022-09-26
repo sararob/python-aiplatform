@@ -54,8 +54,13 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
         Returns:
             The PipelineJob resource if this evaluation ran from a managed pipeline or None.
         """
-        if "metadata" in self._gca_resource and "pipeline_job_resource_name" in self._gca_resource.metadata:
-            return aiplatform.PipelineJob.get(resource_name=self._gca_resource.metadata["pipeline_job_resource_name"])
+        if (
+            "metadata" in self._gca_resource
+            and "pipeline_job_resource_name" in self._gca_resource.metadata
+        ):
+            return aiplatform.PipelineJob.get(
+                resource_name=self._gca_resource.metadata["pipeline_job_resource_name"]
+            )
 
     @property
     def batch_prediction_job(self) -> Optional[jobs.BatchPredictionJob]:
@@ -79,7 +84,9 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
                         )["resources"][0]["resourceUri"]
                         bp_job_resource_name = bp_job_resource_uri.split("v1/")[1]
 
-                        bp_resource = aiplatform.BatchPredictionJob(batch_prediction_job_name=bp_job_resource_name)
+                        bp_resource = aiplatform.BatchPredictionJob(
+                            batch_prediction_job_name=bp_job_resource_name
+                        )
 
                         bp_resource._gca_resource = bp_resource._get_gca_resource(
                             resource_name=bp_job_resource_name
@@ -100,7 +107,9 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
                     if output_name == "evaluation_metrics":
                         for artifact in component.outputs[output_name].artifacts:
                             if artifact.display_name == "evaluation_metrics":
-                                return aiplatform.Artifact.get(resource_id=artifact.name)
+                                return aiplatform.Artifact.get(
+                                    resource_id=artifact.name
+                                )
 
     def __init__(
         self,
