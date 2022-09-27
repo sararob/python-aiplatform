@@ -325,9 +325,6 @@ class _ExperimentTracker:
             )
             if autolog:
                 try:
-                    import sys
-                    if 'mlflow' in sys.modules:
-                        raise RuntimeError("Vertex Autologging cannot be used if mlflow is imported in the same session.")
                     import mlflow
                 except ImportError:
                     raise ImportError(
@@ -338,11 +335,7 @@ class _ExperimentTracker:
 
     def autolog(self):
         try:
-            import sys
-            if 'mlflow' in sys.modules:
-                raise RuntimeError("Vertex Autologging cannot be used if mlflow is imported in the same session.")
-
-            import mlflow as mlflow
+            import mlflow
         except ImportError:
             raise ImportError(
                 f"MLFlow is not installed. Please install MLFlow to use autologging in Vertex Experiments."
