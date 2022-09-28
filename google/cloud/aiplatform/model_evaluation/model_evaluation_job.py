@@ -275,7 +275,7 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         """
 
         if isinstance(model_name, aiplatform.Model):
-            model_resource_name = model_name.resource_name
+            model_resource_name = model_name.versioned_resource_name
         else:
             model_resource_name = model_name
 

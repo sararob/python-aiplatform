@@ -4960,7 +4960,7 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             )
 
         return model_evaluation._ModelEvaluationJob.submit(
-            model_name=self.resource_name,
+            model_name=self.versioned_resource_name,
             prediction_type=prediction_type,
             target_column_name=target_column_name,
             gcs_source_uris=gcs_source_uris,
