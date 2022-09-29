@@ -248,7 +248,7 @@ class _ExperimentTracker:
         mlflow_logger = logging.getLogger('mlflow')
         mlflow_logger.setLevel(logging.ERROR)
 
-        mlflow.set_tracking_uri(f"file-plugin://{setting}")
+        mlflow.set_tracking_uri(f"vertex-mlflow-plugin://{setting}")
         mlflow.autolog()
 
     def start_run(
