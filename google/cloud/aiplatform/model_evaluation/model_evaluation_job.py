@@ -277,7 +277,9 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         if isinstance(model_name, aiplatform.Model):
             model_resource_name = model_name.versioned_resource_name
         else:
-            model_resource_name = model_name
+            model_resource_name = aiplatform.Model(
+                model_name=model_name
+            ).versioned_resource_name
 
         if not evaluation_pipeline_display_name:
             evaluation_pipeline_display_name = cls._generate_display_name()
