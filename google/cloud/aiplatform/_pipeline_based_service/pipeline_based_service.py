@@ -33,7 +33,6 @@ from google.cloud import aiplatform
 from google.cloud.aiplatform import base, utils, pipeline_jobs
 from google.cloud.aiplatform.utils import yaml_utils
 from google.cloud.aiplatform.constants import pipeline as pipeline_constants
-
 from google.cloud.aiplatform.compat.types import (
     pipeline_job as gca_pipeline_job,
     pipeline_state as gca_pipeline_state,
@@ -110,7 +109,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
             return self.backing_pipeline_job.state
         return None
 
-    # TODO (b/): expose _template_ref in error message when artifact registry support is added
+    # TODO (b/249153354): expose _template_ref in error message when artifact registry support is added
     def _validate_pipeline_template_matches_service(
         self, pipeline_job: "pipeline_jobs.PipelineJob"
     ):
@@ -288,7 +287,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         project: Optional[str] = None,
         location: Optional[str] = None,
         credentials: Optional[str] = None,
-    ) -> List["pipeline_jobs.PipelineJob"]:
+    ) -> List["_VertexAiPipelineBasedService"]:
         """Lists all PipelineJob resources associated with this Pipeline Based service.
         Args:
             filter (str):
@@ -325,7 +324,8 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         for job in all_pipeline_jobs:
             try:
                 self._validate_pipeline_template_matches_service(job)
-                service_pipeline_jobs.append(job)
+                self._gca_resource = self._get_gca_resource(resource_name=job.resource_name)
+                service_pipeline_jobs.append(self)
             except ValueError:
                 continue
 
