@@ -68,7 +68,7 @@ vizier_extra_require = [
     "portpicker==1.3.1",
     "googleapis-common-protos==1.56.0",
     "google-api-python-client==1.12.8",
-    "google-vizier==0.0.3a",
+    "google-vizier==0.0.4",
 ]
 
 prediction_extra_require = [
@@ -130,7 +130,7 @@ setuptools.setup(
     install_requires=(
         "google-api-core[grpc] >= 1.32.0, <3.0.0dev,!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.*,!=2.4.*,!=2.5.*,!=2.6.*,!=2.7.*",
         "proto-plus >= 1.22.0, <2.0.0dev",
-        "protobuf >= 3.19.0, <5.0.0dev",
+        "protobuf >= 3.20.2, <5.0.0dev",
         "packaging >= 14.3, <22.0.0dev",
         "google-cloud-storage >= 1.32.0, < 3.0.0dev",
         "google-cloud-bigquery >= 1.15.0, < 3.0.0dev",
@@ -161,6 +161,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Topic :: Internet",
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
