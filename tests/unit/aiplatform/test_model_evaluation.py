@@ -274,30 +274,6 @@ _TEST_MODEL_EVAL_PIPELINE_JOB = json.dumps(
     }
 )
 
-# _TEST_INVALID_MODEL_EVAL_PIPELINE_SPEC_JSON = json.dumps(
-#     {
-#         "pipelineInfo": {"name": "my-pipeline"},
-#         "root": {
-#             "dag": {"tasks": {}},
-#             "inputDefinitions": {
-#                 "parameters": {
-#                     "batch_predict_gcs_source_uris": {"type": "STRING"},
-#                     "batch_predict_instances_format": {"type": "STRING"},
-#                     "model_name": {"type": "STRING"},
-#                     "prediction_type": {"type": "STRING"},
-#                     "project": {"type": "STRING"},
-#                     "location": {"type": "STRING"},
-#                     "root_dir": {"type": "STRING"},
-#                     "target_column_name": {"type": "STRING"},
-#                 }
-#             },
-#         },
-#         "schemaVersion": "2.0.0",
-#         "sdkVersion": "kfp-1.8.12",
-#         "components": {"test_component": {}},
-#     }
-# )
-
 _TEST_INVALID_MODEL_EVAL_PIPELINE_JOB = json.dumps(
     {
         "runtimeConfig": {
@@ -1031,6 +1007,7 @@ class TestModelEvaluationJob:
             gcs_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "batch_predict_gcs_source_uris"
             ],
+            job_id=_TEST_PIPELINE_JOB_ID,
             service_account=_TEST_SERVICE_ACCOUNT,
             network=_TEST_NETWORK,
         )
@@ -1075,12 +1052,10 @@ class TestModelEvaluationJob:
             network=_TEST_NETWORK,
         )
 
-        test_job_create_time_str = _TEST_PIPELINE_CREATE_TIME.strftime("%Y%m%d%H%M%S")
-
         mock_model_eval_job_create.assert_called_with(
             parent=_TEST_PARENT,
             pipeline_job=expected_gapic_pipeline_job,
-            pipeline_job_id=f"evaluation-default-pipeline-{test_job_create_time_str}",
+            pipeline_job_id=_TEST_PIPELINE_JOB_ID,
             timeout=None,
         )
 
@@ -1133,6 +1108,7 @@ class TestModelEvaluationJob:
             gcs_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "batch_predict_gcs_source_uris"
             ],
+            job_id=_TEST_PIPELINE_JOB_ID,
             instances_format=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
                 "batch_predict_instances_format"
             ],
@@ -1166,7 +1142,7 @@ class TestModelEvaluationJob:
         job_spec = yaml.safe_load(job_spec)
         pipeline_spec = job_spec.get("pipelineSpec") or job_spec
 
-        # # Construct expected request
+        # Construct expected request
         expected_gapic_pipeline_job = gca_pipeline_job.PipelineJob(
             display_name=_TEST_MODEL_EVAL_PIPELINE_JOB_DISPLAY_NAME,
             pipeline_spec={
@@ -1181,12 +1157,10 @@ class TestModelEvaluationJob:
             network=_TEST_NETWORK,
         )
 
-        test_job_create_time_str = _TEST_PIPELINE_CREATE_TIME.strftime("%Y%m%d%H%M%S")
-
         mock_model_eval_job_create.assert_called_with(
             parent=_TEST_PARENT,
             pipeline_job=expected_gapic_pipeline_job,
-            pipeline_job_id=f"evaluation-default-pipeline-{test_job_create_time_str}",
+            pipeline_job_id=_TEST_PIPELINE_JOB_ID,
             timeout=None,
         )
 
