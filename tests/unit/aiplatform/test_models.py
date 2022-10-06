@@ -261,7 +261,6 @@ _TEST_LOCAL_MODEL = LocalModel(
     serving_container_predict_route=_TEST_SERVING_CONTAINER_PREDICTION_ROUTE,
     serving_container_health_route=_TEST_SERVING_CONTAINER_HEALTH_ROUTE,
 )
-_TEST_MODEL_EVAL_KEY_COLUMNS = ["a", "b", "c"]
 _TEST_MODEL_EVAL_CLASS_NAMES = ["dog", "cat", "rabbit"]
 _TEST_BIGQUERY_EVAL_INPUT_URI = "bq://my-project.my-dataset.my-table"
 _TEST_BIGQUERY_EVAL_DESTINATION_URI = "bq://my-project.my-dataset"
@@ -2638,7 +2637,6 @@ class TestModel:
         eval_job = test_model.evaluate(
             prediction_type="classification",
             target_column_name="class",
-            key_columns=_TEST_MODEL_EVAL_KEY_COLUMNS,
             class_names=_TEST_MODEL_EVAL_CLASS_NAMES,
             evaluation_staging_path="gs://my-eval-staging-path",
             gcs_source_uris=["gs://test-bucket/test-file.csv"],
@@ -2677,7 +2675,6 @@ class TestModel:
         eval_job = test_model.evaluate(
             prediction_type="classification",
             target_column_name="class",
-            key_columns=_TEST_MODEL_EVAL_KEY_COLUMNS,
             class_names=_TEST_MODEL_EVAL_CLASS_NAMES,
             bigquery_source_uri=_TEST_BIGQUERY_EVAL_INPUT_URI,
             bigquery_destination_output_uri=_TEST_BIGQUERY_EVAL_DESTINATION_URI,
@@ -2704,7 +2701,6 @@ class TestModel:
         eval_job = test_model.evaluate(
             prediction_type="classification",
             target_column_name="class",
-            key_columns=_TEST_MODEL_EVAL_KEY_COLUMNS,
             class_names=_TEST_MODEL_EVAL_CLASS_NAMES,
             gcs_source_uris=["gs://test-bucket/test-file.csv"],
         )
@@ -2729,7 +2725,6 @@ class TestModel:
             test_model.evaluate(
                 prediction_type="classification",
                 target_column_name="class",
-                key_columns=_TEST_MODEL_EVAL_KEY_COLUMNS,
                 class_names=_TEST_MODEL_EVAL_CLASS_NAMES,
                 gcs_source_uris=["gs://test-bucket/test-file.csv"],
             )
@@ -2748,7 +2743,6 @@ class TestModel:
             test_model.evaluate(
                 prediction_type="invalid_prediction_type",
                 target_column_name="class",
-                key_columns=_TEST_MODEL_EVAL_KEY_COLUMNS,
                 gcs_source_uris=["gs://test-bucket/test-file.csv"],
             )
 
@@ -2766,7 +2760,6 @@ class TestModel:
             test_model.evaluate(
                 prediction_type="classification",
                 target_column_name="class",
-                key_columns=_TEST_MODEL_EVAL_KEY_COLUMNS,
                 gcs_source_uris=["storage.googleapis.com/test-bucket/test-file.csv"],
             )
 
@@ -2784,7 +2777,6 @@ class TestModel:
             test_model.evaluate(
                 prediction_type="classification",
                 target_column_name="class",
-                key_columns=_TEST_MODEL_EVAL_KEY_COLUMNS,
                 bigquery_source_uri="my-project.my-dataset.my-table",
                 bigquery_destination_output_uri="bq://my-project.my-dataset.my-table",
             )

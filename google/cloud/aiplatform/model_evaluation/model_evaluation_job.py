@@ -37,10 +37,10 @@ _LOGGER = base.Logger(__name__)
 
 # First 2 are for automl tabular models, the others are for everything else
 _MODEL_EVAL_PIPELINE_TEMPLATES = {
-    "automl_tabular_without_feature_attribution": "gs://vertex-evaluation-templates/20220922_1912/evaluation_automl_tabular_pipeline.json",
-    "automl_tabular_with_feature_attribution": "gs://vertex-evaluation-templates/20220922_1912/evaluation_automl_tabular_feature_attribution_pipeline.json",
-    "other_without_feature_attribution": "gs://vertex-evaluation-templates/20220922_1912/evaluation_pipeline.json",
-    "other_with_feature_attribution": "gs://vertex-evaluation-templates/20220922_1912/evaluation_feature_attribution_pipeline.json",
+    "automl_tabular_without_feature_attribution": "gs://vertex-evaluation-templates/20221006_0012/evaluation_automl_tabular_pipeline.json",
+    "automl_tabular_with_feature_attribution": "gs://vertex-evaluation-templates/20221006_0012/evaluation_automl_tabular_feature_attribution_pipeline.json",
+    "other_without_feature_attribution": "gs://vertex-evaluation-templates/20221006_0012/evaluation_pipeline.json",
+    "other_with_feature_attribution": "gs://vertex-evaluation-templates/20221006_0012/evaluation_feature_attribution_pipeline.json",
 }
 
 _EXPERIMENTAL_EVAL_PIPELINE_TEMPLATES = {
@@ -147,7 +147,6 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         bigquery_source_uri: Optional[str] = None,
         batch_predict_bigquery_destination_output_uri: Optional[str] = None,
         class_names: Optional[List[str]] = None,
-        key_columns: Optional[List[str]] = None,
         prediction_label_column: Optional[str] = None,
         prediction_score_column: Optional[str] = None,
         generate_feature_attributions: Optional[bool] = False,
@@ -223,9 +222,6 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
                 For example, in a classification model with 3 possible classes that are outputted in the format: [0.97, 0.02, 0.01]
                 with the class names "cat", "dog", and "fish", the value of `class_names` should be `["cat", "dog", "fish"]` where
                 the class "cat" corresponds with 0.97 in the example above.
-            key_columns (str):
-                Optional. The column headers in the data files provided to gcs_source_uris, in the order the columns
-                appear in the file. This argument is required for custom models and AutoML Vision, Text, and Video models.
             prediction_label_column (str):
                 Optional. The column name of the field containing classes the model is scoring. Formatted to be able to find nested
                 columns, delimeted by `.`. If not set, defaulted to `prediction.classes` for classification.
@@ -286,7 +282,6 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
 
         template_params = {
             "batch_predict_instances_format": instances_format,
-            "evaluation_join_keys": key_columns,
             "model_name": model_resource_name,
             "prediction_type": prediction_type,
             "evaluation_display_name": evaluation_metrics_display_name,
