@@ -57,6 +57,8 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
 
     _creation_log_message = "Created PipelineJob for your Model Evaluation."
 
+    _component_identifier = "fpc-model-evaluation"
+
     @property
     def _metadata_output_artifact(self) -> Optional[str]:
         """The resource uri for the ML Metadata output artifact from the evaluation component of the Model Evaluation pipeline"""
