@@ -119,6 +119,7 @@ setuptools.setup(
         "console_scripts": [
             "tb-gcp-uploader=google.cloud.aiplatform.tensorboard.uploader_main:run_main"
         ],
+        "mlflow.tracking_store": "vertex-mlflow-plugin=google.cloud.aiplatform.mlflow_plugin.plugin_src.file_store:VertexMlflowTracking",
     },
     namespace_packages=("google", "google.cloud"),
     author="Google LLC",

@@ -15,6 +15,9 @@
 # limitations under the License.
 #
 
+import logging
+
+from typing import Dict, Union, Optional, Any
 from typing import Dict, Union, Optional, Any, List
 
 from google.api_core import exceptions
@@ -239,9 +242,20 @@ class _ExperimentTracker:
 
         self._experiment = experiment
 
+    def _initialize_mlflow_and_start_run(setting: str):
+        import mlflow
+
+        # supress mlflow logs
+        mlflow_logger = logging.getLogger('mlflow')
+        mlflow_logger.setLevel(logging.ERROR)
+
+        mlflow.set_tracking_uri(f"vertex-mlflow-plugin://{setting}")
+        mlflow.autolog()
+
     def start_run(
         self,
         run: str,
+        autolog: bool = False,
         *,
         tensorboard: Union[tensorboard_resource.Tensorboard, str, None] = None,
         resume=False,
@@ -306,10 +320,29 @@ class _ExperimentTracker:
 
         else:
             self._experiment_run = experiment_run_resource.ExperimentRun.create(
-                run_name=run, experiment=self._experiment, tensorboard=tensorboard
+                run_name=run,
+                experiment=self._experiment,
+                tensorboard=tensorboard,
             )
-
+            if autolog:
+                try:
+                    import mlflow
+                except ImportError:
+                    raise ImportError(
+                        f"MLFlow is not installed. Please install MLFlow to use autologging in Vertex Experiments."
+                    )
+                _ExperimentTracker._initialize_mlflow_and_start_run(setting="run_scoped_autolog")
         return self._experiment_run
+
+    def autolog(self):
+        try:
+            import mlflow
+        except ImportError:
+            raise ImportError(
+                f"MLFlow is not installed. Please install MLFlow to use autologging in Vertex Experiments."
+            )
+    
+        _ExperimentTracker._initialize_mlflow_and_start_run(setting="global_autolog")
 
     def end_run(self, state: gapic.Execution.State = gapic.Execution.State.COMPLETE):
         """Ends the the current experiment run.
