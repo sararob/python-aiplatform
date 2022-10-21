@@ -82,7 +82,9 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
     @abc.abstractmethod
     def _component_identifier(self) -> str:
         """A 'component_type' value unique to this service's pipeline execution metadata.
-        This is used by the _validate_pipeline_template_matches_service method to 
+        This is an identifier used by the _validate_pipeline_template_matches_service method
+        to confirm the pipeline being instantiated belongs to this service. Use something
+        specific to your service's PipelineJob.
 
         For example: 'fpc-model-evaluation'
 
@@ -136,10 +138,11 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         """
 
         for comp in pipeline_job.task_details:
-            for key in comp.execution.metadata:
-                if key == "component_type":
-                    if comp.execution.metadata[key] == self._component_identifier:
-                        return True
+            if (
+                comp.execution.metadata.get("component_type")
+                == self._component_identifier
+            ):
+                return True
 
         raise ValueError(
             f"The provided pipeline template is not compatible with {self.__class__.__name__}"
