@@ -4751,7 +4751,7 @@ class Model(base.VertexAiResourceNounWithFutureManager):
     def evaluate(
         self,
         prediction_type: str,
-        target_column_name: str,
+        target_field_name: str,
         gcs_source_uris: Optional[List[str]] = None,
         bigquery_source_uri: Optional[str] = None,
         bigquery_destination_output_uri: Optional[str] = None,
@@ -4778,7 +4778,7 @@ class Model(base.VertexAiResourceNounWithFutureManager):
 
             my_evaluation_job = my_model.evaluate(
                 prediction_type="classification",
-                target_column_name="type",
+                target_field_name="type",
                 data_source_uris=["gs://sdk-model-eval/my-prediction-data.csv"],
                 evaluation_staging_path="gs://my-staging-bucket/eval_pipeline_root",
             )
@@ -4793,7 +4793,7 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             prediction_type (str):
                 Required. The problem type being addressed by this evaluation run. 'classification', 'regression',
                 and 'forecasting' are the currently supported problem types.
-            target_column_name (str):
+            target_field_name (str):
                 Required. The column name of the field containing the label for this prediction task.
             gcs_source_uris (List[str]):
                 Optional. A list of Cloud Storage data files containing the ground truth data to use for this
@@ -4953,7 +4953,7 @@ class Model(base.VertexAiResourceNounWithFutureManager):
         return model_evaluation._ModelEvaluationJob.submit(
             model_name=self.versioned_resource_name,
             prediction_type=prediction_type,
-            target_column_name=target_column_name,
+            target_field_name=target_field_name,
             gcs_source_uris=gcs_source_uris,
             bigquery_source_uri=bigquery_source_uri,
             batch_predict_bigquery_destination_output_uri=bigquery_destination_output_uri,

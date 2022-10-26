@@ -62,6 +62,7 @@ _TEST_MODEL_ID = "1028944691210842416"
 _TEST_EVAL_ID = "1028944691210842622"
 _TEST_EXPERIMENT = "test-experiment"
 _TEST_BATCH_PREDICTION_JOB_ID = "614161631630327111"
+_TEST_COMPONENT_IDENTIFIER = "fpc-model-evaluation"
 
 _TEST_MODEL_RESOURCE_NAME = model_service_client.ModelServiceClient.model_path(
     _TEST_PROJECT, _TEST_LOCATION, _TEST_MODEL_ID
@@ -157,7 +158,7 @@ _TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES = {
     "project": _TEST_PROJECT,
     "location": _TEST_LOCATION,
     "root_dir": _TEST_GCS_BUCKET_NAME,
-    "target_column_name": "predict_class",
+    "target_field_name": "predict_class",
 }
 
 _TEST_JSON_FORMATTED_MODEL_EVAL_PIPELINE_PARAMETER_VALUES = {
@@ -169,7 +170,7 @@ _TEST_JSON_FORMATTED_MODEL_EVAL_PIPELINE_PARAMETER_VALUES = {
     "project": _TEST_PROJECT,
     "location": _TEST_LOCATION,
     "root_dir": _TEST_GCS_BUCKET_NAME,
-    "target_column_name": "predict_class",
+    "target_field_name": "predict_class",
 }
 
 _TEST_MODEL_EVAL_PIPELINE_SPEC = {
@@ -187,7 +188,7 @@ _TEST_MODEL_EVAL_PIPELINE_SPEC = {
                 "prediction_type": {"type": "STRING"},
                 "project": {"type": "STRING"},
                 "root_dir": {"type": "STRING"},
-                "target_column_name": {"type": "STRING"},
+                "target_field_name": {"type": "STRING"},
             }
         },
     },
@@ -212,7 +213,7 @@ _TEST_MODEL_EVAL_PIPELINE_SPEC_JSON = json.dumps(
                     "prediction_type": {"type": "STRING"},
                     "project": {"type": "STRING"},
                     "root_dir": {"type": "STRING"},
-                    "target_column_name": {"type": "STRING"},
+                    "target_field_name": {"type": "STRING"},
                 }
             },
         },
@@ -237,7 +238,7 @@ _TEST_INVALID_MODEL_EVAL_PIPELINE_SPEC = json.dumps(
                     "project": {"type": "STRING"},
                     "location": {"type": "STRING"},
                     "root_dir": {"type": "STRING"},
-                    "target_column_name": {"type": "STRING"},
+                    "target_field_name": {"type": "STRING"},
                 }
             },
         },
@@ -264,7 +265,7 @@ _TEST_MODEL_EVAL_PIPELINE_JOB = json.dumps(
                     "prediction_type": {"type": "STRING"},
                     "project": {"type": "STRING"},
                     "root_dir": {"type": "STRING"},
-                    "target_column_name": {"type": "STRING"},
+                    "target_field_name": {"type": "STRING"},
                 }
             },
         },
@@ -291,7 +292,7 @@ _TEST_INVALID_MODEL_EVAL_PIPELINE_JOB = json.dumps(
                     "project": {"type": "STRING"},
                     "location": {"type": "STRING"},
                     "root_dir": {"type": "STRING"},
-                    "target_column_name": {"type": "STRING"},
+                    "target_field_name": {"type": "STRING"},
                 }
             },
         },
@@ -315,6 +316,7 @@ _BP_JOB_GCP_RESOURCES_STR = (
 
 _TEST_PIPELINE_JOB_DETAIL_EVAL = {
     "output:gcp_resources": _EVAL_GCP_RESOURCES_STR,
+    "component_type": _TEST_COMPONENT_IDENTIFIER,
 }
 
 _TEST_PIPELINE_JOB_DETAIL_BP = {
@@ -473,7 +475,7 @@ def make_pipeline_job(state):
                             fields={
                                 key: struct_pb2.Value(string_value=value)
                                 for key, value in _TEST_PIPELINE_JOB_DETAIL_EVAL.items()
-                            }
+                            },
                         ),
                     },
                 ),
@@ -795,8 +797,8 @@ class TestModelEvaluation:
             ],
             model_type="automl_tabular",
             pipeline_root=_TEST_GCS_BUCKET_NAME,
-            target_column_name=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
-                "target_column_name"
+            target_field_name=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+                "target_field_name"
             ],
             evaluation_pipeline_display_name=_TEST_MODEL_EVAL_PIPELINE_JOB_DISPLAY_NAME,
             gcs_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
@@ -856,8 +858,8 @@ class TestModelEvaluation:
             ],
             model_type="automl_tabular",
             pipeline_root=_TEST_GCS_BUCKET_NAME,
-            target_column_name=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
-                "target_column_name"
+            target_field_name=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+                "target_field_name"
             ],
             evaluation_pipeline_display_name=_TEST_MODEL_EVAL_PIPELINE_JOB_DISPLAY_NAME,
             gcs_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
@@ -887,6 +889,7 @@ class TestModelEvaluationJob:
     )
     def test_init_model_evaluation_job(
         self,
+        # mock_pipeline_service_get,
         mock_pipeline_service_create,
         job_spec,
         mock_load_yaml_and_json,
@@ -897,7 +900,7 @@ class TestModelEvaluationJob:
     ):
         aiplatform.init(project=_TEST_PROJECT)
 
-        model_evaluation_job._ModelEvaluationJob(
+        test_job = model_evaluation_job._ModelEvaluationJob(
             evaluation_pipeline_run_name=_TEST_PIPELINE_JOB_NAME
         )
 
@@ -973,7 +976,6 @@ class TestModelEvaluationJob:
     )
     def test_model_evaluation_job_submit(
         self,
-        mock_pipeline_service_create,
         job_spec,
         mock_load_yaml_and_json,
         mock_model,
@@ -1000,8 +1002,8 @@ class TestModelEvaluationJob:
             ],
             model_type="automl_tabular",
             pipeline_root=_TEST_GCS_BUCKET_NAME,
-            target_column_name=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
-                "target_column_name"
+            target_field_name=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+                "target_field_name"
             ],
             evaluation_pipeline_display_name=_TEST_MODEL_EVAL_PIPELINE_JOB_DISPLAY_NAME,
             gcs_source_uris=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
@@ -1027,7 +1029,7 @@ class TestModelEvaluationJob:
                 "project": {"stringValue": _TEST_PROJECT},
                 "location": {"stringValue": _TEST_LOCATION},
                 "root_dir": {"stringValue": _TEST_GCS_BUCKET_NAME},
-                "target_column_name": {"stringValue": "predict_class"},
+                "target_field_name": {"stringValue": "predict_class"},
             },
         }
 
@@ -1059,7 +1061,7 @@ class TestModelEvaluationJob:
             timeout=None,
         )
 
-        assert mock_pipeline_service_create.called_once
+        # assert mock_pipeline_service_create.called_once
 
         assert mock_pipeline_service_get.called_once
 
@@ -1100,8 +1102,8 @@ class TestModelEvaluationJob:
                 "prediction_type"
             ],
             pipeline_root=_TEST_GCS_BUCKET_NAME,
-            target_column_name=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
-                "target_column_name"
+            target_field_name=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+                "target_field_name"
             ],
             model_type="automl_tabular",
             evaluation_pipeline_display_name=_TEST_MODEL_EVAL_PIPELINE_JOB_DISPLAY_NAME,
@@ -1132,7 +1134,7 @@ class TestModelEvaluationJob:
                 "project": {"stringValue": _TEST_PROJECT},
                 "location": {"stringValue": _TEST_LOCATION},
                 "root_dir": {"stringValue": _TEST_GCS_BUCKET_NAME},
-                "target_column_name": {"stringValue": "predict_class"},
+                "target_field_name": {"stringValue": "predict_class"},
             },
         }
 
@@ -1200,8 +1202,8 @@ class TestModelEvaluationJob:
                 "prediction_type"
             ],
             pipeline_root=_TEST_GCS_BUCKET_NAME,
-            target_column_name=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
-                "target_column_name"
+            target_field_name=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+                "target_field_name"
             ],
             model_type="automl_tabular",
             evaluation_pipeline_display_name=_TEST_MODEL_EVAL_PIPELINE_JOB_DISPLAY_NAME,
@@ -1275,8 +1277,8 @@ class TestModelEvaluationJob:
                 "prediction_type"
             ],
             pipeline_root=_TEST_GCS_BUCKET_NAME,
-            target_column_name=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
-                "target_column_name"
+            target_field_name=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+                "target_field_name"
             ],
             model_type="automl_tabular",
             evaluation_pipeline_display_name=_TEST_MODEL_EVAL_PIPELINE_JOB_DISPLAY_NAME,
@@ -1324,8 +1326,8 @@ class TestModelEvaluationJob:
                 "prediction_type"
             ],
             pipeline_root=_TEST_GCS_BUCKET_NAME,
-            target_column_name=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
-                "target_column_name"
+            target_field_name=_TEST_MODEL_EVAL_PIPELINE_PARAMETER_VALUES[
+                "target_field_name"
             ],
             model_type="automl_tabular",
             evaluation_pipeline_display_name=_TEST_MODEL_EVAL_PIPELINE_JOB_DISPLAY_NAME,

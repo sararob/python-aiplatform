@@ -37,10 +37,10 @@ _LOGGER = base.Logger(__name__)
 
 # First 2 are for automl tabular models, the others are for everything else
 _MODEL_EVAL_PIPELINE_TEMPLATES = {
-    "automl_tabular_without_feature_attribution": "gs://vertex-evaluation-templates/20221006_0012/evaluation_automl_tabular_pipeline.json",
-    "automl_tabular_with_feature_attribution": "gs://vertex-evaluation-templates/20221006_0012/evaluation_automl_tabular_feature_attribution_pipeline.json",
-    "other_without_feature_attribution": "gs://vertex-evaluation-templates/20221006_0012/evaluation_pipeline.json",
-    "other_with_feature_attribution": "gs://vertex-evaluation-templates/20221006_0012/evaluation_feature_attribution_pipeline.json",
+    "automl_tabular_without_feature_attribution": "gs://vertex-evaluation-templates/20221014_2255/evaluation_automl_tabular_pipeline.json",
+    "automl_tabular_with_feature_attribution": "gs://vertex-evaluation-templates/20221014_2255/evaluation_automl_tabular_feature_attribution_pipeline.json",
+    "other_without_feature_attribution": "gs://vertex-evaluation-templates/20221014_2255/evaluation_pipeline.json",
+    "other_with_feature_attribution": "gs://vertex-evaluation-templates/20221014_2255/evaluation_feature_attribution_pipeline.json",
 }
 
 _EXPERIMENTAL_EVAL_PIPELINE_TEMPLATES = {
@@ -142,7 +142,7 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         cls,
         model_name: Union[str, "aiplatform.Model"],
         prediction_type: str,
-        target_column_name: str,
+        target_field_name: str,
         pipeline_root: str,
         model_type: str,
         gcs_source_uris: Optional[List[str]] = None,
@@ -174,7 +174,7 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
             prediction_type="classification",
             pipeline_root="gs://my-pipeline-bucket/runpath",
             gcs_source_uris=["gs://test-prediction-data"],
-            target_column_name=["prediction_class"],
+            target_field_name=["prediction_class"],
             instances_format="jsonl",
         )
 
@@ -183,7 +183,7 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
             prediction_type="regression",
             pipeline_root="gs://my-pipeline-bucket/runpath",
             gcs_source_uris=["gs://test-prediction-data"],
-            target_column_name=["price"],
+            target_field_name=["price"],
             instances_format="jsonl",
         )
         Args:
@@ -193,7 +193,7 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
                 "456" when project and location are initialized or passed.
             prediction_type (str):
                 Required. The type of prediction performed by the Model. One of "classification" or "regression".
-            target_column_name (str):
+            target_field_name (str):
                 Required. The name of your prediction column.
             pipeline_root (str):
                 Required. The GCS directory to store output from the model evaluation PipelineJob.
@@ -290,7 +290,7 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
             "project": project or initializer.global_config.project,
             "location": location or initializer.global_config.location,
             "root_dir": pipeline_root,
-            "target_column_name": target_column_name,
+            "target_field_name": target_field_name,
             "encryption_spec_key_name": encryption_spec_key_name,
         }
 
@@ -308,7 +308,7 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
             and model_type == "other"
             and class_names is not None
         ):
-            template_params["evaluation_class_names"] = class_names
+            template_params["evaluation_class_labels"] = class_names
 
         if prediction_label_column:
             template_params[

@@ -24,6 +24,7 @@ from unittest.mock import patch
 
 from google.auth import credentials as auth_credentials
 from google.protobuf import json_format
+from google.protobuf import struct_pb2
 from google.cloud import storage
 
 from google.cloud import aiplatform
@@ -37,7 +38,9 @@ from google.cloud.aiplatform_v1.types import (
     pipeline_state as gca_pipeline_state_v1,
 )
 
-from google.cloud.aiplatform._pipeline_based_service import pipeline_based_service
+from google.cloud.aiplatform._pipeline_based_service import (
+    pipeline_based_service,
+)
 
 # pipeline job
 _TEST_PROJECT = "test-project"
@@ -47,6 +50,7 @@ _TEST_PIPELINE_JOB_ID = "sample-test-pipeline-202111111"
 _TEST_GCS_BUCKET_NAME = "my-bucket"
 _TEST_CREDENTIALS = auth_credentials.AnonymousCredentials()
 _TEST_SERVICE_ACCOUNT = "abcde@my-project.iam.gserviceaccount.com"
+_TEST_COMPONENT_IDENTIFIER = "fake-pipeline-based-service"
 
 _TEST_TEMPLATE_PATH = f"gs://{_TEST_GCS_BUCKET_NAME}/job_spec.json"
 
@@ -113,33 +117,26 @@ _TEST_INVALID_PIPELINE_SPEC = {
 
 _TEST_PIPELINE_JOB = {
     "runtimeConfig": {"parameterValues": {}},
-    "pipelineSpec": _TEST_PIPELINE_SPEC,
+    "pipelineInfo": {"name": "my-pipeline"},
+    "root": {
+        "dag": {"tasks": {}},
+        "inputDefinitions": {
+            "parameters": {
+                "string_param": {"parameterType": "STRING"},
+                "bool_param": {"parameterType": "BOOLEAN"},
+                "double_param": {"parameterType": "NUMBER_DOUBLE"},
+                "int_param": {"parameterType": "NUMBER_INTEGER"},
+                "list_int_param": {"parameterType": "LIST"},
+                "list_string_param": {"parameterType": "LIST"},
+                "struct_param": {"parameterType": "STRUCT"},
+            }
+        },
+    },
+    "schemaVersion": "2.0.0",
+    "components": {},
 }
 
-_TEST_INVALID_PIPELINE_JOB = {
-    "runtimeConfig": {"parameterValues": {}},
-    "pipelineSpec": _TEST_INVALID_PIPELINE_SPEC,
-}
-
-_TEST_PIPELINE_RESOURCE_NAME = (
-    f"{_TEST_PARENT}/fakePipelineJobs/{_TEST_PIPELINE_JOB_ID}"
-)
 _TEST_PIPELINE_CREATE_TIME = datetime.now()
-
-
-@pytest.fixture
-def mock_pipeline_service_create():
-    with mock.patch.object(
-        pipeline_service_client_v1.PipelineServiceClient, "create_pipeline_job"
-    ) as mock_create_pipeline_job:
-        mock_create_pipeline_job.return_value = gca_pipeline_job_v1.PipelineJob(
-            name=_TEST_PIPELINE_JOB_NAME,
-            state=gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED,
-            create_time=_TEST_PIPELINE_CREATE_TIME,
-            service_account=_TEST_SERVICE_ACCOUNT,
-            network=_TEST_NETWORK,
-        )
-        yield mock_create_pipeline_job
 
 
 def make_pipeline_job(state):
@@ -149,7 +146,34 @@ def make_pipeline_job(state):
         create_time=_TEST_PIPELINE_CREATE_TIME,
         service_account=_TEST_SERVICE_ACCOUNT,
         network=_TEST_NETWORK,
+        job_detail=gca_pipeline_job_v1.PipelineJobDetail(
+            task_details=[
+                gca_pipeline_job_v1.PipelineTaskDetail(
+                    task_id=123,
+                    execution={
+                        "metadata": struct_pb2.Struct(
+                            fields={
+                                "component_type": struct_pb2.Value(
+                                    string_value=_TEST_COMPONENT_IDENTIFIER
+                                ),
+                            }
+                        ),
+                    },
+                ),
+            ],
+        ),
     )
+
+
+@pytest.fixture
+def mock_pipeline_service_create():
+    with mock.patch.object(
+        pipeline_service_client_v1.PipelineServiceClient, "create_pipeline_job"
+    ) as mock_create_pipeline_job:
+        mock_create_pipeline_job.return_value = make_pipeline_job(
+            gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED
+        )
+        yield mock_create_pipeline_job
 
 
 @pytest.fixture
@@ -222,15 +246,29 @@ def mock_pipeline_based_service_get():
     with mock.patch.object(
         pipeline_service_client_v1.PipelineServiceClient, "get_pipeline_job"
     ) as mock_get_pipeline_based_service:
-        mock_get_pipeline_based_service.return_value = gca_pipeline_job_v1.PipelineJob(
-            name=_TEST_PIPELINE_JOB_NAME,
-            state=gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED,
-            create_time=_TEST_PIPELINE_CREATE_TIME,
-            service_account=_TEST_SERVICE_ACCOUNT,
-            network=_TEST_NETWORK,
-            pipeline_spec=_TEST_PIPELINE_SPEC,
+        mock_get_pipeline_based_service.return_value = make_pipeline_job(
+            gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED
         )
         yield mock_get_pipeline_based_service
+
+
+@pytest.fixture
+def mock_pipeline_service_list():
+    with mock.patch.object(
+        pipeline_service_client_v1.PipelineServiceClient, "list_pipeline_jobs"
+    ) as mock_list_pipeline_jobs:
+        mock_list_pipeline_jobs.return_value = [
+            make_pipeline_job(
+                gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED
+            ),
+            make_pipeline_job(
+                gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED
+            ),
+            make_pipeline_job(
+                gca_pipeline_state_v1.PipelineState.PIPELINE_STATE_SUCCEEDED
+            ),
+        ]
+        yield mock_list_pipeline_jobs
 
 
 @pytest.mark.usefixtures("google_auth_mock")
@@ -240,6 +278,16 @@ class TestPipelineBasedService:
     ):
         _template_ref = _TEST_TEMPLATE_REF
         _metadata_output_artifact = "TODO"
+        _creation_log_message = (
+            "Created PipelineJob for your fake PipelineBasedService."
+        )
+        _component_identifier = _TEST_COMPONENT_IDENTIFIER
+
+        @classmethod
+        def submit(cls) -> pipeline_based_service._VertexAiPipelineBasedService:
+            return cls._create_and_submit_pipeline_job(
+                template_params={}, template_path=_TEST_TEMPLATE_PATH
+            )
 
     @pytest.mark.parametrize(
         "job_spec_json",
@@ -269,6 +317,9 @@ class TestPipelineBasedService:
             name=_TEST_PIPELINE_JOB_NAME, retry=base._DEFAULT_RETRY
         )
 
+        # There are 2 get requests made for each item: 1 in the constructor and 1 in the validation method
+        assert mock_pipeline_based_service_get.call_count == 2
+
         assert not mock_pipeline_service_create.called
 
     @pytest.mark.parametrize(
@@ -281,9 +332,9 @@ class TestPipelineBasedService:
         mock_pipeline_service_create,
     ):
         """
-        Raises TypeError since abstract properties '_template_ref' and metadata_output_artifact
-        are not set, the VertexAiPipelineBasedService class should only be instantiated through
-        a child class.
+        Raises TypeError since abstract properties `_template_ref`, `_metadata_output_artifact`,
+        and `_creation_log_message` are not set. The VertexAiPipelineBasedService class should
+        only be instantiated through a child class.
         """
 
         with pytest.raises(TypeError):
@@ -374,4 +425,43 @@ class TestPipelineBasedService:
         assert (
             test_pipeline_service.gca_resource.name
             == test_backing_pipeline_job.resource_name
+        )
+
+    @pytest.mark.parametrize(
+        "job_spec_json",
+        [_TEST_PIPELINE_SPEC],
+    )
+    def test_list_pipeline_based_service(
+        self,
+        mock_pipeline_service_get,
+        mock_pipeline_service_create,
+        mock_load_json,
+        job_spec_json,
+        mock_pipeline_service_list,
+    ):
+        aiplatform.init(
+            project=_TEST_PROJECT,
+            location=_TEST_LOCATION,
+            credentials=_TEST_CREDENTIALS,
+        )
+
+        test_list_request = self.FakePipelineBasedService.list()
+
+        mock_pipeline_service_list.assert_called_once_with(
+            request={"parent": _TEST_PARENT}
+        )
+
+        assert mock_pipeline_service_list.call_count == 1
+
+        assert mock_pipeline_service_get.call_count == len(
+            mock_pipeline_service_list.return_value
+        )
+
+        assert isinstance(
+            test_list_request[0], pipeline_based_service._VertexAiPipelineBasedService
+        )
+
+        assert (
+            test_list_request[0]._template_ref
+            == self.FakePipelineBasedService._template_ref
         )
