@@ -12,26 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional, Union
+from typing import List, Union
 
 from google.cloud import aiplatform
+from google.cloud.aiplatform.metadata import artifact
 
 
-#  [START aiplatform_sdk_create_experiment_sample]
-def create_experiment_sample(
-    experiment_name: str,
-    experiment_description: str,
-    experiment_tensorboard: Optional[Union[str, aiplatform.Tensorboard]],
+#  [START aiplatform_sdk_get_experiment_run_artifacts_sample]
+def get_experiment_run_artifacts_sample(
+    run_name: str,
+    experiment: Union[str, aiplatform.Experiment],
     project: str,
     location: str,
-):
-    aiplatform.init(
-        experiment=experiment_name,
-        experiment_description=experiment_description,
-        experiment_tensorboard=experiment_tensorboard,
+) -> List[artifact.Artifact]:
+    experiment_run = aiplatform.ExperimentRun(
+        run_name=run_name,
+        experiment=experiment,
         project=project,
         location=location,
     )
 
+    return experiment_run.get_artifacts()
 
-#  [END aiplatform_sdk_create_experiment_sample]
+#  [END aiplatform_sdk_get_experiment_run_artifacts_sample]
