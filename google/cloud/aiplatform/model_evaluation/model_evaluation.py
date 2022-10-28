@@ -38,14 +38,21 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
     _format_resource_name_method = "model_evaluation_path"
 
     @property
-    def metrics(self) -> Optional[Dict]:
+    def metrics(self) -> Dict:
         """Gets the evaluation metrics from the Model Evaluation.
         Returns:
             A dict with model metrics created from the Model Evaluation or
             None if the metrics for this evaluation are empty.
+
+        Raises:
+            ValueError: If the Model Evaluation doesn't have metrics.
         """
         if self._gca_resource.metrics:
             return self.to_dict()["metrics"]
+
+        raise ValueError(
+            "This ModelEvaluation does not have any metrics, this could be because the Evaluation job failed. Check the logs for details."
+        )
 
     @property
     def backing_pipeline_job(self) -> Optional["pipeline_jobs.PipelineJob"]:
