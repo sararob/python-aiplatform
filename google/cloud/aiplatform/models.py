@@ -4755,7 +4755,7 @@ class Model(base.VertexAiResourceNounWithFutureManager):
         gcs_source_uris: Optional[List[str]] = None,
         bigquery_source_uri: Optional[str] = None,
         bigquery_destination_output_uri: Optional[str] = None,
-        class_names: Optional[List[str]] = None,
+        class_labels: Optional[List[str]] = None,
         prediction_label_column: Optional[str] = None,
         prediction_score_column: Optional[str] = None,
         evaluation_staging_path: Optional[str] = None,
@@ -4809,11 +4809,11 @@ class Model(base.VertexAiResourceNounWithFutureManager):
                 prediction output. This can be a BigQuery URI to a project ('bq://my-project'), a dataset
                 ('bq://my-project.my-dataset'), or a table ('bq://my-project.my-dataset.my-table'). Required if `bigquery_source_uri`
                 is provided.
-            class_names (List[str]):
+            class_labels (List[str]):
                 Optional. For custom (non-AutoML) classification models, a list of possible class names, in the
                 same order that predictions are generated. This argument is required when prediction_type is 'classification'.
                 For example, in a classification model with 3 possible classes that are outputted in the format: [0.97, 0.02, 0.01]
-                with the class names "cat", "dog", and "fish", the value of `class_names` should be `["cat", "dog", "fish"]` where
+                with the class names "cat", "dog", and "fish", the value of `class_labels` should be `["cat", "dog", "fish"]` where
                 the class "cat" corresponds with 0.97 in the example above.
             prediction_label_column (str):
                 Optional. The column name of the field containing classes the model is scoring. Formatted to be able to find nested
@@ -4944,10 +4944,10 @@ class Model(base.VertexAiResourceNounWithFutureManager):
         if (
             model_type == "other"
             and prediction_type == "classification"
-            and class_names is None
+            and class_labels is None
         ):
             raise ValueError(
-                "Please provide `class_names` when running evaluation on a custom classification model."
+                "Please provide `class_labels` when running evaluation on a custom classification model."
             )
 
         return model_evaluation._ModelEvaluationJob.submit(
@@ -4957,7 +4957,7 @@ class Model(base.VertexAiResourceNounWithFutureManager):
             gcs_source_uris=gcs_source_uris,
             bigquery_source_uri=bigquery_source_uri,
             batch_predict_bigquery_destination_output_uri=bigquery_destination_output_uri,
-            class_names=class_names,
+            class_labels=class_labels,
             prediction_label_column=prediction_label_column,
             prediction_score_column=prediction_score_column,
             service_account=service_account,

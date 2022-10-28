@@ -138,12 +138,19 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
             service it's trying to instantiate.
         """
 
-        for comp in pipeline_job.task_details:
-            if (
-                comp.execution.metadata.get("component_type")
-                == cls._component_identifier
-            ):
-                return True
+        # We get the Execution here because we want to allow instantiating
+        # failed pipeline runs that match the service. The component_type is
+        # present in the Execution metadata for both failed and successful
+        # pipeline runs
+        for component in pipeline_job.task_details:
+            if "name" in component.execution:
+                execution_resource = aiplatform.Execution.get(component.execution.name)
+                if (
+                    "component_type" in execution_resource.metadata
+                    and execution_resource.metadata["component_type"]
+                    == cls._component_identifier
+                ):
+                    return True
         return False
 
     # TODO (b/249153354): expose _template_ref in error message when artifact
@@ -292,7 +299,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
 
         # Suppresses logs from PipelineJob
         # The class implementing _VertexAiPipelineBasedService should define a
-        # custom log message via `_component_identifier`
+        # custom log message via `_creation_log_message`
         logging.getLogger("google.cloud.aiplatform.pipeline_jobs").setLevel(
             logging.WARNING
         )
@@ -338,23 +345,23 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
             (List[PipelineJob]):
                 A list of PipelineJob resource objects.
         """
-        all_pipeline_jobs = pipeline_jobs.PipelineJob.list(
-            filter=filter,
-            project=project,
-            location=location,
-            credentials=credentials,
+
+        filter_str = f"metadata.component_type.string_value={cls._component_identifier}"
+
+        filtered_pipeline_executions = aiplatform.Execution.list(
+            filter=filter_str, credentials=credentials
         )
 
         service_pipeline_jobs = []
 
-        for job in all_pipeline_jobs:
-            if cls._does_pipeline_template_match_service(job):
-                service_pipeline_job = cls._empty_constructor(
+        for pipeline_execution in filtered_pipeline_executions:
+            if "pipeline_job_resource_name" in pipeline_execution.metadata:
+                service_pipeline_job = cls(
+                    pipeline_execution.metadata["pipeline_job_resource_name"],
                     project=project,
                     location=location,
                     credentials=credentials,
                 )
-                service_pipeline_job._gca_resource = job._gca_resource
                 service_pipeline_jobs.append(service_pipeline_job)
 
         return service_pipeline_jobs

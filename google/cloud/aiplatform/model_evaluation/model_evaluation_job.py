@@ -148,7 +148,7 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         gcs_source_uris: Optional[List[str]] = None,
         bigquery_source_uri: Optional[str] = None,
         batch_predict_bigquery_destination_output_uri: Optional[str] = None,
-        class_names: Optional[List[str]] = None,
+        class_labels: Optional[List[str]] = None,
         prediction_label_column: Optional[str] = None,
         prediction_score_column: Optional[str] = None,
         generate_feature_attributions: Optional[bool] = False,
@@ -218,11 +218,11 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
                 prediction output. This can be a BigQuery URI to a project ('bq://my-project'), a dataset
                 ('bq://my-project.my-dataset'), or a table ('bq://my-project.my-dataset.my-table'). Required if `bigquery_source_uri`
                 is provided.
-            class_names (List[str]):
+            class_labels (List[str]):
                 Optional. For custom (non-AutoML) classification models, a list of possible class names, in the
                 same order that predictions are generated. This argument is required when prediction_type is 'classification'.
                 For example, in a classification model with 3 possible classes that are outputted in the format: [0.97, 0.02, 0.01]
-                with the class names "cat", "dog", and "fish", the value of `class_names` should be `["cat", "dog", "fish"]` where
+                with the class names "cat", "dog", and "fish", the value of `class_labels` should be `["cat", "dog", "fish"]` where
                 the class "cat" corresponds with 0.97 in the example above.
             prediction_label_column (str):
                 Optional. The column name of the field containing classes the model is scoring. Formatted to be able to find nested
@@ -306,9 +306,9 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
         if (
             prediction_type == "classification"
             and model_type == "other"
-            and class_names is not None
+            and class_labels is not None
         ):
-            template_params["evaluation_class_labels"] = class_names
+            template_params["evaluation_class_labels"] = class_labels
 
         if prediction_label_column:
             template_params[
