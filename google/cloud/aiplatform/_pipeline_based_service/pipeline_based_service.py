@@ -92,6 +92,19 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         """
         pass
 
+    @property
+    def _template_name_identifier(cls) -> Optional[str]:
+        """An optional name identifier for the pipeline template.
+
+        This will validate on the Pipeline's PipelineSpec.PipelineInfo.name
+        field. Setting this property will lead to an additional validation
+        check on pipeline templates in _does_pipeline_template_match_service.
+        If this property is present, the validation method will check for it
+        after validating on `_component_identifier`.
+
+        """
+        return None
+
     @classmethod
     @abc.abstractmethod
     def submit(self) -> "_VertexAiPipelineBasedService":
@@ -143,14 +156,19 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         # present in the Execution metadata for both failed and successful
         # pipeline runs
         for component in pipeline_job.task_details:
+            # print(component.execution, 'yooo')
             if "name" in component.execution:
-                execution_resource = aiplatform.Execution.get(component.execution.name)
-                if (
-                    "component_type" in execution_resource.metadata
-                    and execution_resource.metadata["component_type"]
-                    == cls._component_identifier
-                ):
-                    return True
+                if component.execution.schema_title == "system.Run":
+                    execution_resource = aiplatform.Execution.get(component.execution.name)
+
+                    # First validate on component_type
+                    if (
+                        "component_type" in execution_resource.metadata
+                        and execution_resource.metadata["component_type"]
+                        == cls._component_identifier
+                    ):
+                        if cls._template_name_identifier is None or (pipeline_job.pipeline_spec is not None and cls._template_name_identifier == pipeline_job.pipeline_spec.get("pipelineInfo")["name"]):
+                            return True
         return False
 
     # TODO (b/249153354): expose _template_ref in error message when artifact
