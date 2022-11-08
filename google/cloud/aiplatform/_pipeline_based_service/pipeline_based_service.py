@@ -58,8 +58,10 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
     @classmethod
     @abc.abstractmethod
     def _template_ref(cls) -> FrozenSet[Tuple[str, str]]:
-        """A dictionary of the pipeline template URLs for this servicewhere the key is
-        an identifier for that template and the value is the url of that pipeline template.
+        """A dictionary of the pipeline template URLs for this service.
+
+        The key is an identifier for that template and the value is the url of
+        that pipeline template.
 
         For example: {"tabular_classification": "gs://path/to/tabular/pipeline/template.json"}
 
@@ -70,8 +72,10 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
     @classmethod
     @abc.abstractmethod
     def _creation_log_message(cls) -> str:
-        """A log message to use when the Pipeline-based Service is created, since this class
-        supresses logs from PipelineJob creation to avoid duplication.
+        """A log message to use when the Pipeline-based Service is created.
+
+        _VertexAiPipelineBasedService supresses logs from PipelineJob creation
+        to avoid duplication.
 
         For example: 'Created PipelineJob for your Model Evaluation.'
 
@@ -83,6 +87,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
     @abc.abstractmethod
     def _component_identifier(cls) -> str:
         """A 'component_type' value unique to this service's pipeline execution metadata.
+
         This is an identifier used by the _validate_pipeline_template_matches_service method
         to confirm the pipeline being instantiated belongs to this service. Use something
         specific to your service's PipelineJob.
@@ -93,6 +98,8 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         pass
 
     @property
+    @classmethod
+    @abc.abstractmethod
     def _template_name_identifier(cls) -> Optional[str]:
         """An optional name identifier for the pipeline template.
 
@@ -103,7 +110,7 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
         after validating on `_component_identifier`.
 
         """
-        return None
+        pass
 
     @classmethod
     @abc.abstractmethod
@@ -151,24 +158,34 @@ class _VertexAiPipelineBasedService(base.VertexAiStatefulResource):
             service it's trying to instantiate.
         """
 
+        valid_schema_titles = ["system.Run", "system.DagExecution"]
+
         # We get the Execution here because we want to allow instantiating
         # failed pipeline runs that match the service. The component_type is
         # present in the Execution metadata for both failed and successful
         # pipeline runs
         for component in pipeline_job.task_details:
-            # print(component.execution, 'yooo')
-            if "name" in component.execution:
-                if component.execution.schema_title == "system.Run":
-                    execution_resource = aiplatform.Execution.get(component.execution.name)
+            if not (
+                "name" in component.execution
+                and component.execution.schema_title in valid_schema_titles
+            ):
+                continue
 
-                    # First validate on component_type
-                    if (
-                        "component_type" in execution_resource.metadata
-                        and execution_resource.metadata["component_type"]
-                        == cls._component_identifier
-                    ):
-                        if cls._template_name_identifier is None or (pipeline_job.pipeline_spec is not None and cls._template_name_identifier == pipeline_job.pipeline_spec.get("pipelineInfo")["name"]):
-                            return True
+            execution_resource = aiplatform.Execution.get(component.execution.name)
+
+            # First validate on component_type
+            if (
+                "component_type" in execution_resource.metadata
+                and execution_resource.metadata["component_type"]
+                == cls._component_identifier
+            ):
+                # Then validate on _template_name_identifier if provided
+                if cls._template_name_identifier is None or (
+                    pipeline_job.pipeline_spec is not None
+                    and cls._template_name_identifier
+                    == pipeline_job.pipeline_spec.get("pipelineInfo")["name"]
+                ):
+                    return True
         return False
 
     # TODO (b/249153354): expose _template_ref in error message when artifact
