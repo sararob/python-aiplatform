@@ -56,6 +56,10 @@ from google.cloud.aiplatform.utils import console_utils
 from google.cloud.aiplatform.utils import source_utils
 from google.cloud.aiplatform.utils import worker_spec_utils
 
+from google.cloud.aiplatform_v1.types import (
+    batch_prediction_job as batch_prediction_job_v1,
+)
+from google.cloud.aiplatform_v1.types import custom_job as custom_job_v1
 
 _LOGGER = base.Logger(__name__)
 
@@ -331,7 +335,7 @@ class BatchPredictionJob(_Job):
     @property
     def output_info(
         self,
-    ) -> Optional[aiplatform.gapic.BatchPredictionJob.OutputInfo]:
+    ) -> Optional[batch_prediction_job_v1.BatchPredictionJob.OutputInfo]:
         """Information describing the output of this job, including output location
         into which prediction output is written.
 
@@ -625,7 +629,7 @@ class BatchPredictionJob(_Job):
                 f"{predictions_format} is not an accepted prediction format "
                 f"type. Please choose from: {constants.BATCH_PREDICTION_OUTPUT_STORAGE_FORMATS}"
             )
-        # TODO: remove temporary import statements once model monitoring for batch prediction is GA
+        # TODO(b/242108750): remove temporary re-import statements once model monitoring for batch prediction is GA
         if model_monitoring_objective_config:
             from google.cloud.aiplatform.compat.types import (
                 io_v1beta1 as gca_io_compat,
@@ -759,7 +763,7 @@ class BatchPredictionJob(_Job):
             sync=sync,
             create_request_timeout=create_request_timeout,
         )
-        # TODO: b/242108750
+        # TODO(b/242108750): remove temporary re-import statements once model monitoring for batch prediction is GA
         from google.cloud.aiplatform.compat.types import (
             io as gca_io_compat,
             batch_prediction_job as gca_bp_job_compat,
@@ -1121,7 +1125,7 @@ class CustomJob(_RunnableJob):
         self,
         # TODO(b/223262536): Make display_name parameter fully optional in next major release
         display_name: str,
-        worker_pool_specs: Union[List[Dict], List[aiplatform.gapic.WorkerPoolSpec]],
+        worker_pool_specs: Union[List[Dict], List[custom_job_v1.WorkerPoolSpec]],
         base_output_dir: Optional[str] = None,
         project: Optional[str] = None,
         location: Optional[str] = None,
@@ -1637,6 +1641,68 @@ class CustomJob(_RunnableJob):
             create_request_timeout (float):
                 Optional. The timeout for the create request in seconds.
         """
+        self.submit(
+            service_account=service_account,
+            network=network,
+            timeout=timeout,
+            restart_job_on_worker_restart=restart_job_on_worker_restart,
+            enable_web_access=enable_web_access,
+            tensorboard=tensorboard,
+            create_request_timeout=create_request_timeout,
+        )
+
+        self._block_until_complete()
+
+    def submit(
+        self,
+        *,
+        service_account: Optional[str] = None,
+        network: Optional[str] = None,
+        timeout: Optional[int] = None,
+        restart_job_on_worker_restart: bool = False,
+        enable_web_access: bool = False,
+        tensorboard: Optional[str] = None,
+        create_request_timeout: Optional[float] = None,
+    ) -> None:
+        """Submit the configured CustomJob.
+
+        Args:
+            service_account (str):
+                Optional. Specifies the service account for workload run-as account.
+                Users submitting jobs must have act-as permission on this run-as account.
+            network (str):
+                Optional. The full name of the Compute Engine network to which the job
+                should be peered. For example, projects/12345/global/networks/myVPC.
+                Private services access must already be configured for the network.
+            timeout (int):
+                The maximum job running time in seconds. The default is 7 days.
+            restart_job_on_worker_restart (bool):
+                Restarts the entire CustomJob if a worker
+                gets restarted. This feature can be used by
+                distributed training jobs that are not resilient
+                to workers leaving and joining a job.
+            enable_web_access (bool):
+                Whether you want Vertex AI to enable interactive shell access
+                to training containers.
+                https://cloud.google.com/vertex-ai/docs/training/monitor-debug-interactive-shell
+            tensorboard (str):
+                Optional. The name of a Vertex AI
+                [Tensorboard][google.cloud.aiplatform.v1beta1.Tensorboard]
+                resource to which this CustomJob will upload Tensorboard
+                logs. Format:
+                ``projects/{project}/locations/{location}/tensorboards/{tensorboard}``
+
+                The training script should write Tensorboard to following Vertex AI environment
+                variable:
+
+                AIP_TENSORBOARD_LOG_DIR
+
+                `service_account` is required with provided `tensorboard`.
+                For more information on configuring your service account please visit:
+                https://cloud.google.com/vertex-ai/docs/experiments/tensorboard-training
+            create_request_timeout (float):
+                Optional. The timeout for the create request in seconds.
+        """
         if service_account:
             self._gca_resource.job_spec.service_account = service_account
 
@@ -1677,8 +1743,6 @@ class CustomJob(_RunnableJob):
                     tensorboard, self.resource_name
                 )
             )
-
-        self._block_until_complete()
 
     @property
     def job_spec(self):
@@ -2626,7 +2690,7 @@ class ModelDeploymentMonitoringJob(_Job):
                     deployed_model_ids=deployed_model_ids,
                 )
             )
-        # TODO: b/254285776 add optional_sync support to model monitoring job
+        # TODO(b/254285776): add optional_sync support to model monitoring job
         lro = self.api_client.update_model_deployment_monitoring_job(
             model_deployment_monitoring_job=current_job,
             update_mask=field_mask_pb2.FieldMask(paths=update_mask),

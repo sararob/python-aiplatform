@@ -60,6 +60,11 @@
                 "list_saved_queries"
               ]
             },
+            "SearchDataItems": {
+              "methods": [
+                "search_data_items"
+              ]
+            },
             "UpdateDataset": {
               "methods": [
                 "update_dataset"
@@ -118,6 +123,11 @@
             "ListSavedQueries": {
               "methods": [
                 "list_saved_queries"
+              ]
+            },
+            "SearchDataItems": {
+              "methods": [
+                "search_data_items"
               ]
             },
             "UpdateDataset": {
@@ -227,6 +237,11 @@
               "methods": [
                 "streaming_read_feature_values"
               ]
+            },
+            "WriteFeatureValues": {
+              "methods": [
+                "write_feature_values"
+              ]
             }
           }
         },
@@ -241,6 +256,11 @@
             "StreamingReadFeatureValues": {
               "methods": [
                 "streaming_read_feature_values"
+              ]
+            },
+            "WriteFeatureValues": {
+              "methods": [
+                "write_feature_values"
               ]
             }
           }

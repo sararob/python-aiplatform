@@ -668,6 +668,7 @@ class FeaturestoreServiceAsyncClient:
                 -  ``labels``
                 -  ``online_serving_config.fixed_node_count``
                 -  ``online_serving_config.scaling``
+                -  ``online_storage_ttl_days``
 
                 This corresponds to the ``update_mask`` field
                 on the ``request`` instance; if ``request`` is provided, this
@@ -1319,6 +1320,7 @@ class FeaturestoreServiceAsyncClient:
                 -  ``monitoring_config.import_features_analysis.anomaly_detection_baseline``
                 -  ``monitoring_config.numerical_threshold_config.value``
                 -  ``monitoring_config.categorical_threshold_config.value``
+                -  ``offline_storage_ttl_days``
 
                 This corresponds to the ``update_mask`` field
                 on the ``request`` instance; if ``request`` is provided, this
@@ -1594,7 +1596,7 @@ class FeaturestoreServiceAsyncClient:
                 become the final component of the Feature's resource
                 name.
 
-                This value may be up to 60 characters, and valid
+                This value may be up to 128 characters, and valid
                 characters are ``[a-z0-9_]``. The first character cannot
                 be a number.
 

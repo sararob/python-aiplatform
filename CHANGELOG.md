@@ -1,6 +1,69 @@
 # Changelog
 
 
+## [1.20.0](https://github.com/googleapis/python-aiplatform/compare/v1.19.1...v1.20.0) (2022-12-15)
+
+
+### Features
+
+* Adds the temporal fusion transformer (TFT) forecasting job ([99313e0](https://github.com/googleapis/python-aiplatform/commit/99313e0baacd61d7d00d6576a22b151c1d8e1a49))
+* Reraise exceptions from API calls ([d72bc83](https://github.com/googleapis/python-aiplatform/commit/d72bc835184c73e61bb2879e53c71d6772d1b802))
+
+
+### Documentation
+
+* **samples:** Feature Store: Streaming ingestion code sample and test ([bc9e2cf](https://github.com/googleapis/python-aiplatform/commit/bc9e2cf55f6b4f651c79f68f426a75ed42a7d4c7))
+
+## [1.19.1](https://github.com/googleapis/python-aiplatform/compare/v1.19.0...v1.19.1) (2022-12-08)
+
+
+### Features
+
+* Add explanationSpec to TrainingPipeline-based custom jobs ([957703f](https://github.com/googleapis/python-aiplatform/commit/957703f9b9c953ee1f67740a652f68279907b104))
+
+
+### Bug Fixes
+
+* Add pre-built container(tf2-gpu-2-1) to the container URI list ([cdd557e](https://github.com/googleapis/python-aiplatform/commit/cdd557e5e86b0b4d4cf401509aba5914e0bab8b7))
+* Fix bug that broke profiler with '0-rc2' tensorflow versions. ([8779df5](https://github.com/googleapis/python-aiplatform/commit/8779df5362a6851372cf3cea005a1c6c3096b19e))
+* Fixed argument name in UnmanagedContainerModel ([d876b3a](https://github.com/googleapis/python-aiplatform/commit/d876b3ad8d0129dc98de9f86567d5bf17791058b))
+
+
+### Documentation
+
+* Add a sample for create_tensorboard. ([52656ca](https://github.com/googleapis/python-aiplatform/commit/52656cac24eedd500a3d97b3d4678857b1d51ed8))
+* Fix Experiment resource name format docstring. ([f8e5842](https://github.com/googleapis/python-aiplatform/commit/f8e5842a086bcd90c3b153ffa9dc7e788650e670))
+* Fix get Experiment data frame sample ([24e1465](https://github.com/googleapis/python-aiplatform/commit/24e146551237c494349b324ee8830154d129860c))
+* Update docstrings for "data_item_labels" in dataset ([b2f8c42](https://github.com/googleapis/python-aiplatform/commit/b2f8c42d88c29010cf78a9f44fb3cdb711a1e94c))
+* Update README fix product doc link ([43a2679](https://github.com/googleapis/python-aiplatform/commit/43a2679c0d6f5cba7dff4535a03aedd84e09a2f1))
+
+
+### Miscellaneous Chores
+
+* Release 1.19.1 ([f01867f](https://github.com/googleapis/python-aiplatform/commit/f01867f697a5d5134c993283f7cf9b22717da029))
+
+## [1.19.0](https://github.com/googleapis/python-aiplatform/compare/v1.18.3...v1.19.0) (2022-11-17)
+
+
+### Features
+
+* Add Feature Store: Streaming Ingestion (write_feature_values()) and introduce Preview namespace to Vertex SDK ([bae0315](https://github.com/googleapis/python-aiplatform/commit/bae03158c06865d1b61c06a1c8af64e876ce76dd))
+* Add bq_dataset_id parameter to batch_serve_to_df ([bb72562](https://github.com/googleapis/python-aiplatform/commit/bb72562f4515b6ace73a735477584ca0b5a30f58))
+* Add annotation_labels to ImportDataConfig in aiplatform v1 dataset.proto ([43e2805](https://github.com/googleapis/python-aiplatform/commit/43e28052d798c380de6e102edbe257a0100738cd))
+* Add support for ordery_by in Metadata SDK list methods for Artifact, Execution and Context. ([2377606](https://github.com/googleapis/python-aiplatform/commit/23776066909b5b7f77f704722d2719e1a1733ad4))
+* Support global network parameter. ([c7f57ad](https://github.com/googleapis/python-aiplatform/commit/c7f57ad505b7251b9c663538e2312998445db691))
+
+
+### Bug Fixes
+
+* Correct data file gcs path for import_data_text_sentiment_analysis_sample test ([86df4b5](https://github.com/googleapis/python-aiplatform/commit/86df4b5d79118caf8f45c3845c92afe6585c24e9))
+* Print error for schema classes ([13e2165](https://github.com/googleapis/python-aiplatform/commit/13e216518f20a32c7e18e6ea5b497a5fcb1d77a0))
+
+
+### Documentation
+
+* Update README with new link for AI Platform API ([35b83d9](https://github.com/googleapis/python-aiplatform/commit/35b83d90649ec396b736469278def4aaaf80621e))
+
 ## [1.18.3](https://github.com/googleapis/python-aiplatform/compare/v1.18.2...v1.18.3) (2022-11-01)
 
 

@@ -56,6 +56,7 @@ from .dataset import (
 from .dataset_service import (
     CreateDatasetOperationMetadata,
     CreateDatasetRequest,
+    DataItemView,
     DeleteDatasetRequest,
     ExportDataOperationMetadata,
     ExportDataRequest,
@@ -73,6 +74,8 @@ from .dataset_service import (
     ListDatasetsResponse,
     ListSavedQueriesRequest,
     ListSavedQueriesResponse,
+    SearchDataItemsRequest,
+    SearchDataItemsResponse,
     UpdateDatasetRequest,
 )
 from .deployed_index_ref import (
@@ -160,6 +163,9 @@ from .featurestore_online_service import (
     ReadFeatureValuesRequest,
     ReadFeatureValuesResponse,
     StreamingReadFeatureValuesRequest,
+    WriteFeatureValuesPayload,
+    WriteFeatureValuesRequest,
+    WriteFeatureValuesResponse,
 )
 from .featurestore_service import (
     BatchCreateFeaturesOperationMetadata,
@@ -625,6 +631,7 @@ __all__ = (
     "ImportDataConfig",
     "CreateDatasetOperationMetadata",
     "CreateDatasetRequest",
+    "DataItemView",
     "DeleteDatasetRequest",
     "ExportDataOperationMetadata",
     "ExportDataRequest",
@@ -642,6 +649,8 @@ __all__ = (
     "ListDatasetsResponse",
     "ListSavedQueriesRequest",
     "ListSavedQueriesResponse",
+    "SearchDataItemsRequest",
+    "SearchDataItemsResponse",
     "UpdateDatasetRequest",
     "DeployedIndexRef",
     "DeployedModelRef",
@@ -695,6 +704,9 @@ __all__ = (
     "ReadFeatureValuesRequest",
     "ReadFeatureValuesResponse",
     "StreamingReadFeatureValuesRequest",
+    "WriteFeatureValuesPayload",
+    "WriteFeatureValuesRequest",
+    "WriteFeatureValuesResponse",
     "BatchCreateFeaturesOperationMetadata",
     "BatchCreateFeaturesRequest",
     "BatchCreateFeaturesResponse",

@@ -548,6 +548,12 @@ class BatchReadFeatureValuesRequest(proto.Message):
             [BatchReadFeatureValuesRequest.entity_type_specs] must have
             a column specifying entity IDs in the EntityType in
             [BatchReadFeatureValuesRequest.request][] .
+        start_time (google.protobuf.timestamp_pb2.Timestamp):
+            Optional. Excludes Feature values with
+            feature generation timestamp before this
+            timestamp. If not set, retrieve oldest values
+            kept in Feature Store. Timestamp, if present,
+            must not have higher than millisecond precision.
     """
 
     class PassThroughField(proto.Message):
@@ -628,6 +634,11 @@ class BatchReadFeatureValuesRequest(proto.Message):
         proto.MESSAGE,
         number=7,
         message=EntityTypeSpec,
+    )
+    start_time = proto.Field(
+        proto.MESSAGE,
+        number=11,
+        message=timestamp_pb2.Timestamp,
     )
 
 
@@ -1109,7 +1120,7 @@ class CreateFeatureRequest(proto.Message):
             Required. The ID to use for the Feature, which will become
             the final component of the Feature's resource name.
 
-            This value may be up to 60 characters, and valid characters
+            This value may be up to 128 characters, and valid characters
             are ``[a-z0-9_]``. The first character cannot be a number.
 
             The value must be unique within an EntityType.
@@ -1564,6 +1575,9 @@ class ImportFeatureValuesOperationMetadata(proto.Message):
         imported_feature_value_count (int):
             Number of Feature values that have been
             imported by the operation.
+        source_uris (Sequence[str]):
+            The source URI from where Feature values are
+            imported.
         invalid_row_count (int):
             The number of rows in input source that weren't imported due
             to either
@@ -1590,6 +1604,10 @@ class ImportFeatureValuesOperationMetadata(proto.Message):
     imported_feature_value_count = proto.Field(
         proto.INT64,
         number=3,
+    )
+    source_uris = proto.RepeatedField(
+        proto.STRING,
+        number=4,
     )
     invalid_row_count = proto.Field(
         proto.INT64,
