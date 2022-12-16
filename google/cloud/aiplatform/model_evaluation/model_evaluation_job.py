@@ -29,6 +29,7 @@ from google.cloud.aiplatform import pipeline_jobs
 
 from google.cloud.aiplatform.compat.types import (
     pipeline_state_v1 as gca_pipeline_state_v1,
+    pipeline_job_v1 as gca_pipeline_job_v1,
 )
 
 import json
@@ -376,25 +377,32 @@ class _ModelEvaluationJob(pipeline_based_service._VertexAiPipelineBasedService):
             )
         else:
             for component in self.backing_pipeline_job.task_details:
-                for metadata_key in component.execution.metadata:
-                    if (
-                        metadata_key == "output:gcp_resources"
-                        and json.loads(component.execution.metadata[metadata_key])[
-                            "resources"
-                        ][0]["resourceType"]
-                        == "ModelEvaluation"
-                    ):
-                        eval_resource_uri = json.loads(
-                            component.execution.metadata[metadata_key]
-                        )["resources"][0]["resourceUri"]
-                        eval_resource_name = eval_resource_uri.split("v1/")[1]
+                if (
+                    component.task_name.startswith("model-evaluation-import")
+                    and "output:gcp_resources" in component.execution.metadata
+                ):
+                    for metadata_key in component.execution.metadata:
+                        if (
+                            metadata_key == "output:gcp_resources"
+                            and component.state
+                            == gca_pipeline_job_v1.PipelineTaskDetail.State.SUCCEEDED
+                        ):
+                            resource_metadata = json.loads(
+                                (component.execution.metadata[metadata_key])
+                            )["resources"]
+                            for entry in resource_metadata:
+                                if entry["resourceType"] == "ModelEvaluation":
+                                    eval_resource_uri = entry["resourceUri"]
+                                    eval_resource_name = eval_resource_uri.split("v1/")[
+                                        1
+                                    ]
+                                    eval_resource = model_evaluation.ModelEvaluation(
+                                        evaluation_name=eval_resource_name
+                                    )
+                                    eval_resource._gca_resource = (
+                                        eval_resource._get_gca_resource(
+                                            resource_name=eval_resource_name
+                                        )
+                                    )
 
-                        eval_resource = model_evaluation.ModelEvaluation(
-                            evaluation_name=eval_resource_name
-                        )
-
-                        eval_resource._gca_resource = eval_resource._get_gca_resource(
-                            resource_name=eval_resource_name
-                        )
-
-                        return eval_resource
+                            return eval_resource

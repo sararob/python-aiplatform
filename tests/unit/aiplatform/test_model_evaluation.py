@@ -365,7 +365,6 @@ _TEST_PARAMS = {
 _TEST_OTHER_PARAMS = {_TEST_PARAM_KEY_1: 0.02, _TEST_PARAM_KEY_2: 0.3}
 
 
-
 # experiment mocks
 get_experiment_mock = test_metadata.get_experiment_mock
 get_metadata_store_mock = test_metadata.get_metadata_store_mock
@@ -760,6 +759,7 @@ def list_executions_mock():
             ),
         ]
         yield list_executions_mock
+
 
 @pytest.mark.usefixtures("google_auth_mock")
 class TestModelEvaluation:
