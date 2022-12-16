@@ -15,14 +15,16 @@
 # limitations under the License.
 #
 
-from google.auth import credentials as auth_credentials
+import json
 
+from google.auth import credentials as auth_credentials
+from google.cloud import aiplatform
+from google.cloud.aiplatform import jobs
 from google.cloud.aiplatform import base
 from google.cloud.aiplatform import utils
 from google.cloud.aiplatform import models
-from google.protobuf import struct_pb2
 
-from typing import Optional
+from typing import Dict, Optional
 
 
 class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
@@ -36,13 +38,85 @@ class ModelEvaluation(base.VertexAiResourceNounWithFutureManager):
     _format_resource_name_method = "model_evaluation_path"
 
     @property
-    def metrics(self) -> Optional[struct_pb2.Value]:
+    def metrics(self) -> Dict:
         """Gets the evaluation metrics from the Model Evaluation.
         Returns:
             A dict with model metrics created from the Model Evaluation or
             None if the metrics for this evaluation are empty.
+
+        Raises:
+            ValueError: If the Model Evaluation doesn't have metrics.
         """
-        return self._gca_resource.metrics
+        if self._gca_resource.metrics:
+            return self.to_dict()["metrics"]
+
+        raise ValueError(
+            "This ModelEvaluation does not have any metrics, this could be because the Evaluation job failed. Check the logs for details."
+        )
+
+    @property
+    def backing_pipeline_job(self) -> Optional["pipeline_jobs.PipelineJob"]:
+        """The managed pipeline for this model evaluation job.
+
+        Returns:
+            The PipelineJob resource if this evaluation ran from a managed pipeline or None.
+        """
+        if (
+            "metadata" in self._gca_resource
+            and "pipeline_job_resource_name" in self._gca_resource.metadata
+        ):
+            return aiplatform.PipelineJob.get(
+                resource_name=self._gca_resource.metadata["pipeline_job_resource_name"]
+            )
+
+    @property
+    def batch_prediction_job(self) -> Optional[jobs.BatchPredictionJob]:
+        """The batch prediction job used for this evaluation if this ran as a
+        Model Evaluation pipeline.
+        Returns:
+            An instantiated representation of the Batch Prediction Job if it exists.
+        """
+        if self.backing_pipeline_job is not None:
+            for component in self.backing_pipeline_job.task_details:
+                for metadata_key in component.execution.metadata:
+                    if (
+                        metadata_key == "output:gcp_resources"
+                        and json.loads(component.execution.metadata[metadata_key])[
+                            "resources"
+                        ][0]["resourceType"]
+                        == "BatchPredictionJob"
+                    ):
+                        bp_job_resource_uri = json.loads(
+                            component.execution.metadata[metadata_key]
+                        )["resources"][0]["resourceUri"]
+                        bp_job_resource_name = bp_job_resource_uri.split("v1/")[1]
+
+                        bp_resource = aiplatform.BatchPredictionJob(
+                            batch_prediction_job_name=bp_job_resource_name
+                        )
+
+                        bp_resource._gca_resource = bp_resource._get_gca_resource(
+                            resource_name=bp_job_resource_name
+                        )
+
+                        return bp_resource
+
+    @property
+    def metadata_output_artifact(self) -> Optional["aiplatform.Artifact"]:
+        """The MLMD Artifact created by the Model Evaluation pipeline.
+
+        Returns:
+            The MLMD Artifact resource if this Model Evaluation was created from a pipeline run.
+        """
+        if self.backing_pipeline_job is not None:
+            for component in self.backing_pipeline_job.task_details:
+                for output_name in component.outputs:
+                    if output_name == "evaluation_metrics":
+                        for artifact in component.outputs[output_name].artifacts:
+                            if artifact.display_name == "evaluation_metrics":
+                                return aiplatform.Artifact.get(
+                                    resource_id=artifact.name
+                                )
 
     def __init__(
         self,
